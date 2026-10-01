@@ -1,0 +1,7 @@
+{
+  "name": "Pet OS",
+  "description": "Pet OS - Canonical Pet Lifecycle & Operating System Platform (Sprint 27: Marketplace Seller & Commerce Operations, Product Catalogue, Inventory, Orders, Fulfillment, Returns, Commissions & Trust; Sprint 26: Provider Business SaaS; Sprint 25: Tracker Connectivity; Sprint 24: Consumer Subscriptions; Sprint 23: Reviews; Sprint 22: Pet Transport)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
