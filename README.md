@@ -1,20 +1,44 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Pet OS
 
-# Run and deploy your AI Studio app
+Pet OS is a unified pet-lifecycle operating platform prototype. The repository currently implements the architecture and interactive domain consoles through **Sprint 27 — Marketplace Commerce**.
 
-This contains everything you need to run your app locally.
+The platform includes Pet identity and lifecycle, health, preventive care, nutrition, training, activity, professional services and bookings, finance, tracking and Lost Pet recovery, community, rescue/adoption, professional workspaces, reviews/reputation, subscriptions, tracker connectivity, Provider SaaS, and marketplace commerce.
 
-View your app in AI Studio: https://ai.studio/apps/558f57cc-3918-4fd1-a20b-04859ddd0771
+## Run locally
 
-## Run Locally
+Prerequisite: Node.js 20+.
 
-**Prerequisites:**  Node.js
+```bash
+npm install
+npm run dev
+```
 
+The development server runs on port 3000.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Validate the repository
+
+```bash
+npm run check
+```
+
+This performs TypeScript validation, the unified sprint regression suites, and the production Vite build.
+
+## Build
+
+```bash
+npm run build
+```
+
+The static app is written to `dist/`.
+
+## GitHub Pages
+
+The repository contains a GitHub Actions workflow that validates and deploys the current interactive prototype to GitHub Pages from `main`.
+
+## Current engineering status
+
+See `docs/DEVELOPMENT_STATUS.md` for the current architectural assessment and the path from Sprint 27 into the remaining sprints.
+
+## Architecture rules
+
+See `AGENTS.md` before implementing a new sprint. Pet OS is one platform: new domains must extend the canonical model rather than create isolated prototypes or duplicate sources of truth.

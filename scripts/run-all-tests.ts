@@ -2,7 +2,7 @@ import { seedUnifiedPetOS } from '../src/pet-os/seed/unified-seed';
 
 async function main() {
   console.log('--- Initializing Unified Pet OS Seed Baseline ---');
-  seedUnifiedPetOS();
+  await seedUnifiedPetOS({ forceReset: true });
 
   const suites: Array<{ name: string; runner: () => Promise<any> }> = [
     {
@@ -145,6 +145,48 @@ async function main() {
         return runSprint21Tests();
       },
     },
+    {
+      name: 'Sprint 22 (Pet Transport)',
+      runner: async () => {
+        const { runAllTransportTests } = await import('../src/pet-os/transport/tests');
+        return runAllTransportTests();
+      },
+    },
+    {
+      name: 'Sprint 23 (Reviews & Reputation)',
+      runner: async () => {
+        const { runAllReviewTests } = await import('../src/pet-os/reviews/tests');
+        return runAllReviewTests();
+      },
+    },
+    {
+      name: 'Sprint 24 (Consumer Subscriptions)',
+      runner: async () => {
+        const { SubscriptionTestSuite } = await import('../src/pet-os/subscription/tests');
+        return SubscriptionTestSuite.runAllTests();
+      },
+    },
+    {
+      name: 'Sprint 25 (Tracker Connectivity Subscriptions)',
+      runner: async () => {
+        const { TrackerSubscriptionTestSuite } = await import('../src/pet-os/tracker-service/tests');
+        return TrackerSubscriptionTestSuite.runAllTests();
+      },
+    },
+    {
+      name: 'Sprint 26 (Provider Business SaaS)',
+      runner: async () => {
+        const { ProviderSaaSTestSuite } = await import('../src/pet-os/provider-saas/tests');
+        return ProviderSaaSTestSuite.runAllTests();
+      },
+    },
+    {
+      name: 'Sprint 27 (Marketplace Commerce)',
+      runner: async () => {
+        const { CommerceTestSuite } = await import('../src/pet-os/commerce/tests');
+        return CommerceTestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -173,7 +215,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 19 SPRINT TEST SUITES (SPRINTS 2-20) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 25 REGRESSION SUITES (SPRINTS 2-27; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 
