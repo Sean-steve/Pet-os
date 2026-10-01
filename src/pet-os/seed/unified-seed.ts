@@ -68,6 +68,15 @@ import { seedSubscriptionData } from '../subscription/seed';
 import { seedTrackerSubscriptionData } from '../tracker-service/seed';
 import { seedProviderSaaSData } from '../provider-saas/seed';
 import { seedCommerceData } from '../commerce/seed';
+import { RescueStore } from '../rescue/store';
+import { VetWorkspaceStore } from '../vet-workspace/store';
+import { ProfessionalCareStore } from '../professional-care/store';
+import { TransportStore } from '../transport/store';
+import { ReviewStore } from '../reviews/store';
+import { SubscriptionStore } from '../subscription/store';
+import { TrackerSubscriptionStore } from '../tracker-service/store';
+import { ProviderSaaSStore } from '../provider-saas/store';
+import { CommerceStore } from '../commerce/store';
 
 // Canonical Identifiers
 export const CANONICAL_IDS = {
@@ -130,6 +139,15 @@ export function resetAllStores(): void {
   DocumentStore.reset();
   TrackingStore.reset();
   TrainerWorkspaceStore.getInstance().reset();
+  RescueStore.getInstance().reset();
+  VetWorkspaceStore.getInstance().reset();
+  ProfessionalCareStore.getInstance().reset();
+  TransportStore.getInstance().reset();
+  ReviewStore.getInstance().clear();
+  SubscriptionStore.reset();
+  TrackerSubscriptionStore.getInstance().reset();
+  ProviderSaaSStore.getInstance().reset();
+  CommerceStore.getInstance().reset();
 }
 
 /**
