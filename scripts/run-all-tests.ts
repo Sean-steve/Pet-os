@@ -2,7 +2,7 @@ import { seedUnifiedPetOS } from '../src/pet-os/seed/unified-seed';
 
 async function main() {
   console.log('--- Initializing Unified Pet OS Seed Baseline ---');
-  seedUnifiedPetOS();
+  await seedUnifiedPetOS({ forceReset: true });
 
   const suites: Array<{ name: string; runner: () => Promise<any> }> = [
     {
