@@ -22,6 +22,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Force Pages to GitHub Actions mode
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method PUT repos/${{ github.repository }}/pages -f build_type=workflow
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -43,6 +48,13 @@ jobs:
         env:
           VITE_BASE_PATH: /Pet-os/
         run: npm run build
+
+      - name: Verify Pages artifact
+        run: |
+          test -f dist/index.html
+          grep -q '/Pet-os/assets/' dist/index.html
+          test -n "$(find dist/assets -maxdepth 1 -type f -name '*.js' -print -quit)"
+          test -n "$(find dist/assets -maxdepth 1 -type f -name '*.css' -print -quit)"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
