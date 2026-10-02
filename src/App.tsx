@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Header, TabType } from './components/Header';
+import { PetOSExperience } from './components/PetOSExperience';
 import { seedUnifiedPetOS } from './pet-os/seed/unified-seed';
 import { Sprint1Overview } from './components/Sprint1Overview';
 import { KernelPlayground } from './components/KernelPlayground';
@@ -34,67 +35,56 @@ import { Sprint26ProviderSaaSConsole } from './components/Sprint26ProviderSaaSCo
 import { Sprint27CommerceConsole } from './components/Sprint27CommerceConsole';
 
 export default function App() {
+  const [mode, setMode] = useState<'product' | 'lab'>('product');
   const [activeTab, setActiveTab] = useState<TabType>('sprint27');
 
   useEffect(() => {
     seedUnifiedPetOS();
   }, []);
 
+  if (mode === 'product') {
+    return <PetOSExperience onOpenLab={() => setMode('lab')} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#0F1115] text-[#E2E8F0] flex flex-col font-sans selection:bg-[#A5B4FC] selection:text-[#0F1115]">
-      {/* Top Application Header */}
+      <div className="border-b border-emerald-500/15 bg-emerald-950/30 px-4 py-2 text-center text-xs text-emerald-300">
+        Build Lab · engineering consoles and sprint validation
+        <button
+          onClick={() => setMode('product')}
+          className="ml-3 rounded-lg bg-emerald-400/10 px-2.5 py-1 font-semibold text-emerald-200 hover:bg-emerald-400/20"
+        >
+          Return to Pet OS
+        </button>
+      </div>
+
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'sprint27' && <Sprint27CommerceConsole />}
-
         {activeTab === 'sprint26' && <Sprint26ProviderSaaSConsole />}
-
         {activeTab === 'sprint25' && <Sprint25TrackerSubscriptionConsole />}
-
         {activeTab === 'sprint24' && <Sprint24SubscriptionConsole />}
-
         {activeTab === 'sprint23' && <Sprint23ReviewConsole />}
-
         {activeTab === 'sprint22' && <Sprint22TransportConsole />}
-
         {activeTab === 'sprint21' && <Sprint21CareConsole />}
-
         {activeTab === 'sprint20' && <Sprint20TrainerWorkspaceConsole />}
-
         {activeTab === 'sprint19' && <Sprint19VetWorkspaceConsole />}
-
         {activeTab === 'sprint18' && <Sprint18RescueConsole />}
-
         {activeTab === 'sprint17' && <Sprint17CrowdRecoveryConsole />}
-
         {activeTab === 'sprint16' && <Sprint16CommunityConsole />}
-
         {activeTab === 'sprint15' && <Sprint15RecoveryConsole />}
-
         {activeTab === 'sprint14' && <Sprint14TrackingConsole />}
-
         {activeTab === 'sprint13' && <Sprint13DogWalkingConsole />}
-
         {activeTab === 'sprint12' && <Sprint12FinanceConsole />}
-
         {activeTab === 'sprint11' && <Sprint11BookingConsole />}
-
         {activeTab === 'sprint10' && <Sprint10ProviderConsole />}
-
         {activeTab === 'sprint9' && <Sprint9ActivityConsole />}
-
         {activeTab === 'sprint8' && <Sprint8TrainingConsole />}
-
         {activeTab === 'sprint7' && <Sprint7NutritionConsole />}
-
         {activeTab === 'sprint6' && <Sprint6CareConsole />}
-
         {activeTab === 'sprint5' && <Sprint5HealthConsole />}
-
         {activeTab === 'sprint4' && <Sprint4Console />}
-
         {activeTab === 'sprint3' && <Sprint3PetCoreConsole />}
 
         {activeTab === 'overview' && (
@@ -106,40 +96,28 @@ export default function App() {
         )}
 
         {activeTab === 'identity' && <Sprint2IdentityConsole />}
-
         {activeTab === 'kernel' && <KernelPlayground />}
-
         {activeTab === 'documentation' && <DocumentationExplorer />}
-
         {activeTab === 'adrs' && <AdrCatalog />}
-
         {activeTab === 'sprint2' && <Sprint2Terminal />}
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-[#1E293B] bg-[#0B0D10] py-6 text-xs text-[#64748B]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-[#F1F5F9]">Pet OS Architecture Library</span>
+            <span className="font-bold text-[#F1F5F9]">Pet OS Build Lab</span>
             <span className="text-[#334155]">·</span>
-            <span>Sprint 27 (Marketplace Commerce, Catalogue, Inventory, Orders, Fulfillment, Returns &amp; Trust)</span>
-            <span className="text-[#334155]">·</span>
-            <span className="text-amber-400 font-semibold flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
-              Sprint 27 Active
-            </span>
+            <span>Engineering architecture through Sprint 27</span>
           </div>
-
           <div className="flex items-center gap-4 text-[11px] text-[#475569]">
-            <span className="text-[#94A3B8]">Live Animal Sale Blocked</span>
+            <span className="text-[#94A3B8]">Regression suites</span>
             <span className="text-[#334155]">·</span>
-            <span className="text-[#94A3B8]">Concurrency Oversell Protection</span>
+            <span className="text-[#94A3B8]">Domain consoles</span>
             <span className="text-[#334155]">·</span>
-            <span className="text-[#94A3B8]">Multi-Seller Order Splitting</span>
+            <span className="text-[#94A3B8]">Canonical source ownership</span>
           </div>
         </div>
       </footer>
     </div>
   );
 }
-
