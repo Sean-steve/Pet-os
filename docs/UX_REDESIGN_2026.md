@@ -40,3 +40,34 @@ Design principles:
 This redesign is a visual/product-experience layer over the existing Sprint 1–27 domain architecture. It intentionally does not replace canonical domain logic or persistence.
 
 Future sprints should continue to use the product shell as the user-facing experience while Build Lab remains available for engineering verification.
+
+
+## Multi-sided unification
+
+The second redesign pass extends the product shell beyond the pet-parent experience and makes every major Pet OS actor a first-class workspace.
+
+Unified workspaces now include:
+
+- Pet Parent
+- Professional
+- Provider Business
+- Rescue & Welfare
+- Seller & Commerce
+- Finance & Billing
+- Trust & Operations
+- Platform & Engineering
+
+Every Sprint 1–27 implementation remains accessible from the unified shell through an appropriate actor/workspace instead of being hidden behind a sprint chronology.
+
+### Coverage principles
+
+- Provider verification is separate from Provider SaaS and reputation.
+- Seller identity is separate from service-provider identity.
+- Finance is a shared control plane rather than a feature buried inside commerce or services.
+- Rescue and welfare are independent operational contexts.
+- Trust, moderation and continuity controls are explicit platform operations.
+- Consumer subscriptions, tracker subscriptions and Provider SaaS are separate commercial products.
+- Engineering documentation, ADRs and kernel tools remain available under Platform & Engineering.
+- The operational consoles remain the deep implementation surfaces; the product shell is now the consistent navigation and workspace layer around them.
+
+This completes the redesign's actor coverage through Sprint 27 and provides the navigation model Sprint 28+ should extend.
