@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Header, TabType } from './components/Header';
-import { PetOSExperience } from './components/PetOSExperience';
+import { UnifiedPetOSExperience } from './components/UnifiedPetOSExperience';
 import { seedUnifiedPetOS } from './pet-os/seed/unified-seed';
 import { Sprint1Overview } from './components/Sprint1Overview';
 import { KernelPlayground } from './components/KernelPlayground';
@@ -43,18 +43,25 @@ export default function App() {
   }, []);
 
   if (mode === 'product') {
-    return <PetOSExperience onOpenLab={() => setMode('lab')} />;
+    return (
+      <UnifiedPetOSExperience
+        onOpenModule={(tab) => {
+          setActiveTab(tab);
+          setMode('lab');
+        }}
+      />
+    );
   }
 
   return (
     <div className="min-h-screen bg-[#0F1115] text-[#E2E8F0] flex flex-col font-sans selection:bg-[#A5B4FC] selection:text-[#0F1115]">
       <div className="border-b border-emerald-500/15 bg-emerald-950/30 px-4 py-2 text-center text-xs text-emerald-300">
-        Build Lab · engineering consoles and sprint validation
+        Operational Console · full Sprint 1–27 domain execution and engineering validation
         <button
           onClick={() => setMode('product')}
           className="ml-3 rounded-lg bg-emerald-400/10 px-2.5 py-1 font-semibold text-emerald-200 hover:bg-emerald-400/20"
         >
-          Return to Pet OS
+          Return to unified Pet OS
         </button>
       </div>
 
@@ -105,7 +112,7 @@ export default function App() {
       <footer className="border-t border-[#1E293B] bg-[#0B0D10] py-6 text-xs text-[#64748B]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-[#F1F5F9]">Pet OS Build Lab</span>
+            <span className="font-bold text-[#F1F5F9]">Pet OS Operational Console</span>
             <span className="text-[#334155]">·</span>
             <span>Engineering architecture through Sprint 27</span>
           </div>
