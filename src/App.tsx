@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Header, TabType } from './components/Header';
+import type { TabType } from './components/Header';
 import { UnifiedPetOSExperience } from './components/UnifiedPetOSExperience';
 import { seedUnifiedPetOS } from './pet-os/seed/unified-seed';
 import { Sprint1Overview } from './components/Sprint1Overview';
@@ -36,97 +36,64 @@ import { Sprint27CommerceConsole } from './components/Sprint27CommerceConsole';
 import { Sprint28AIConsole } from './components/Sprint28AIConsole';
 
 export default function App() {
-  const [mode, setMode] = useState<'product' | 'lab'>('product');
-  const [activeTab, setActiveTab] = useState<TabType>('sprint28');
+  const [activeModule, setActiveModule] = useState<TabType | null>(null);
 
   useEffect(() => {
     seedUnifiedPetOS();
   }, []);
 
-  if (mode === 'product') {
-    return (
-      <UnifiedPetOSExperience
-        onOpenModule={(tab) => {
-          setActiveTab(tab);
-          setMode('lab');
-        }}
-      />
-    );
-  }
+  const renderModule = (tab: TabType): React.ReactNode => {
+    switch (tab) {
+      case 'sprint28': return <Sprint28AIConsole />;
+      case 'sprint27': return <Sprint27CommerceConsole />;
+      case 'sprint26': return <Sprint26ProviderSaaSConsole />;
+      case 'sprint25': return <Sprint25TrackerSubscriptionConsole />;
+      case 'sprint24': return <Sprint24SubscriptionConsole />;
+      case 'sprint23': return <Sprint23ReviewConsole />;
+      case 'sprint22': return <Sprint22TransportConsole />;
+      case 'sprint21': return <Sprint21CareConsole />;
+      case 'sprint20': return <Sprint20TrainerWorkspaceConsole />;
+      case 'sprint19': return <Sprint19VetWorkspaceConsole />;
+      case 'sprint18': return <Sprint18RescueConsole />;
+      case 'sprint17': return <Sprint17CrowdRecoveryConsole />;
+      case 'sprint16': return <Sprint16CommunityConsole />;
+      case 'sprint15': return <Sprint15RecoveryConsole />;
+      case 'sprint14': return <Sprint14TrackingConsole />;
+      case 'sprint13': return <Sprint13DogWalkingConsole />;
+      case 'sprint12': return <Sprint12FinanceConsole />;
+      case 'sprint11': return <Sprint11BookingConsole />;
+      case 'sprint10': return <Sprint10ProviderConsole />;
+      case 'sprint9': return <Sprint9ActivityConsole />;
+      case 'sprint8': return <Sprint8TrainingConsole />;
+      case 'sprint7': return <Sprint7NutritionConsole />;
+      case 'sprint6': return <Sprint6CareConsole />;
+      case 'sprint5': return <Sprint5HealthConsole />;
+      case 'sprint4': return <Sprint4Console />;
+      case 'sprint3': return <Sprint3PetCoreConsole />;
+      case 'identity': return <Sprint2IdentityConsole />;
+      case 'kernel': return <KernelPlayground />;
+      case 'documentation': return <DocumentationExplorer />;
+      case 'adrs': return <AdrCatalog />;
+      case 'sprint2': return <Sprint2Terminal />;
+      case 'overview':
+        return (
+          <Sprint1Overview
+            onGoToSprint2={() => setActiveModule('identity')}
+            onExploreKernel={() => setActiveModule('kernel')}
+            onViewDocs={() => setActiveModule('documentation')}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-[#E2E8F0] flex flex-col font-sans selection:bg-[#A5B4FC] selection:text-[#0F1115]">
-      <div className="border-b border-emerald-500/15 bg-emerald-950/30 px-4 py-2 text-center text-xs text-emerald-300">
-        Operational Console · full Sprint 1–28 domain execution and engineering validation
-        <button
-          onClick={() => setMode('product')}
-          className="ml-3 rounded-lg bg-emerald-400/10 px-2.5 py-1 font-semibold text-emerald-200 hover:bg-emerald-400/20"
-        >
-          Return to unified Pet OS
-        </button>
-      </div>
-
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} />
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'sprint28' && <Sprint28AIConsole />}
-        {activeTab === 'sprint27' && <Sprint27CommerceConsole />}
-        {activeTab === 'sprint26' && <Sprint26ProviderSaaSConsole />}
-        {activeTab === 'sprint25' && <Sprint25TrackerSubscriptionConsole />}
-        {activeTab === 'sprint24' && <Sprint24SubscriptionConsole />}
-        {activeTab === 'sprint23' && <Sprint23ReviewConsole />}
-        {activeTab === 'sprint22' && <Sprint22TransportConsole />}
-        {activeTab === 'sprint21' && <Sprint21CareConsole />}
-        {activeTab === 'sprint20' && <Sprint20TrainerWorkspaceConsole />}
-        {activeTab === 'sprint19' && <Sprint19VetWorkspaceConsole />}
-        {activeTab === 'sprint18' && <Sprint18RescueConsole />}
-        {activeTab === 'sprint17' && <Sprint17CrowdRecoveryConsole />}
-        {activeTab === 'sprint16' && <Sprint16CommunityConsole />}
-        {activeTab === 'sprint15' && <Sprint15RecoveryConsole />}
-        {activeTab === 'sprint14' && <Sprint14TrackingConsole />}
-        {activeTab === 'sprint13' && <Sprint13DogWalkingConsole />}
-        {activeTab === 'sprint12' && <Sprint12FinanceConsole />}
-        {activeTab === 'sprint11' && <Sprint11BookingConsole />}
-        {activeTab === 'sprint10' && <Sprint10ProviderConsole />}
-        {activeTab === 'sprint9' && <Sprint9ActivityConsole />}
-        {activeTab === 'sprint8' && <Sprint8TrainingConsole />}
-        {activeTab === 'sprint7' && <Sprint7NutritionConsole />}
-        {activeTab === 'sprint6' && <Sprint6CareConsole />}
-        {activeTab === 'sprint5' && <Sprint5HealthConsole />}
-        {activeTab === 'sprint4' && <Sprint4Console />}
-        {activeTab === 'sprint3' && <Sprint3PetCoreConsole />}
-
-        {activeTab === 'overview' && (
-          <Sprint1Overview
-            onGoToSprint2={() => setActiveTab('identity')}
-            onExploreKernel={() => setActiveTab('kernel')}
-            onViewDocs={() => setActiveTab('documentation')}
-          />
-        )}
-
-        {activeTab === 'identity' && <Sprint2IdentityConsole />}
-        {activeTab === 'kernel' && <KernelPlayground />}
-        {activeTab === 'documentation' && <DocumentationExplorer />}
-        {activeTab === 'adrs' && <AdrCatalog />}
-        {activeTab === 'sprint2' && <Sprint2Terminal />}
-      </main>
-
-      <footer className="border-t border-[#1E293B] bg-[#0B0D10] py-6 text-xs text-[#64748B]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-[#F1F5F9]">Pet OS Operational Console</span>
-            <span className="text-[#334155]">·</span>
-            <span>Engineering architecture through Sprint 28</span>
-          </div>
-          <div className="flex items-center gap-4 text-[11px] text-[#475569]">
-            <span className="text-[#94A3B8]">Regression suites</span>
-            <span className="text-[#334155]">·</span>
-            <span className="text-[#94A3B8]">Domain consoles</span>
-            <span className="text-[#334155]">·</span>
-            <span className="text-[#94A3B8]">Canonical source ownership</span>
-          </div>
-        </div>
-      </footer>
-    </div>
+    <UnifiedPetOSExperience
+      activeModule={activeModule}
+      onOpenModule={setActiveModule}
+      onCloseModule={() => setActiveModule(null)}
+      renderModule={renderModule}
+    />
   );
 }
