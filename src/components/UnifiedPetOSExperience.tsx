@@ -56,6 +56,7 @@ type WorkspaceId =
   | 'commerce'
   | 'finance'
   | 'trust'
+  | 'intelligence'
   | 'platform';
 
 interface UnifiedPetOSExperienceProps {
@@ -132,6 +133,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'subscription', title: 'Membership & Premium', description: 'Consumer plans, entitlements, billing and usage.', icon: CreditCard, tab: 'sprint24', accent: 'amber' },
       { id: 'tracker-plan', title: 'Tracker Plans', description: 'Per-device connectivity subscriptions and service status.', icon: Radio, tab: 'sprint25', accent: 'blue' },
       { id: 'store', title: 'Store & Orders', description: 'Marketplace products, checkout, orders, returns and buyer protection.', icon: ShoppingBag, tab: 'sprint27', accent: 'peach' },
+      { id: 'ai', title: 'Pet OS AI', description: 'Grounded assistant, summaries, recommendations and safety-aware guidance.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
     ],
   },
   {
@@ -163,6 +165,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'care', title: 'Grooming, Sitting & Boarding', description: 'Care handover, custody, medication, feeding and incidents.', icon: HeartPulse, tab: 'sprint21', accent: 'sage' },
       { id: 'transport', title: 'Pet Transport', description: 'Verified drivers, vehicles, custody-in-transit and handovers.', icon: Truck, tab: 'sprint22', accent: 'blue' },
       { id: 'reviews', title: 'Reviews & Reputation', description: 'Verified-service feedback, responses, disputes and reputation.', icon: Star, tab: 'sprint23', accent: 'amber' },
+      { id: 'professional-ai', title: 'Professional AI', description: 'Authorized drafting and summaries that remain review-required.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
     ],
   },
   {
@@ -311,6 +314,37 @@ const workspaces: WorkspaceDef[] = [
       { id: 'rescue', title: 'Welfare Operations', description: 'Restricted welfare cases, custody and reunification review.', icon: HeartHandshake, tab: 'sprint18', accent: 'peach' },
       { id: 'commerce', title: 'Commerce Trust', description: 'Seller verification, product moderation, safety reports and recalls.', icon: Store, tab: 'sprint27', accent: 'amber' },
       { id: 'saas', title: 'Continuity Controls', description: 'Ensure active care continues safely through SaaS billing changes.', icon: ShieldCheck, tab: 'sprint26', accent: 'sage' },
+      { id: 'ai-safety', title: 'AI Safety Operations', description: 'Model governance, prompt safety, incidents, consent and release gates.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
+    ],
+  },
+  {
+    id: 'intelligence',
+    label: 'AI & Intelligence',
+    shortLabel: 'Intelligence',
+    eyebrow: 'Governed intelligence workspace',
+    title: 'Useful intelligence, without surrendering control.',
+    description: 'Pet OS AI assembles only authorized context, preserves provenance, applies safety policies before and after generation, and never becomes the source of clinical, financial, tracking or operational truth.',
+    icon: Sparkles,
+    accent: '#7058A8',
+    metrics: [
+      { label: 'Models', value: '2 active', detail: 'Risk-aware routing', icon: Sparkles },
+      { label: 'Safety', value: '4 gates', detail: 'Critical golden cases', icon: ShieldCheck },
+      { label: 'Consent', value: 'Scoped', detail: 'Pet · Health · Location', icon: UserRoundCheck },
+      { label: 'Autonomy', value: 'Read-only', detail: 'No unconfirmed writes', icon: Database },
+    ],
+    queue: [
+      { title: 'Sprint 28 evaluation suite', meta: 'Emergency, medication and injection gates', status: 'Safety' },
+      { title: 'External model providers', meta: 'Production adapter deferred until server-side secrets are available', status: 'Architecture' },
+      { title: 'Action orchestration', meta: 'Human-confirmed write tools begin in Sprint 29', status: 'Next' },
+    ],
+    modules: [
+      { id: 'ai-platform', title: 'Pet Intelligence & AI', description: 'Assistant, recommendations, safety, models, consent and evaluations.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
+      { id: 'health-source', title: 'Clinical Source Context', description: 'Review the canonical health records AI is permitted to summarize.', icon: HeartPulse, tab: 'sprint5', accent: 'peach' },
+      { id: 'care-source', title: 'Care Source Context', description: 'Deterministic due-state remains the source for care recommendations.', icon: Calendar, tab: 'sprint6', accent: 'sage' },
+      { id: 'training-source', title: 'Training Source Context', description: 'AI guidance respects active plans and professional provenance.', icon: GraduationCap, tab: 'sprint8', accent: 'violet' },
+      { id: 'tracking-source', title: 'Tracking Source Context', description: 'Device state, telemetry truth and exact-location privacy remain separate.', icon: MapPin, tab: 'sprint14', accent: 'blue' },
+      { id: 'subscription-source', title: 'AI Entitlements', description: 'Premium access is evaluated centrally and cannot override safety.', icon: CreditCard, tab: 'sprint24', accent: 'amber' },
+      { id: 'platform-governance', title: 'Platform Governance', description: 'Shared kernel, documentation and architecture decisions behind AI.', icon: Database, tab: 'kernel', accent: 'blue' },
     ],
   },
   {
@@ -365,6 +399,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'tracker-plans', title: 'Tracker Plans', description: 'Connectivity subscription console.', icon: Radio, tab: 'sprint25', accent: 'blue' },
       { id: 'provider-saas', title: 'Provider SaaS', description: 'Business SaaS console.', icon: Building2, tab: 'sprint26', accent: 'violet' },
       { id: 'commerce', title: 'Marketplace Commerce', description: 'Seller and commerce console.', icon: Store, tab: 'sprint27', accent: 'amber' },
+      { id: 'ai', title: 'Pet Intelligence & AI', description: 'Governed context, model routing, recommendations and evaluation console.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
     ],
   },
 ];
@@ -582,7 +617,7 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({ 
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-[#6656A2] shadow-sm"><Sparkles className="h-5 w-5" /></span>
                 <div>
                   <p className="text-sm font-semibold text-[#26362E]">Pet OS intelligence</p>
-                  <p className="text-xs text-[#7E8983]">Sprint 28 ready</p>
+                  <p className="text-xs text-[#7E8983]">Sprint 28 active</p>
                 </div>
               </div>
               <p className="mt-4 text-sm leading-6 text-[#61716A]">
@@ -598,7 +633,7 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({ 
                 <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#223129]">Open a domain</h2>
               </div>
               {workspace.id === 'platform' && (
-                <span className="hidden rounded-full bg-[#EEF1F5] px-3 py-1 text-xs font-semibold text-[#667381] sm:inline">Sprint 1–27 coverage</span>
+                <span className="hidden rounded-full bg-[#EEF1F5] px-3 py-1 text-xs font-semibold text-[#667381] sm:inline">Sprint 1–28 coverage</span>
               )}
             </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
