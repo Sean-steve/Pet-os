@@ -22,12 +22,16 @@ The primary limitation is that persistence is currently in-memory/client-side do
 - GitHub Pages deployment workflow builds and publishes the interactive prototype.
 - Vite supports an explicit Pages base path.
 - Package scripts include `test`, `typecheck`, and `check`.
+- All Sprint 1–28 operational modules now render inside the unified multi-sided SaaS shell instead of switching to a separate legacy console application.
+- A scoped compatibility theme normalizes legacy module surfaces, typography, borders, forms and tables to the new Pet OS design system without altering domain behavior.
 
 ## Remaining platform direction
 
 Sprint 28: governed Pet Intelligence & AI Platform — implemented in the prototype.
 
-Sprint 29 onward: cross-domain automation/action orchestration, external integrations/developer platform, consolidated analytics/operations, security/privacy/compliance hardening, resilience/performance/DR, full-system E2E certification, and final production readiness.
+Sprint 29 next: cross-domain automation/action orchestration with user-confirmed actions, approvals, previews, policy gates, idempotency and compensating transactions. It must extend the unified workspace shell rather than create another parallel console.
+
+Later sprints: external integrations/developer platform, consolidated analytics/operations, security/privacy/compliance hardening, resilience/performance/DR, full-system E2E certification, and final production readiness.
 
 ## Engineering rule for future sprints
 
@@ -39,3 +43,5 @@ Every new sprint must:
 4. Keep `npm run check` green.
 5. Preserve the GitHub Pages build.
 6. Avoid introducing a parallel source of truth for an existing domain.
+7. Render user-facing and operational workflows inside the unified Pet OS shell; no new standalone sprint UI.
+8. Any state-changing AI or automation action must go through explicit authorization, preview/confirmation, domain validation and audit.

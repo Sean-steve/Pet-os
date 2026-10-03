@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   BarChart3,
   Bell,
@@ -60,7 +61,10 @@ type WorkspaceId =
   | 'platform';
 
 interface UnifiedPetOSExperienceProps {
+  activeModule: TabType | null;
   onOpenModule: (tab: TabType) => void;
+  onCloseModule: () => void;
+  renderModule: (tab: TabType) => React.ReactNode;
 }
 
 interface ModuleDef {
@@ -453,14 +457,25 @@ const ModuleCard = ({ module, onOpen }: { module: ModuleDef; onOpen: () => void 
   );
 };
 
-export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({ onOpenModule }) => {
+export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({
+  activeModule,
+  onOpenModule,
+  onCloseModule,
+  renderModule,
+}) => {
   const [workspaceId, setWorkspaceId] = useState<WorkspaceId>('owner');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
   const workspace = useMemo(() => workspaces.find((item) => item.id === workspaceId) || workspaces[0], [workspaceId]);
+  const currentModule = useMemo(() => {
+    if (!activeModule) return undefined;
+    return workspace.modules.find((module) => module.tab === activeModule)
+      || workspaces.flatMap((item) => item.modules).find((module) => module.tab === activeModule);
+  }, [activeModule, workspace]);
 
   const selectWorkspace = (id: WorkspaceId) => {
     setWorkspaceId(id);
+    onCloseModule();
     setMobileOpen(false);
     setWorkspaceMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -546,8 +561,8 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({ 
                   {React.createElement(workspace.icon, { className: 'h-4 w-4' })}
                 </span>
                 <div className="hidden sm:block">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#A0A8A4]">Current workspace</p>
-                  <p className="text-sm font-semibold text-[#34433B]">{workspace.label}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#A0A8A4]">{activeModule ? 'Operational module' : 'Current workspace'}</p>
+                  <p className="text-sm font-semibold text-[#34433B]">{activeModule && currentModule ? currentModule.title : workspace.label}</p>
                 </div>
                 <ChevronDown className="h-4 w-4 text-[#98A09C]" />
               </button>
@@ -585,6 +600,65 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({ 
         </header>
 
         <main className="mx-auto max-w-[1540px] px-4 py-7 sm:px-6 lg:px-8 xl:px-10 xl:py-9">
+          {activeModule && currentModule ? (
+            <>
+              <div className="mb-5 flex flex-col gap-4 rounded-[28px] border border-[#E3E7E3] bg-white p-5 shadow-[0_16px_45px_rgba(31,52,42,0.05)] md:p-6">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="flex min-w-0 items-start gap-4">
+                    <button
+                      onClick={onCloseModule}
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-[#E2E7E3] bg-[#F8FAF8] text-[#526159] transition hover:bg-[#EEF3EF]"
+                      aria-label={`Back to ${workspace.label}`}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                    <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${toneClasses[currentModule.accent || 'sage']}`}>
+                      {React.createElement(currentModule.icon, { className: 'h-5 w-5' })}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: workspace.accent }}>{workspace.label}</p>
+                        <span className="text-[#C1C8C4]">/</span>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#89938E]">Operational module</p>
+                      </div>
+                      <h1 className="mt-1 text-2xl font-semibold tracking-[-0.035em] text-[#1B2A23] md:text-[30px]">{currentModule.title}</h1>
+                      <p className="mt-1 max-w-3xl text-sm leading-6 text-[#748079]">{currentModule.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="rounded-full bg-[#E9F3ED] px-3 py-1.5 text-[11px] font-semibold text-[#2F6B50]">Live domain logic</span>
+                    <span className="rounded-full bg-[#F2F3F0] px-3 py-1.5 text-[11px] font-semibold text-[#68746E]">Unified Pet OS</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 overflow-x-auto border-t border-[#EDF0ED] pt-4">
+                  {workspace.modules.map((module) => {
+                    const Icon = module.icon;
+                    const active = module.tab === activeModule;
+                    return (
+                      <button
+                        key={module.id}
+                        onClick={() => onOpenModule(module.tab)}
+                        className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                          active
+                            ? 'bg-[#173F31] text-white shadow-sm'
+                            : 'border border-[#E5E9E5] bg-[#FAFBF9] text-[#68746E] hover:bg-[#EEF3EF] hover:text-[#324239]'
+                        }`}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {module.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="petos-integrated-module rounded-[28px] border border-[#E3E7E3] bg-white p-4 shadow-[0_18px_55px_rgba(31,52,42,0.05)] sm:p-5 md:p-6">
+                {renderModule(activeModule)}
+              </div>
+            </>
+          ) : (
+            <>
           <div className="relative overflow-hidden rounded-[30px] border border-[#E3E7E3] bg-white px-6 py-7 shadow-[0_18px_55px_rgba(31,52,42,0.055)] md:px-8 md:py-8">
             <div className="absolute -right-14 -top-20 h-64 w-64 rounded-full opacity-[0.09]" style={{ background: workspace.accent }} />
             <div className="relative z-10 max-w-4xl">
@@ -608,7 +682,7 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({ 
                 <span className="rounded-full bg-[#F0F3F0] px-3 py-1 text-xs font-semibold text-[#68746E]">{workspace.modules.length} modules</span>
               </div>
               <p className="mt-2 text-sm leading-6 text-[#7E8983]">
-                The product shell gives each side of Pet OS a clear home. Open any module to access the full operational implementation already built through Sprint 27.
+                The product shell gives each side of Pet OS a clear home. Open any module to access the full operational implementation already built through Sprint 28.
               </p>
             </section>
 
@@ -621,7 +695,7 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({ 
                 </div>
               </div>
               <p className="mt-4 text-sm leading-6 text-[#61716A]">
-                AI will sit across these workspaces as a governed assistive layer — never as a replacement for clinical, financial, safety or operational source-of-truth domains.
+                AI sits across these workspaces as a governed assistive layer — never as a replacement for clinical, financial, safety or operational source-of-truth domains.
               </p>
             </section>
           </div>
@@ -680,6 +754,8 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({ 
               </button>
             </section>
           </div>
+            </>
+          )}
         </main>
 
         <footer className="mx-auto max-w-[1540px] px-4 pb-8 pt-2 text-xs text-[#9AA39E] sm:px-6 lg:px-8 xl:px-10">

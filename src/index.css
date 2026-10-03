@@ -29,3 +29,147 @@ select {
 button {
   -webkit-tap-highlight-color: transparent;
 }
+
+
+/*
+ * Unified Pet OS module theme
+ * Legacy sprint consoles keep their domain logic and interactions, while this
+ * compatibility layer makes them visually belong to the new SaaS shell.
+ */
+.petos-integrated-module {
+  color: #33433b;
+  background: #ffffff;
+  --petos-border: #e3e8e4;
+  --petos-muted: #7b8780;
+  --petos-surface: #f8faf8;
+  --petos-surface-strong: #eef3ef;
+  --petos-ink: #1b2a23;
+  --petos-brand: #1f5f46;
+}
+
+.petos-integrated-module [class*="bg-[#0F1115]"],
+.petos-integrated-module [class*="bg-[#0B0D10]"],
+.petos-integrated-module [class*="bg-slate-950"] {
+  background-color: var(--petos-surface) !important;
+}
+
+.petos-integrated-module [class*="bg-[#13151A]"],
+.petos-integrated-module [class*="bg-slate-900"] {
+  background-color: #ffffff !important;
+}
+
+.petos-integrated-module [class*="bg-[#1E293B]"],
+.petos-integrated-module [class*="bg-slate-800"] {
+  background-color: var(--petos-surface-strong) !important;
+}
+
+.petos-integrated-module [class*="bg-[#1E1B4B]"],
+.petos-integrated-module [class*="from-[#1E1B4B]"],
+.petos-integrated-module [class*="from-violet-950"],
+.petos-integrated-module [class*="via-slate-950"],
+.petos-integrated-module [class*="to-emerald-950"] {
+  background: #f4f1fb !important;
+}
+
+.petos-integrated-module [class*="border-[#1E293B]"],
+.petos-integrated-module [class*="border-slate-800"],
+.petos-integrated-module [class*="border-slate-700"] {
+  border-color: var(--petos-border) !important;
+}
+
+.petos-integrated-module [class*="border-[#312E81]"] {
+  border-color: #d9d2ee !important;
+}
+
+.petos-integrated-module [class*="text-[#F8FAFC]"],
+.petos-integrated-module [class*="text-[#F1F5F9]"],
+.petos-integrated-module [class*="text-[#E2E8F0]"],
+.petos-integrated-module [class*="text-[#CBD5E1]"],
+.petos-integrated-module [class*="text-slate-100"],
+.petos-integrated-module [class*="text-slate-200"],
+.petos-integrated-module [class*="text-slate-300"] {
+  color: var(--petos-ink) !important;
+}
+
+.petos-integrated-module [class*="text-[#94A3B8]"],
+.petos-integrated-module [class*="text-[#64748B]"],
+.petos-integrated-module [class*="text-[#475569]"],
+.petos-integrated-module [class*="text-slate-400"],
+.petos-integrated-module [class*="text-slate-500"],
+.petos-integrated-module [class*="text-slate-600"] {
+  color: var(--petos-muted) !important;
+}
+
+.petos-integrated-module [class~="text-white"] {
+  color: var(--petos-ink) !important;
+}
+
+/* Preserve high-contrast text on intentional accent actions and statuses. */
+.petos-integrated-module [class*="bg-violet-5"][class~="text-white"],
+.petos-integrated-module [class*="bg-indigo-5"][class~="text-white"],
+.petos-integrated-module [class*="bg-indigo-6"][class~="text-white"],
+.petos-integrated-module [class*="bg-blue-5"][class~="text-white"],
+.petos-integrated-module [class*="bg-blue-6"][class~="text-white"],
+.petos-integrated-module [class*="bg-emerald-5"][class~="text-white"],
+.petos-integrated-module [class*="bg-emerald-6"][class~="text-white"],
+.petos-integrated-module [class*="bg-teal-5"][class~="text-white"],
+.petos-integrated-module [class*="bg-rose-5"][class~="text-white"],
+.petos-integrated-module [class*="bg-red-5"][class~="text-white"],
+.petos-integrated-module [class*="bg-[#173F31]"][class~="text-white"],
+.petos-integrated-module [class*="bg-[#1F5F46]"][class~="text-white"] {
+  color: #ffffff !important;
+}
+
+.petos-integrated-module input,
+.petos-integrated-module textarea,
+.petos-integrated-module select {
+  border-color: var(--petos-border) !important;
+  background-color: #ffffff !important;
+  color: var(--petos-ink) !important;
+}
+
+.petos-integrated-module input::placeholder,
+.petos-integrated-module textarea::placeholder {
+  color: #9aa49e !important;
+}
+
+.petos-integrated-module table {
+  color: #394940;
+}
+
+.petos-integrated-module thead,
+.petos-integrated-module [class*="bg-[#0B0D10]"] {
+  background-color: #f3f6f3 !important;
+}
+
+.petos-integrated-module [class*="divide-[#1E293B]"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--petos-border) !important;
+}
+
+.petos-integrated-module [class*="shadow-black"],
+.petos-integrated-module [class*="shadow-indigo-950"] {
+  --tw-shadow-color: rgba(32, 52, 43, 0.08) !important;
+}
+
+/* Old console tab rows become calm SaaS sub-navigation. */
+.petos-integrated-module > div > [class*="border-b"][class*="pb-3"],
+.petos-integrated-module nav[class*="bg-slate"] {
+  border-color: var(--petos-border) !important;
+  background: transparent !important;
+}
+
+/* Keep internal operational surfaces contained and responsive. */
+.petos-integrated-module [class*="max-h-"] {
+  scrollbar-color: #c8d2cc transparent;
+}
+
+.petos-integrated-module a,
+.petos-integrated-module button {
+  outline-color: #5f8b72;
+}
+
+.petos-integrated-module pre,
+.petos-integrated-module code,
+.petos-integrated-module [class*="font-mono"] {
+  font-variant-ligatures: none;
+}
