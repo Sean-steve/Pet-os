@@ -33,10 +33,11 @@ import { Sprint24SubscriptionConsole } from './components/Sprint24SubscriptionCo
 import { Sprint25TrackerSubscriptionConsole } from './components/Sprint25TrackerSubscriptionConsole';
 import { Sprint26ProviderSaaSConsole } from './components/Sprint26ProviderSaaSConsole';
 import { Sprint27CommerceConsole } from './components/Sprint27CommerceConsole';
+import { Sprint28AIConsole } from './components/Sprint28AIConsole';
 
 export default function App() {
   const [mode, setMode] = useState<'product' | 'lab'>('product');
-  const [activeTab, setActiveTab] = useState<TabType>('sprint27');
+  const [activeTab, setActiveTab] = useState<TabType>('sprint28');
 
   useEffect(() => {
     seedUnifiedPetOS();
@@ -56,7 +57,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0F1115] text-[#E2E8F0] flex flex-col font-sans selection:bg-[#A5B4FC] selection:text-[#0F1115]">
       <div className="border-b border-emerald-500/15 bg-emerald-950/30 px-4 py-2 text-center text-xs text-emerald-300">
-        Operational Console · full Sprint 1–27 domain execution and engineering validation
+        Operational Console · full Sprint 1–28 domain execution and engineering validation
         <button
           onClick={() => setMode('product')}
           className="ml-3 rounded-lg bg-emerald-400/10 px-2.5 py-1 font-semibold text-emerald-200 hover:bg-emerald-400/20"
@@ -68,6 +69,7 @@ export default function App() {
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'sprint28' && <Sprint28AIConsole />}
         {activeTab === 'sprint27' && <Sprint27CommerceConsole />}
         {activeTab === 'sprint26' && <Sprint26ProviderSaaSConsole />}
         {activeTab === 'sprint25' && <Sprint25TrackerSubscriptionConsole />}
@@ -114,7 +116,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <span className="font-bold text-[#F1F5F9]">Pet OS Operational Console</span>
             <span className="text-[#334155]">·</span>
-            <span>Engineering architecture through Sprint 27</span>
+            <span>Engineering architecture through Sprint 28</span>
           </div>
           <div className="flex items-center gap-4 text-[11px] text-[#475569]">
             <span className="text-[#94A3B8]">Regression suites</span>
