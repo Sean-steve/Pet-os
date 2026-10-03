@@ -1,8 +1,8 @@
 # Pet OS
 
-Pet OS is a unified pet-lifecycle operating platform prototype. The repository currently implements the architecture and interactive domain consoles through **Sprint 27 — Marketplace Commerce**.
+Pet OS is a unified pet-lifecycle operating platform prototype. The repository currently implements the architecture and interactive domain consoles through **Sprint 28 — Pet Intelligence & AI**.
 
-The platform includes Pet identity and lifecycle, health, preventive care, nutrition, training, activity, professional services and bookings, finance, tracking and Lost Pet recovery, community, rescue/adoption, professional workspaces, reviews/reputation, subscriptions, tracker connectivity, Provider SaaS, and marketplace commerce.
+The platform includes Pet identity and lifecycle, health, preventive care, nutrition, training, activity, professional services and bookings, finance, tracking and Lost Pet recovery, community, rescue/adoption, professional workspaces, reviews/reputation, subscriptions, tracker connectivity, Provider SaaS, marketplace commerce, and the governed Pet Intelligence & AI platform.
 
 ## Run locally
 
@@ -37,7 +37,7 @@ The repository contains a GitHub Actions workflow that validates and deploys the
 
 ## Current engineering status
 
-See `docs/DEVELOPMENT_STATUS.md` for the current architectural assessment and the path from Sprint 27 into the remaining sprints.
+See `docs/DEVELOPMENT_STATUS.md` for the current architectural assessment and the path from Sprint 28 into the remaining sprints.
 
 ## Architecture rules
 
