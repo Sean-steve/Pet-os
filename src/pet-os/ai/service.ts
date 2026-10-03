@@ -20,6 +20,7 @@ import { TrainingStore } from '../training/store';
 import { ActivityStore } from '../activity/store';
 import { TrackingStore } from '../tracking/store';
 import { RecoveryStore } from '../recovery/store';
+import { EntitlementService } from '../subscription/entitlement-service';
 import { AIStore } from './store';
 import {
   AIAskInput,
@@ -307,6 +308,14 @@ export class AIPlatformService {
       createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()
     };
     store.saveRequest(request);store.publish(AIEvents.requestCreated(request));store.saveSafetyDecision(safety);
+
+    // Authorization and monetization are separate from safety. An emergency safety response
+    // is never blocked solely because the household lacks the premium AI entitlement.
+    PetContextAssembler.authorize(input.userId,input.householdId,input.petId);
+    if (safety.action !== 'EMERGENCY_ESCALATION') {
+      const entitlement=EntitlementService.evaluate('HOUSEHOLD',String(input.householdId),'ai.pet_coach');
+      if (!entitlement.isAllowed) throw new Error('AI_ENTITLEMENT_REQUIRED: ai.pet_coach');
+    }
 
     request={...request,status:'CONTEXT_ASSEMBLING',updatedAt:new Date().toISOString()};store.saveRequest(request);
     const context=PetContextAssembler.assemble(input);
