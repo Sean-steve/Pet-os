@@ -68,6 +68,7 @@ import { seedSubscriptionData } from '../subscription/seed';
 import { seedTrackerSubscriptionData } from '../tracker-service/seed';
 import { seedProviderSaaSData } from '../provider-saas/seed';
 import { seedCommerceData } from '../commerce/seed';
+import { seedAIData } from '../ai/seed';
 import { RescueStore } from '../rescue/store';
 import { VetWorkspaceStore } from '../vet-workspace/store';
 import { ProfessionalCareStore } from '../professional-care/store';
@@ -77,6 +78,7 @@ import { SubscriptionStore } from '../subscription/store';
 import { TrackerSubscriptionStore } from '../tracker-service/store';
 import { ProviderSaaSStore } from '../provider-saas/store';
 import { CommerceStore } from '../commerce/store';
+import { AIStore } from '../ai/store';
 
 // Canonical Identifiers
 export const CANONICAL_IDS = {
@@ -148,6 +150,7 @@ export function resetAllStores(): void {
   TrackerSubscriptionStore.getInstance().reset();
   ProviderSaaSStore.getInstance().reset();
   CommerceStore.getInstance().reset();
+  AIStore.getInstance().reset();
 }
 
 /**
@@ -731,6 +734,11 @@ export async function seedUnifiedPetOS(options: { forceReset?: boolean } = {}): 
   // 18. SEED MARKETPLACE COMMERCE, SELLERS & INVENTORY (Sprint 27)
   // ==========================================================================
   seedCommerceData();
+
+  // ==========================================================================
+  // 19. SEED PET INTELLIGENCE & AI GOVERNANCE PLATFORM (Sprint 28)
+  // ==========================================================================
+  seedAIData();
 }
 
 
