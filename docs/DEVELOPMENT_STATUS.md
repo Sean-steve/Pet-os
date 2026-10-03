@@ -1,10 +1,10 @@
 # Pet OS Development Status
 
-Last audited against repository `main`: Sprint 27 implementation baseline.
+Last audited against repository `main`: Sprint 28 implementation baseline.
 
 ## Current implementation
 
-Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 27, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, and marketplace commerce.
+Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 28, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, marketplace commerce, and a governed Pet Intelligence & AI bounded context.
 
 ## Architecture assessment
 
@@ -15,7 +15,9 @@ The primary limitation is that persistence is currently in-memory/client-side do
 ## Readiness improvements added before Sprint 28+
 
 - CI now typechecks, runs regression suites, and builds the production bundle.
-- Regression runner now includes Sprint 22 through Sprint 27 suites.
+- Regression runner now includes Sprint 22 through Sprint 28 suites.
+- Sprint 28 adds authorization-aware AI context assembly, scoped consent, provenance, deterministic safety routing, non-destructive recommendations, model/prompt registries, incident controls and release-gate evaluations.
+- The static demo deliberately uses a local deterministic model-provider adapter so GitHub Pages never exposes production model API keys.
 - Unified seed reset now resets newer domain stores as well as the earlier platform.
 - GitHub Pages deployment workflow builds and publishes the interactive prototype.
 - Vite supports an explicit Pages base path.
@@ -23,7 +25,7 @@ The primary limitation is that persistence is currently in-memory/client-side do
 
 ## Remaining platform direction
 
-Sprint 28: governed Pet Intelligence & AI Platform.
+Sprint 28: governed Pet Intelligence & AI Platform — implemented in the prototype.
 
 Sprint 29 onward: cross-domain automation/action orchestration, external integrations/developer platform, consolidated analytics/operations, security/privacy/compliance hardening, resilience/performance/DR, full-system E2E certification, and final production readiness.
 

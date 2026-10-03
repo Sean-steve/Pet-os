@@ -187,6 +187,13 @@ async function main() {
         return CommerceTestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 28 (Pet Intelligence & AI)',
+      runner: async () => {
+        const { AITestSuite } = await import('../src/pet-os/ai/tests');
+        return AITestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -215,7 +222,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 25 REGRESSION SUITES (SPRINTS 2-27; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 26 REGRESSION SUITES (SPRINTS 2-28; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 

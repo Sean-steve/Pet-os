@@ -24,6 +24,22 @@ export type MembershipId = Brand<string, 'MembershipId'>;
 export type OrderId = Brand<string, 'OrderId'>;
 export type ProductId = Brand<string, 'ProductId'>;
 export type RecommendationId = Brand<string, 'RecommendationId'>;
+
+// Sprint 28 - Pet Intelligence & AI Platform IDs
+export type AIModelDefinitionId = Brand<string, 'AIModelDefinitionId'>;
+export type AIModelDeploymentId = Brand<string, 'AIModelDeploymentId'>;
+export type AIPromptTemplateId = Brand<string, 'AIPromptTemplateId'>;
+export type AIPromptVersionId = Brand<string, 'AIPromptVersionId'>;
+export type AIConversationId = Brand<string, 'AIConversationId'>;
+export type AIMessageId = Brand<string, 'AIMessageId'>;
+export type AIRequestId = Brand<string, 'AIRequestId'>;
+export type AIResponseId = Brand<string, 'AIResponseId'>;
+export type AIContextAssemblyId = Brand<string, 'AIContextAssemblyId'>;
+export type AISafetyDecisionId = Brand<string, 'AISafetyDecisionId'>;
+export type AIConsentId = Brand<string, 'AIConsentId'>;
+export type AIEvaluationCaseId = Brand<string, 'AIEvaluationCaseId'>;
+export type AIEvaluationRunId = Brand<string, 'AIEvaluationRunId'>;
+export type AIIncidentId = Brand<string, 'AIIncidentId'>;
 export type PetPhotoId = Brand<string, 'PetPhotoId'>;
 export type MicrochipId = Brand<string, 'MicrochipId'>;
 export type PetRelationshipId = Brand<string, 'PetRelationshipId'>;

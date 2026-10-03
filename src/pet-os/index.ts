@@ -22,4 +22,5 @@ export * from './subscription';
 export * from './tracker-service';
 export * from './provider-saas';
 export * from './commerce';
+export * from './ai';
 export type { TestResult } from './health';
