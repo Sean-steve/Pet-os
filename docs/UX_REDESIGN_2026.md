@@ -31,15 +31,15 @@ Design principles:
 5. AI presented as an assistive layer grounded in records, not as the product itself.
 6. Clear source-of-truth language around health and tracking.
 7. Responsive SaaS shell with desktop sidebar and mobile drawer.
-8. Engineering consoles preserved in a dedicated Build Lab rather than exposed as the product.
+8. Engineering tools remain available under Platform & Engineering, while operational modules run inside the same product shell as every other workspace.
 9. Soft neutral surfaces, deep evergreen brand color, restrained semantic accents and large-radius cards.
 10. Strong hierarchy: one primary pet state, one daily plan, then secondary analytics and actions.
 
 ## Current scope
 
-This redesign is a visual/product-experience layer over the existing Sprint 1–27 domain architecture. It intentionally does not replace canonical domain logic or persistence.
+This redesign is a visual/product-experience layer over the existing Sprint 1–28 domain architecture. It intentionally does not replace canonical domain logic or persistence.
 
-Future sprints should continue to use the product shell as the user-facing experience while Build Lab remains available for engineering verification.
+Future sprints must extend the same product shell; operational and engineering modules must not open a second visual application.
 
 
 ## Multi-sided unification
@@ -57,7 +57,7 @@ Unified workspaces now include:
 - Trust & Operations
 - Platform & Engineering
 
-Every Sprint 1–27 implementation remains accessible from the unified shell through an appropriate actor/workspace instead of being hidden behind a sprint chronology.
+Every Sprint 1–28 implementation remains accessible from the unified shell through an appropriate actor/workspace instead of being hidden behind a sprint chronology.
 
 ### Coverage principles
 
@@ -68,6 +68,26 @@ Every Sprint 1–27 implementation remains accessible from the unified shell thr
 - Trust, moderation and continuity controls are explicit platform operations.
 - Consumer subscriptions, tracker subscriptions and Provider SaaS are separate commercial products.
 - Engineering documentation, ADRs and kernel tools remain available under Platform & Engineering.
-- The operational consoles remain the deep implementation surfaces; the product shell is now the consistent navigation and workspace layer around them.
+- The operational consoles remain the deep implementation surfaces, but they are rendered inside the same SaaS workspace shell and receive the shared module theme, breadcrumbs and workspace navigation.
 
-This completes the redesign's actor coverage through Sprint 27 and provides the navigation model Sprint 28+ should extend.
+This completes the redesign's actor coverage through Sprint 28 and provides the navigation model Sprint 29+ must extend.
+
+
+## Seamless operational module integration
+
+The third redesign pass removes the remaining visual break between the new workspace dashboards and the older deep operational modules.
+
+Rules now enforced:
+
+- Opening a module does not leave the unified Pet OS shell.
+- The workspace sidebar, workspace switcher, search and global header remain persistent.
+- Each module receives a consistent module header, breadcrumb, source-workspace identity and horizontal sibling-module navigation.
+- Existing domain logic, forms, tables, simulators, test controls and workflows are preserved.
+- Legacy dark-console surfaces are normalized through a scoped Pet OS module theme so they visually inherit the warm SaaS system without rewriting domain logic.
+- Switching workspaces closes the active module and returns to that workspace's dashboard instead of carrying stale context across actors.
+- Engineering-only material remains under Platform & Engineering, but it uses the same shell.
+- Sprint numbers are implementation metadata, not the primary user-navigation model.
+
+### Sprint 29 UI contract
+
+Sprint 29 must not create a parallel console or standalone visual application. Cross-domain automation and action orchestration must appear inside the appropriate existing workspace and use the same module surface, navigation, forms, confirmations, approvals and safety states.
