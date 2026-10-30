@@ -229,6 +229,13 @@ async function main() {
         return EngagementTestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 34 (Security, Privacy & Compliance Hardening)',
+      runner: async () => {
+        const { SecurityTestSuite } = await import('../src/pet-os/security/tests');
+        return SecurityTestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -262,7 +269,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 31 REGRESSION SUITES (SPRINTS 2-33; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 32 REGRESSION SUITES (SPRINTS 2-34; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 

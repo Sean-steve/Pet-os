@@ -33,3 +33,5 @@ export * from './integrations';
 export * from './analytics';
 
 export * from './engagement';
+
+export * from './security';
