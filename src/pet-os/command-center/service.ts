@@ -59,6 +59,7 @@ export const COMMAND_CENTER_MODULES: ModuleSearchEntry[] = [
   { id: 'command-center', title: 'Command Center', subtitle: 'Today, search, action inbox and household pulse.', tab: 'sprint30', keywords: ['home', 'today', 'search', 'inbox', 'command center'] },
   { id: 'developer-platform', title: 'Integrations & Developer', subtitle: 'Connected apps, scoped APIs and signed webhooks.', tab: 'sprint31', keywords: ['integration', 'developer', 'api', 'webhook', 'connected app'] },
   { id: 'analytics', title: 'Analytics & Outcomes', subtitle: 'Metrics, trends, outcome indicators and operations intelligence.', tab: 'sprint32', keywords: ['analytics', 'metrics', 'outcomes', 'intelligence', 'trend', 'operations'] },
+  { id: 'engagement', title: 'Engagement & Platform Intelligence', subtitle: 'Meaningful adoption, activation, workflow continuity and product health.', tab: 'sprint33', keywords: ['engagement', 'activation', 'adoption', 'retention', 'workflow', 'product intelligence', 'platform health'] },
   { id: 'integrations', title: 'Integrations & Developer Platform', subtitle: 'Connected apps, scoped APIs, signed webhooks and audit.', tab: 'sprint31', keywords: ['integration', 'developer', 'api', 'webhook', 'connected app', 'credential'] },
 ];
 

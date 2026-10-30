@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShieldCheck, Database, Layers, BookOpen, Terminal, Sparkles, Activity, Users, Dog, Clock, Shield, Stethoscope, CalendarCheck, Utensils, GraduationCap, Footprints, Briefcase, Receipt, Scale, Radio, AlertOctagon, HeartHandshake, Scissors, Truck, Star, CreditCard, ShoppingBag } from 'lucide-react';
 
-export type TabType = 'sprint32' | 'sprint31' | 'sprint30' | 'sprint29' | 'sprint28' | 'sprint27' | 'sprint26' | 'sprint25' | 'sprint24' | 'sprint23' | 'sprint22' | 'sprint21' | 'sprint20' | 'sprint19' | 'sprint18' | 'sprint17' | 'sprint16' | 'sprint15' | 'sprint14' | 'sprint13' | 'sprint12' | 'sprint11' | 'sprint10' | 'sprint9' | 'sprint8' | 'sprint7' | 'sprint6' | 'sprint5' | 'sprint4' | 'sprint3' | 'identity' | 'overview' | 'kernel' | 'documentation' | 'adrs' | 'sprint2';
+export type TabType = 'sprint33' | 'sprint32' | 'sprint31' | 'sprint30' | 'sprint29' | 'sprint28' | 'sprint27' | 'sprint26' | 'sprint25' | 'sprint24' | 'sprint23' | 'sprint22' | 'sprint21' | 'sprint20' | 'sprint19' | 'sprint18' | 'sprint17' | 'sprint16' | 'sprint15' | 'sprint14' | 'sprint13' | 'sprint12' | 'sprint11' | 'sprint10' | 'sprint9' | 'sprint8' | 'sprint7' | 'sprint6' | 'sprint5' | 'sprint4' | 'sprint3' | 'identity' | 'overview' | 'kernel' | 'documentation' | 'adrs' | 'sprint2';
 
 interface HeaderProps {
   activeTab: TabType;
@@ -20,14 +20,14 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-lg text-[#F8FAFC] tracking-tight">Pet OS</span>
-                <span className="text-[#64748B] font-mono text-xs hidden sm:inline">Kernel v0.32.0-sprint32</span>
+                <span className="text-[#64748B] font-mono text-xs hidden sm:inline">Kernel v0.33.0-sprint33</span>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)] mr-1.5 animate-pulse"></span>
-                  Sprint 32 Active
+                  Sprint 33 Active
                 </span>
               </div>
               <p className="text-[10px] uppercase tracking-widest text-[#475569] font-bold hidden sm:block">
-                Analytics · Outcomes · Operations Intelligence · Provenance · Guardrails
+                Engagement · Activation · Adoption · Workflow Continuity · Privacy Guardrails
               </p>
             </div>
           </div>
@@ -442,7 +442,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
             <div className="hidden xl:flex items-center gap-2 pl-4 border-l border-[#1E293B]">
               <div className="flex flex-col items-end">
                 <span className="text-[9px] uppercase tracking-widest text-[#64748B] font-bold">Status</span>
-                <span className="text-green-400 font-mono text-xs tracking-tight font-semibold">SPRINT_31_ACTIVE</span>
+                <span className="text-green-400 font-mono text-xs tracking-tight font-semibold">SPRINT_33_ACTIVE</span>
               </div>
               <div className="flex gap-1">
                 <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
