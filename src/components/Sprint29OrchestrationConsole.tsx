@@ -55,18 +55,17 @@ export const Sprint29OrchestrationConsole:React.FC=()=>{
   const demoCareAction=async()=>{
     setBusy(true);setMessage(null);
     try{
-      const p=OrchestrationService.propose({
+      OrchestrationService.propose({
         actionType:'CARE_CREATE_OWNER_TASK',
         actorUserId:CANONICAL_IDS.OWNER_ELENA,
         householdId:CANONICAL_IDS.MAIN_HOUSEHOLD,
         petId:CANONICAL_IDS.PET_KIBO,
         origin:'USER_UI',
         payload:{petId:CANONICAL_IDS.PET_KIBO,title:'Check Kibo’s paws after evening walk',description:'Household care task created from Sprint 29 action preview.',dueAt:new Date(Date.now()+4*3600000).toISOString()},
-        idempotencyKey:`ui-demo-care-${new Date().toISOString().slice(0,16)}`
+        idempotencyKey:`ui-demo-care-${Date.now()}`
       });
-      OrchestrationService.confirmProposal(p.actionProposalId,CANONICAL_IDS.OWNER_ELENA);
-      await OrchestrationService.executeProposal(p.actionProposalId);
-      setMessage({type:'success',text:'Care action previewed, confirmed and executed through the canonical Care domain.'});
+      setView('actions');
+      setMessage({type:'success',text:'Action proposal created. Review the exact effects below, then confirm before Pet OS executes it.'});
       setRefresh(v=>v+1);
     }catch(e:any){setMessage({type:'error',text:e?.message||String(e)});}
     finally{setBusy(false);}
@@ -85,6 +84,25 @@ export const Sprint29OrchestrationConsole:React.FC=()=>{
       });
       await OrchestrationService.triggerRule(rule.automationRuleId,`ui-event-${Date.now()}`);
       setMessage({type:'success',text:'Safe notification rule triggered. No Pet, clinical, financial or location state was mutated.'});
+      setRefresh(v=>v+1);
+    }catch(e:any){setMessage({type:'error',text:e?.message||String(e)});}
+    finally{setBusy(false);}
+  };
+
+  const confirmAndExecute=async(p:ActionProposal)=>{
+    setBusy(true);setMessage(null);
+    try{
+      const def=store.getActionDefinitionByType(p.actionType);
+      if(!def)throw new Error('Action definition is unavailable.');
+      if(p.status==='AWAITING_CONFIRMATION'){
+        OrchestrationService.confirmProposal(
+          p.actionProposalId,
+          CANONICAL_IDS.OWNER_ELENA,
+          {reauthenticated:def.confirmationLevel==='STRONG_REAUTH'}
+        );
+      }
+      const result=await OrchestrationService.executeProposal(p.actionProposalId);
+      setMessage({type:'success',text:result.attempt.resultSummary||'Action executed through its canonical domain.'});
       setRefresh(v=>v+1);
     }catch(e:any){setMessage({type:'error',text:e?.message||String(e)});}
     finally{setBusy(false);}
@@ -138,7 +156,7 @@ export const Sprint29OrchestrationConsole:React.FC=()=>{
           <Card className="p-6">
             <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#909A94]">Live demos</p>
             <h3 className="mt-1 text-xl font-semibold">Exercise the safe path</h3>
-            <button disabled={busy} onClick={demoCareAction} className="mt-5 flex w-full items-center justify-between rounded-2xl bg-[#173F31] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><span>Create confirmed Care task</span>{busy?<RefreshCw className="h-4 w-4 animate-spin"/>:<ArrowRight className="h-4 w-4"/>}</button>
+            <button disabled={busy} onClick={demoCareAction} className="mt-5 flex w-full items-center justify-between rounded-2xl bg-[#173F31] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><span>Create Care action proposal</span>{busy?<RefreshCw className="h-4 w-4 animate-spin"/>:<ArrowRight className="h-4 w-4"/>}</button>
             <button disabled={busy} onClick={demoAutomation} className="mt-3 flex w-full items-center justify-between rounded-2xl border border-[#DCE5DF] bg-[#F6F9F6] px-4 py-3 text-sm font-semibold text-[#365545] disabled:opacity-50"><span>Trigger safe reminder rule</span><Play className="h-4 w-4"/></button>
             <p className="mt-4 text-xs leading-5 text-[#849089]">Financial movement, medication changes, signed clinical records, generic public posts and exact-location publication are intentionally absent from the action registry.</p>
           </Card>
@@ -148,7 +166,39 @@ export const Sprint29OrchestrationConsole:React.FC=()=>{
       {view==='actions'&&<Card className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-[#EBEEEB] p-5"><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#909A94]">Action proposals</p><h3 className="mt-1 text-xl font-semibold">Human-reviewable execution queue</h3></div><button onClick={notify} className="rounded-xl border border-[#E1E6E2] p-2 text-[#65736B]"><RefreshCw className="h-4 w-4"/></button></div>
         <div className="divide-y divide-[#EEF0EE]">
-          {proposals.length?proposals.slice(0,20).map(p=><div key={String(p.actionProposalId)} className="p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap gap-2"><Badge tone={statusTone(p.status) as any}>{p.status}</Badge><Badge>{p.actionType}</Badge><Badge tone="violet">{p.origin}</Badge></div><p className="mt-3 text-sm font-semibold">{p.preview?.summary||p.actionType}</p><p className="mt-1 text-xs text-[#849089]">Proposal {String(p.actionProposalId).slice(0,22)}…</p></div><span className="text-[11px] text-[#929C96]">{new Date(p.createdAt).toLocaleString()}</span></div></div>):<div className="p-10 text-center text-sm text-[#8B9690]">No action proposals yet.</div>}
+          {proposals.length?proposals.slice(0,20).map(p=>{
+            const def=store.getActionDefinitionByType(p.actionType);
+            return <div key={String(p.actionProposalId)} className="p-5">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap gap-2"><Badge tone={statusTone(p.status) as any}>{p.status}</Badge><Badge>{p.actionType}</Badge><Badge tone="violet">{p.origin}</Badge>{def&&<Badge>{def.confirmationLevel}</Badge>}</div>
+                  <p className="mt-3 text-sm font-semibold">{p.preview?.summary||p.actionType}</p>
+                  {p.preview&&<div className="mt-4 grid gap-3 lg:grid-cols-2">
+                    <div className="rounded-2xl bg-[#F7F9F7] p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#89948E]">What will happen</p>
+                      <div className="mt-2 space-y-1.5">{p.preview.effects.map(effect=><p key={effect} className="text-xs leading-5 text-[#526159]">• {effect}</p>)}</div>
+                    </div>
+                    <div className="rounded-2xl bg-[#FFF8F3] p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#9B7660]">Warnings & privacy</p>
+                      <div className="mt-2 space-y-1.5">
+                        {p.preview.warnings.map(w=><p key={w} className="text-xs leading-5 text-[#71584B]">• {w}</p>)}
+                        <p className="text-xs font-semibold text-[#71584B]">Privacy impact: {p.preview.privacyImpact}</p>
+                        {p.preview.money&&<p className="text-xs font-semibold text-[#71584B]">Money context: {p.preview.money.currency} {(p.preview.money.amountMinor/100).toFixed(2)} — no payment is authorized by this proposal.</p>}
+                      </div>
+                    </div>
+                  </div>}
+                  <p className="mt-3 text-[11px] text-[#929C96]">Proposal {String(p.actionProposalId).slice(0,28)}… · {new Date(p.createdAt).toLocaleString()}</p>
+                </div>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  {(p.status==='AWAITING_CONFIRMATION'||p.status==='CONFIRMED')&&
+                    <button disabled={busy} onClick={()=>confirmAndExecute(p)} className="inline-flex items-center gap-2 rounded-xl bg-[#173F31] px-3.5 py-2.5 text-xs font-bold text-white disabled:opacity-50">
+                      {busy?<RefreshCw className="h-3.5 w-3.5 animate-spin"/>:<CheckCircle2 className="h-3.5 w-3.5"/>}
+                      {def?.confirmationLevel==='STRONG_REAUTH'?'Strong confirm & execute':p.status==='AWAITING_CONFIRMATION'?'Confirm & execute':'Execute'}
+                    </button>}
+                </div>
+              </div>
+            </div>
+          }):<div className="p-10 text-center text-sm text-[#8B9690]">No action proposals yet.</div>}
         </div>
       </Card>}
 
