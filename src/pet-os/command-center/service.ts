@@ -57,6 +57,7 @@ export const COMMAND_CENTER_MODULES: ModuleSearchEntry[] = [
   { id: 'ai', title: 'Pet OS AI', subtitle: 'Grounded assistant, recommendations and safety.', tab: 'sprint28', keywords: ['ai', 'assistant', 'recommendation', 'intelligence'] },
   { id: 'automation', title: 'Automation & Actions', subtitle: 'Human-confirmed actions, rules and workflows.', tab: 'sprint29', keywords: ['automation', 'action', 'workflow', 'approval', 'confirmation'] },
   { id: 'command-center', title: 'Command Center', subtitle: 'Today, search, action inbox and household pulse.', tab: 'sprint30', keywords: ['home', 'today', 'search', 'inbox', 'command center'] },
+  { id: 'integrations', title: 'Integrations & Developer Platform', subtitle: 'Connected apps, scoped APIs, signed webhooks and audit.', tab: 'sprint31', keywords: ['integration', 'developer', 'api', 'webhook', 'connected app', 'credential'] },
 ];
 
 function requireAccess(ctx: CommandCenterContext): void {

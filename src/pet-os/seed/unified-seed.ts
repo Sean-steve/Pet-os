@@ -72,6 +72,7 @@ import { seedProviderSaaSData } from '../provider-saas/seed';
 import { seedCommerceData } from '../commerce/seed';
 import { seedAIData } from '../ai/seed';
 import { seedOrchestrationData } from '../orchestration/seed';
+import { seedIntegrationData } from '../integrations/seed';
 import { RescueStore } from '../rescue/store';
 import { VetWorkspaceStore } from '../vet-workspace/store';
 import { ProfessionalCareStore } from '../professional-care/store';
@@ -83,6 +84,8 @@ import { ProviderSaaSStore } from '../provider-saas/store';
 import { CommerceStore } from '../commerce/store';
 import { AIStore } from '../ai/store';
 import { OrchestrationStore } from '../orchestration/store';
+import { IntegrationStore } from '../integrations/store';
+import { IntegrationService } from '../integrations/service';
 
 // Canonical Identifiers
 export const CANONICAL_IDS = {
@@ -158,6 +161,8 @@ export function resetAllStores(): void {
   CommerceStore.getInstance().reset();
   AIStore.getInstance().reset();
   OrchestrationStore.getInstance().reset();
+  IntegrationStore.getInstance().reset();
+  IntegrationService.resetRuntime();
 }
 
 /**
@@ -751,6 +756,11 @@ export async function seedUnifiedPetOS(options: { forceReset?: boolean } = {}): 
   // 20. SEED CROSS-DOMAIN AUTOMATION & ACTION ORCHESTRATION (Sprint 29)
   // ==========================================================================
   seedOrchestrationData(CANONICAL_IDS.OWNER_ELENA, CANONICAL_IDS.MAIN_HOUSEHOLD);
+
+  // ==========================================================================
+  // 21. SEED EXTERNAL INTEGRATIONS & DEVELOPER PLATFORM (Sprint 31)
+  // ==========================================================================
+  await seedIntegrationData(CANONICAL_IDS.OWNER_ELENA, CANONICAL_IDS.ADMIN_CHARLES, CANONICAL_IDS.MAIN_HOUSEHOLD);
 }
 
 

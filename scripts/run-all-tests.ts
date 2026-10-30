@@ -208,6 +208,13 @@ async function main() {
         return CommandCenterTestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 31 (External Integrations & Developer Platform)',
+      runner: async () => {
+        const { IntegrationTestSuite } = await import('../src/pet-os/integrations/tests');
+        return IntegrationTestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -226,6 +233,11 @@ async function main() {
       const ok = failed === 0;
       if (!ok) allPassed = false;
       console.log(`[${ok ? 'OK' : 'FAIL'}] ${suite.name} -> passed: ${passed}, failed: ${failed}`);
+      if (!ok && res?.results) {
+        for (const failure of res.results.filter((item: any) => item && item.passed === false)) {
+          console.error(`  - ${failure.id ?? 'TEST'} ${failure.name ?? ''}: ${failure.message ?? failure.error ?? 'failed'}`);
+        }
+      }
     } catch (err: any) {
       allPassed = false;
       console.error(`[CRASH] ${suite.name} ->`, err.message || err);
@@ -236,7 +248,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 28 REGRESSION SUITES (SPRINTS 2-30; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 29 REGRESSION SUITES (SPRINTS 2-31; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 
