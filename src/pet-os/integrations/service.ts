@@ -93,6 +93,14 @@ function requireHouseholdInstaller(userId:UserId,householdId:HouseholdId):void{
   }
 }
 
+function requirePlatformReviewer(userId:UserId):void{
+  requireActiveUser(userId);
+  const reviewer=store.getPlatformReviewer(String(userId));
+  if(!reviewer||reviewer.status!=='ACTIVE'||!reviewer.permissions.includes('APP_REVIEW')){
+    throw new Error('INTEGRATION_PLATFORM_REVIEWER_REQUIRED');
+  }
+}
+
 function assertSafeWebhookEndpoint(raw:string):string{
   let url:URL;
   try{url=new URL(raw);}catch{throw new Error('WEBHOOK_ENDPOINT_INVALID');}
@@ -183,9 +191,10 @@ export class IntegrationService {
   }
 
   static activateApprovedAppForPlatform(input:{developerAppId:DeveloperAppId;reviewerUserId:UserId;approvedScopes:IntegrationScope[]}):DeveloperApp{
-    requireActiveUser(input.reviewerUserId);
+    requirePlatformReviewer(input.reviewerUserId);
     const app=store.getApp(input.developerAppId);
     if(!app)throw new Error('DEVELOPER_APP_NOT_FOUND');
+    if(app.ownerUserId===input.reviewerUserId&&app.appType==='THIRD_PARTY')throw new Error('DEVELOPER_APP_SELF_APPROVAL_FORBIDDEN');
     const approved=uniqueScopes(input.approvedScopes);
     if(approved.some(s=>!app.requestedScopes.includes(s)))throw new Error('APPROVED_SCOPE_NOT_REQUESTED');
     const now=nowIso();

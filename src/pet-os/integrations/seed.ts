@@ -5,6 +5,15 @@ import { IntegrationService } from './service';
 
 export async function seedIntegrationData(ownerUserId:UserId,platformReviewerUserId:UserId,householdId:HouseholdId):Promise<void>{
   const store=IntegrationStore.getInstance();
+  if(!store.getPlatformReviewer(String(platformReviewerUserId))){
+    store.savePlatformReviewer({
+      userId:platformReviewerUserId,
+      status:'ACTIVE',
+      permissions:['APP_REVIEW','SECURITY_REVIEW','INCIDENT_RESPONSE'],
+      grantedAt:new Date().toISOString(),
+      grantedBy:'PET_OS_PLATFORM_BOOTSTRAP',
+    });
+  }
   if(store.listApps().length>0)return;
 
   const draft=IntegrationService.createDeveloperApp(ownerUserId,{

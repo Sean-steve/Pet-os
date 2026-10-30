@@ -2,7 +2,7 @@
 import {
   ApiCredential, ApiCredentialId, DeveloperApp, DeveloperAppId,
   IntegrationAuditEvent, IntegrationAuditEventId, IntegrationInstallation,
-  IntegrationInstallationId, WebhookDelivery, WebhookDeliveryId,
+  IntegrationInstallationId, PlatformIntegrationReviewer, WebhookDelivery, WebhookDeliveryId,
   WebhookSubscription, WebhookSubscriptionId
 } from './types';
 
@@ -14,6 +14,7 @@ export class IntegrationStore {
   }
 
   private apps = new Map<DeveloperAppId, DeveloperApp>();
+  private platformReviewers = new Map<string, PlatformIntegrationReviewer>();
   private installations = new Map<IntegrationInstallationId, IntegrationInstallation>();
   private credentials = new Map<ApiCredentialId, ApiCredential>();
   private credentialByPrefix = new Map<string, ApiCredentialId>();
@@ -24,6 +25,7 @@ export class IntegrationStore {
 
   reset(): void {
     this.apps.clear();
+    this.platformReviewers.clear();
     this.installations.clear();
     this.credentials.clear();
     this.credentialByPrefix.clear();
@@ -32,6 +34,12 @@ export class IntegrationStore {
     this.audits.clear();
     this.deliveryBySubscriptionEvent.clear();
   }
+
+  savePlatformReviewer(v:PlatformIntegrationReviewer):void{this.platformReviewers.set(String(v.userId),{...v,permissions:[...v.permissions]});}
+  getPlatformReviewer(userId:string):PlatformIntegrationReviewer|undefined{
+    const v=this.platformReviewers.get(String(userId));return v?{...v,permissions:[...v.permissions]}:undefined;
+  }
+  listPlatformReviewers():PlatformIntegrationReviewer[]{return Array.from(this.platformReviewers.values()).map(v=>({...v,permissions:[...v.permissions]}));}
 
   saveApp(app: DeveloperApp): void { this.apps.set(app.developerAppId, { ...app, requestedScopes:[...app.requestedScopes], approvedScopes:[...app.approvedScopes], redirectUris:[...app.redirectUris] }); }
   getApp(id: DeveloperAppId): DeveloperApp | undefined {
