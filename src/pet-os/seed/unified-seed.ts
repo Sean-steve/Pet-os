@@ -765,7 +765,10 @@ export async function seedUnifiedPetOS(options: { forceReset?: boolean } = {}): 
   // ==========================================================================
   await seedIntegrationData(CANONICAL_IDS.OWNER_ELENA, CANONICAL_IDS.ADMIN_CHARLES, CANONICAL_IDS.MAIN_HOUSEHOLD);
 
-  // ==========================================================================\n  // 22. SEED ENGAGEMENT & PLATFORM INTELLIGENCE (Sprint 33)\n  // ==========================================================================\n  seedEngagementData(CANONICAL_IDS.OWNER_ELENA, CANONICAL_IDS.WALKER_SARAH_USER, CANONICAL_IDS.WALKER_SARAH, CANONICAL_IDS.ADMIN_CHARLES, CANONICAL_IDS.MAIN_HOUSEHOLD);
+  // ==========================================================================
+  // 22. SEED ENGAGEMENT & PLATFORM INTELLIGENCE (Sprint 33)
+  // ==========================================================================
+  seedEngagementData(CANONICAL_IDS.OWNER_ELENA, CANONICAL_IDS.WALKER_SARAH_USER, CANONICAL_IDS.WALKER_SARAH, CANONICAL_IDS.ADMIN_CHARLES, CANONICAL_IDS.MAIN_HOUSEHOLD);
 }
 
 
