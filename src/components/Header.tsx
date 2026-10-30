@@ -442,7 +442,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
             <div className="hidden xl:flex items-center gap-2 pl-4 border-l border-[#1E293B]">
               <div className="flex flex-col items-end">
                 <span className="text-[9px] uppercase tracking-widest text-[#64748B] font-bold">Status</span>
-                <span className="text-green-400 font-mono text-xs tracking-tight font-semibold">SPRINT_29_ACTIVE</span>
+                <span className="text-green-400 font-mono text-xs tracking-tight font-semibold">SPRINT_31_ACTIVE</span>
               </div>
               <div className="flex gap-1">
                 <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
