@@ -492,6 +492,13 @@ export class OrchestrationService {
     const proposal=store.getProposal(proposalId);if(!proposal)throw new Error('ACTION_PROPOSAL_NOT_FOUND');
     const def=getDefinition(proposal.actionType);
     if(def.confirmationLevel!=='NONE'||['FINANCIAL','CLINICAL','SAFETY_CRITICAL','IRREVERSIBLE'].includes(def.risk))throw new Error('SCHEDULED_ACTION_REQUIRES_INTERACTIVE_CONFIRMATION');
+    const executeAtMs=new Date(executeAt).getTime();
+    if(!Number.isFinite(executeAtMs))throw new Error('INVALID_SCHEDULE_TIME');
+    // No-confirmation scheduled actions remain valid through a bounded catch-up window.
+    const scheduledExpiry=new Date(executeAtMs+24*60*60*1000).toISOString();
+    if(new Date(proposal.expiresAt).getTime()<new Date(scheduledExpiry).getTime()){
+      proposal.expiresAt=scheduledExpiry;proposal.updatedAt=nowIso();store.saveProposal(proposal);
+    }
     const schedule:ScheduledAction={scheduledActionId:`sa-${generateUUIDv7()}` as ScheduledActionId,actionProposalId:proposalId,executeAt,timezone,status:'SCHEDULED',missedRunPolicy:'RUN_ONCE_IF_STILL_VALID',createdAt:nowIso(),updatedAt:nowIso()};
     store.saveSchedule(schedule);return schedule;
   }
