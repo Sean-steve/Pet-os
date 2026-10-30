@@ -178,6 +178,7 @@ export class OrchestrationService {
   static confirmProposal(proposalId:ActionProposalId,actorUserId:any,options:{reauthenticated?:boolean}={}):ActionConfirmation{
     const proposal=store.getProposal(proposalId);if(!proposal)throw new Error('ACTION_PROPOSAL_NOT_FOUND');
     if(proposal.actorUserId!==actorUserId)throw new Error('CONFIRMATION_ACTOR_MISMATCH');
+    if(proposal.confirmationId || ['COMPLETED','EXECUTING'].includes(proposal.status))throw new Error('ACTION_ALREADY_CONFIRMED_OR_EXECUTED');
     if(!proposal.preview)throw new Error('ACTION_PREVIEW_REQUIRED');
     if(new Date(proposal.expiresAt).getTime()<=Date.now())throw new Error('ACTION_PROPOSAL_EXPIRED');
     const def=getDefinition(proposal.actionType);
@@ -284,7 +285,7 @@ export class OrchestrationService {
 
     const decision=OrchestrationPolicyEngine.evaluate(proposal,def);
     if(['DENIED','UNAVAILABLE'].includes(decision.outcome))throw new Error(`ORCHESTRATION_POLICY_DENIED: ${decision.reasonCode}`);
-    activeMembership(proposal.actorUserId,proposal.householdId);
+    if(def.requiresActiveHouseholdMembership)activeMembership(proposal.actorUserId,proposal.householdId);
     this.verifyConfirmation(proposal,def);
     if(!proposal.preview)throw new Error('ACTION_PREVIEW_REQUIRED');
     if(targetFingerprint(proposal)!==proposal.preview.targetStateFingerprint){
