@@ -1,66 +1,97 @@
-# Sprint 29 Readiness — Cross-Domain Automation & Action Orchestration
+# Sprint 29 — Cross-Domain Automation & Action Orchestration
 
-## Baseline
+## Status
 
-Sprint 28 is implemented and the user-facing/operational UI is now unified. Sprint 29 must extend this baseline rather than introduce another standalone console.
+Implemented in the Pet OS prototype.
 
-## Sprint 29 must build on
+## Core architecture
 
-- Identity, Household and resource-aware authorization.
-- Canonical bounded-context ownership through Sprint 28.
-- Event/outbox architecture and idempotency patterns.
-- Finance transaction and reconciliation boundaries.
-- Booking/service execution state machines.
-- Care, Nutrition, Training, Activity, Tracking, Lost Pet and professional workspaces.
-- Consumer, tracker and Provider SaaS entitlement services.
-- Governed AI context, consent, model routing, safety, provenance and evaluation.
-- Unified multi-sided SaaS workspace shell.
+Sprint 29 introduces an Automation & Action Orchestration bounded context. It coordinates commands but does not own Care, Health, Booking, Finance, Tracking, Lost Pet, Community, Commerce, Identity or AI source-of-truth records.
 
-## Required orchestration architecture
+Implemented primitives:
 
-Sprint 29 should introduce an explicit Automation / Action Orchestration bounded context with:
-
-- ActionIntent
-- ActionPlan
-- ActionStep
-- ActionPolicyDecision
+- ActionDefinition / strict Action Registry
+- ActionProposal
+- ActionPreview
+- AutomationPolicyDecision
+- ActionConfirmation
 - ApprovalRequest
-- ConfirmationSnapshot
+- WorkflowDefinition / WorkflowInstance / WorkflowStep
 - ExecutionAttempt
-- CompensationPlan
-- AutomationRule
+- CompensationRecord
+- AutomationRule / AutomationRuleVersion
 - ScheduledAction
-- ActionAudit
 - OrchestrationIncident
 
-## Non-negotiable boundaries
+## Action execution path
 
-1. AI proposes; domain services decide.
-2. No model directly writes canonical records.
-3. Every state-changing command is server/domain validated.
-4. High-impact actions require explicit preview and human confirmation.
-5. Financial, clinical, Lost Pet, ownership, access-control and destructive actions require stronger policy gates.
-6. Cross-domain workflows must use public domain commands/contracts, not direct store mutation.
-7. Every step is idempotent and replay-safe.
-8. Partial failure must be observable and compensatable where possible.
-9. Automation may never bypass entitlement, authorization, consent, clinical safety or continuity protections.
-10. The UI must stay inside the unified Pet OS shell.
+1. Propose an allowlisted action.
+2. Build a human-readable preview with exact target, effects, privacy impact, warnings and money context where relevant.
+3. Bind the preview to a target-state fingerprint.
+4. Evaluate origin, household membership, Pet scope, risk and action policy.
+5. Require standard confirmation, strong reauthentication, approval, or no confirmation according to action risk.
+6. Recheck authorization and target state at execution time.
+7. Execute only through the owning domain service.
+8. Record idempotent workflow, step and attempt state.
+9. Compensate a prior successful step only when a truthful semantic/domain reversal exists.
+10. Surface partial failure/manual recovery rather than inventing rollback.
 
-## Initial target workflows
+## Allowlisted actions
 
-- AI recommendation -> user confirms -> create canonical care task.
-- AI suggestion -> user confirms -> open Booking flow for a Vet/Trainer/Groomer.
-- Missed care -> household approval -> reschedule reminder without altering original clinical due date.
-- Lost Pet incident -> user-approved community distribution and tracker mode request.
-- Provider SaaS continuity -> permit minimum safe active-service actions while premium operations remain restricted.
-- Commerce return -> approved return state -> Finance refund request -> reconciliation.
-- Tracker issue -> owner confirms troubleshooting/action request -> Device/Connectivity domain handles it.
-- Professional AI draft -> professional reviews -> explicit sign/commit into canonical workspace.
+- CARE_CREATE_OWNER_TASK
+- CARE_SNOOZE_OCCURRENCE
+- CARE_COMPLETE_OCCURRENCE
+- NOTIFICATION_SCHEDULE_SELF
+- BOOKING_CREATE_SERVICE_REQUEST
+- LOST_PET_ACTIVATE_COMMUNITY_ALERT
+- TRACKING_REQUEST_LOST_MODE
+- OPEN_DOMAIN_WORKSPACE
 
-## UI contract
+## Hard safety boundaries
 
-Sprint 29 should appear as a first-class Automation / Actions module in the relevant workspace and as a cross-platform operations view where appropriate. It must use the same sidebar, workspace switcher, module header, sibling navigation, forms, confirmations and status surfaces introduced by the seamless integration pass.
+Sprint 29 does not register generic actions for:
 
-## Ready state
+- payments, payouts, automatic refunds or purchases;
+- diagnosis, prescribing, medication dose/frequency changes or clinical signing;
+- ownership/access-control mutation;
+- exact-location publication;
+- generic AI-created Community posting;
+- destructive or irreversible actions without a dedicated domain-safe contract.
 
-The repository is ready for Sprint 29 once CI, regression tests and production build remain green after the seamless module integration is merged.
+Lost Pet public distribution and tracker Lost Mode require strong reauthentication. The Lost Pet preview explicitly lists public data and excludes exact GPS, phone number, home address, microchip number and BLE-detector identity.
+
+## AI integration
+
+Sprint 28 AI may create an ActionProposal only when the originating governed AI request is completed and belongs to the same actor/household. The AI model does not receive direct write access.
+
+## Automation rules
+
+Standing automation is limited to action definitions that explicitly opt in. Sprint 29 supports low-risk notification/navigation automation with:
+
+- deterministic idempotency keys;
+- daily execution caps;
+- cycle/depth protection;
+- no arbitrary code, eval or SQL;
+- authorization recheck at trigger time.
+
+Sensitive Care, Booking, Lost Pet and Tracking writes cannot become unattended standing rules.
+
+## Scheduling
+
+Unattended scheduling is limited to no-confirmation actions. Sensitive, financial, clinical, safety-critical and irreversible actions must return to an interactive confirmation path.
+
+## Compensation truthfulness
+
+Care-task creation and booking creation can use target-domain reversals where legal. Tracker Lost Mode may request NORMAL mode as a semantic reversal. Notifications are not “unsent”; actions without truthful reversal are marked NOT_REQUIRED or MANUAL_REVIEW_REQUIRED.
+
+## UI
+
+Sprint 29 is integrated into the existing multi-sided Pet OS shell. It appears as Automation & Actions / Action Center / Orchestration Safety depending on workspace. No parallel legacy application was introduced.
+
+## Production boundary
+
+This remains an in-browser prototype with in-memory stores. Production execution tokens must be cryptographically signed server-side; target commands, queues/outbox, durable workflow state, retries, approvals and credentials require backend persistence before production launch.
+
+## Next
+
+Sprint 30 should build the unified Pet Command Center, global search, Today view, action inbox and cross-domain navigation/read models on top of the now-connected domains.
