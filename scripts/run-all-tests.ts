@@ -194,6 +194,13 @@ async function main() {
         return AITestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 29 (Automation & Orchestration)',
+      runner: async () => {
+        const { OrchestrationTestSuite } = await import('../src/pet-os/orchestration/tests');
+        return OrchestrationTestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -222,7 +229,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 26 REGRESSION SUITES (SPRINTS 2-28; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 27 REGRESSION SUITES (SPRINTS 2-29; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 
