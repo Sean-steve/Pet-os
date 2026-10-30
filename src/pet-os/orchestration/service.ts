@@ -411,6 +411,30 @@ export class OrchestrationService {
     workflow.status='PARTIALLY_COMPLETED';workflow.updatedAt=nowIso();store.saveWorkflow(workflow);
   }
 
+  private static evaluateRuleCondition(expression:string,eventPayload:Record<string,unknown>,householdId:string):boolean{
+    const expr=(expression||'true').trim();
+    if(expr==='true')return true;
+    if(expr==='false')return false;
+
+    const householdMatch=expr.match(/^event\.([A-Za-z0-9_]+)\s*==\s*rule\.householdId$/);
+    if(householdMatch)return String(eventPayload[householdMatch[1]]??'')===householdId;
+
+    const literalMatch=expr.match(/^event\.([A-Za-z0-9_]+)\s*(==|!=)\s*["']([^"']*)["']$/);
+    if(literalMatch){
+      const actual=String(eventPayload[literalMatch[1]]??'');
+      return literalMatch[2]==='==' ? actual===literalMatch[3] : actual!==literalMatch[3];
+    }
+
+    const boolMatch=expr.match(/^event\.([A-Za-z0-9_]+)\s*(==|!=)\s*(true|false)$/);
+    if(boolMatch){
+      const actual=Boolean(eventPayload[boolMatch[1]]);
+      const expected=boolMatch[3]==='true';
+      return boolMatch[2]==='==' ? actual===expected : actual!==expected;
+    }
+
+    throw new Error('AUTOMATION_CONDITION_UNSUPPORTED: use the safe deterministic condition grammar');
+  }
+
   static createRule(input:{ownerUserId:any;householdId:any;name:string;description:string;triggerType:TriggerType;triggerConfig:Record<string,unknown>;conditionExpression?:string;actionType:ActionType;actionPayloadTemplate:Record<string,unknown>;maxExecutionsPerDay?:number}):AutomationRule{
     activeMembership(input.ownerUserId,input.householdId);
     const def=getDefinition(input.actionType);
@@ -434,6 +458,9 @@ export class OrchestrationService {
     }
     activeMembership(rule.ownerUserId,rule.householdId);
     const version=store.getRuleVersion(rule.activeVersionId);if(!version)throw new Error('AUTOMATION_RULE_VERSION_NOT_FOUND');
+    if(!this.evaluateRuleCondition(version.conditionExpression,payloadOverrides,String(rule.householdId))){
+      throw new Error('AUTOMATION_RULE_CONDITION_FALSE');
+    }
     const today=nowIso().slice(0,10);
     const executions=store.listProposals().filter(p=>p.origin==='AUTOMATION_RULE'&&p.originReferenceId===String(version.automationRuleVersionId)&&p.createdAt.startsWith(today)).length;
     if(executions>=version.maxExecutionsPerDay)throw new Error('AUTOMATION_RULE_DAILY_LIMIT_REACHED');
