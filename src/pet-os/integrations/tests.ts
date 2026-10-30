@@ -16,6 +16,13 @@ async function setup(){
   await seedUnifiedPetOS({forceReset:true});
   IntegrationStore.getInstance().reset();
   IntegrationService.resetRuntime();
+  IntegrationStore.getInstance().savePlatformReviewer({
+    userId:CANONICAL_IDS.ADMIN_CHARLES,
+    status:'ACTIVE',
+    permissions:['APP_REVIEW','SECURITY_REVIEW','INCIDENT_RESPONSE'],
+    grantedAt:new Date().toISOString(),
+    grantedBy:'TEST_BOOTSTRAP',
+  });
 }
 
 async function activeInstallation(scopes:IntegrationScope[]=['pet:profile:read','care:read','booking:read','tracker:health:read','command-center:read','webhook:manage']){
@@ -36,6 +43,25 @@ async function activeInstallation(scopes:IntegrationScope[]=['pet:profile:read',
 export class IntegrationTestSuite {
   static async runAllTests():Promise<{passed:number;failed:number;total:number;results:TestResult[]}>{
     const tests:Array<{id:string;name:string;fn:()=>Promise<void>|void}>=[
+      {id:'INT-00A',name:'Only an explicit platform reviewer can approve third-party apps',fn:async()=>{
+        await setup();
+        const draft=IntegrationService.createDeveloperApp(CANONICAL_IDS.OWNER_ELENA,{name:'Reviewer Gate App',description:'test',requestedScopes:['pet:profile:read']});
+        let blocked=false;
+        try{IntegrationService.activateApprovedAppForPlatform({developerAppId:draft.developerAppId,reviewerUserId:CANONICAL_IDS.CAREGIVER_SEAN,approvedScopes:['pet:profile:read']});}
+        catch(e:any){blocked=e.message.includes('PLATFORM_REVIEWER_REQUIRED');}
+        if(!blocked)throw new Error('ordinary active user approved third-party app');
+      }},
+      {id:'INT-00B',name:'Third-party app owner cannot self-approve even when reviewer authority exists',fn:async()=>{
+        await setup();
+        IntegrationStore.getInstance().savePlatformReviewer({
+          userId:CANONICAL_IDS.OWNER_ELENA,status:'ACTIVE',permissions:['APP_REVIEW'],grantedAt:new Date().toISOString(),grantedBy:'TEST_BOOTSTRAP'
+        });
+        const draft=IntegrationService.createDeveloperApp(CANONICAL_IDS.OWNER_ELENA,{name:'Self Approval App',description:'test',requestedScopes:['pet:profile:read']});
+        let blocked=false;
+        try{IntegrationService.activateApprovedAppForPlatform({developerAppId:draft.developerAppId,reviewerUserId:CANONICAL_IDS.OWNER_ELENA,approvedScopes:['pet:profile:read']});}
+        catch(e:any){blocked=e.message.includes('SELF_APPROVAL_FORBIDDEN');}
+        if(!blocked)throw new Error('developer app owner self-approved');
+      }},
       {id:'INT-01',name:'Draft third-party apps cannot be installed',fn:async()=>{
         await setup();
         const app=IntegrationService.createDeveloperApp(CANONICAL_IDS.OWNER_ELENA,{name:'Draft App',description:'test',requestedScopes:['pet:profile:read']});
