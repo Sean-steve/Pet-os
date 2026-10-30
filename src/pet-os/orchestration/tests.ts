@@ -6,6 +6,7 @@ import { CareStore } from '../care/store';
 import { NotificationStore } from '../notifications/store';
 import { IdentityStore } from '../identity/store';
 import { RecoveryService } from '../recovery/service';
+import { CommunityStore } from '../community/store';
 import { TrackingStore } from '../tracking/store';
 import { AIPlatformService } from '../ai/service';
 import { ActionProposalId, AutomationRuleId } from '../kernel/ids';
@@ -119,7 +120,8 @@ export class OrchestrationTestSuite {
         OrchestrationService.confirmProposal(p.actionProposalId,CANONICAL_IDS.OWNER_ELENA,{reauthenticated:true});
         await OrchestrationService.executeProposal(p.actionProposalId);
         const updated=RecoveryService.getInstance().getIncidentById(incident.lostPetIncidentId)!;
-        if(!updated.isCommunityAlertRequested)throw new Error('community alert request not activated');
+        const alert=CommunityStore.getInstance().getAlertByIncidentId(incident.lostPetIncidentId);
+        if(!updated.isCommunityAlertRequested||!alert||alert.status!=='ACTIVE')throw new Error('community alert distribution not activated');
       }},
       {id:'ORCH-12',name:'Tracker Lost Mode is capability-truthful and strongly confirmed',category:'SAFETY',fn:async()=>{
         await setup();const p=OrchestrationService.propose({actionType:'TRACKING_REQUEST_LOST_MODE',actorUserId:CANONICAL_IDS.OWNER_ELENA,householdId:CANONICAL_IDS.MAIN_HOUSEHOLD,petId:CANONICAL_IDS.PET_KIBO,origin:'USER_UI',payload:{petId:CANONICAL_IDS.PET_KIBO}});
