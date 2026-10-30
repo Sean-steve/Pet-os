@@ -208,6 +208,13 @@ async function main() {
         return CommandCenterTestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 31 (External Integrations & Developer Platform)',
+      runner: async () => {
+        const { IntegrationTestSuite } = await import('../src/pet-os/integrations/tests');
+        return IntegrationTestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -236,7 +243,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 28 REGRESSION SUITES (SPRINTS 2-30; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 29 REGRESSION SUITES (SPRINTS 2-31; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 
