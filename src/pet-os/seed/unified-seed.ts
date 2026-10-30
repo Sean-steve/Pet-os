@@ -87,6 +87,7 @@ import { AIStore } from '../ai/store';
 import { OrchestrationStore } from '../orchestration/store';
 import { IntegrationStore } from '../integrations/store';
 import { EngagementStore } from '../engagement/store';
+import { SecurityStore } from '../security/store';
 import { IntegrationService } from '../integrations/service';
 
 // Canonical Identifiers
@@ -165,6 +166,7 @@ export function resetAllStores(): void {
   OrchestrationStore.getInstance().reset();
   IntegrationStore.getInstance().reset();
   EngagementStore.getInstance().reset();
+  SecurityStore.getInstance().reset();
   IntegrationService.resetRuntime();
 }
 
