@@ -40,6 +40,22 @@ export type AIConsentId = Brand<string, 'AIConsentId'>;
 export type AIEvaluationCaseId = Brand<string, 'AIEvaluationCaseId'>;
 export type AIEvaluationRunId = Brand<string, 'AIEvaluationRunId'>;
 export type AIIncidentId = Brand<string, 'AIIncidentId'>;
+
+// Sprint 29 - Cross-Domain Automation & Action Orchestration IDs
+export type ActionDefinitionId = Brand<string, 'ActionDefinitionId'>;
+export type ActionProposalId = Brand<string, 'ActionProposalId'>;
+export type ActionConfirmationId = Brand<string, 'ActionConfirmationId'>;
+export type ApprovalRequestId = Brand<string, 'ApprovalRequestId'>;
+export type WorkflowDefinitionId = Brand<string, 'WorkflowDefinitionId'>;
+export type WorkflowInstanceId = Brand<string, 'WorkflowInstanceId'>;
+export type WorkflowStepId = Brand<string, 'WorkflowStepId'>;
+export type AutomationRuleId = Brand<string, 'AutomationRuleId'>;
+export type AutomationRuleVersionId = Brand<string, 'AutomationRuleVersionId'>;
+export type ScheduledActionId = Brand<string, 'ScheduledActionId'>;
+export type ExecutionAttemptId = Brand<string, 'ExecutionAttemptId'>;
+export type CompensationRecordId = Brand<string, 'CompensationRecordId'>;
+export type AutomationPolicyDecisionId = Brand<string, 'AutomationPolicyDecisionId'>;
+export type OrchestrationIncidentId = Brand<string, 'OrchestrationIncidentId'>;
 export type PetPhotoId = Brand<string, 'PetPhotoId'>;
 export type MicrochipId = Brand<string, 'MicrochipId'>;
 export type PetRelationshipId = Brand<string, 'PetRelationshipId'>;
