@@ -45,6 +45,7 @@ import {
   Users,
   Utensils,
   Warehouse,
+  Workflow,
   X,
 } from 'lucide-react';
 import type { TabType } from './Header';
@@ -138,6 +139,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'tracker-plan', title: 'Tracker Plans', description: 'Per-device connectivity subscriptions and service status.', icon: Radio, tab: 'sprint25', accent: 'blue' },
       { id: 'store', title: 'Store & Orders', description: 'Marketplace products, checkout, orders, returns and buyer protection.', icon: ShoppingBag, tab: 'sprint27', accent: 'peach' },
       { id: 'ai', title: 'Pet OS AI', description: 'Grounded assistant, summaries, recommendations and safety-aware guidance.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
+      { id: 'automation', title: 'Automation & Actions', description: 'Preview, confirm and coordinate safe cross-domain actions.', icon: Workflow, tab: 'sprint29', accent: 'sage' },
     ],
   },
   {
@@ -170,6 +172,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'transport', title: 'Pet Transport', description: 'Verified drivers, vehicles, custody-in-transit and handovers.', icon: Truck, tab: 'sprint22', accent: 'blue' },
       { id: 'reviews', title: 'Reviews & Reputation', description: 'Verified-service feedback, responses, disputes and reputation.', icon: Star, tab: 'sprint23', accent: 'amber' },
       { id: 'professional-ai', title: 'Professional AI', description: 'Authorized drafting and summaries that remain review-required.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
+      { id: 'professional-actions', title: 'Action Center', description: 'Human-confirmed operational actions and approval-safe workflows.', icon: Workflow, tab: 'sprint29', accent: 'sage' },
     ],
   },
   {
@@ -202,6 +205,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'trainer', title: 'Training Operations', description: 'Trainer programs, sessions and household handoffs.', icon: GraduationCap, tab: 'sprint20', accent: 'violet' },
       { id: 'care', title: 'Care Operations', description: 'Grooming, sitting, daycare and boarding execution.', icon: HeartPulse, tab: 'sprint21', accent: 'sage' },
       { id: 'transport', title: 'Transport Operations', description: 'Drivers, vehicles, trip custody and arrival handoffs.', icon: Truck, tab: 'sprint22', accent: 'blue' },
+      { id: 'automation', title: 'Business Automation', description: 'Policy-controlled cross-domain operations without bypassing SaaS or safety rules.', icon: Workflow, tab: 'sprint29', accent: 'sage' },
     ],
   },
   {
@@ -232,6 +236,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'recovery', title: 'Lost Pet & Reunification', description: 'Lost Pet incidents, sightings and recovery evidence.', icon: ShieldCheck, tab: 'sprint15', accent: 'amber' },
       { id: 'community', title: 'Community Network', description: 'Privacy-aware recovery distribution and local support.', icon: Users, tab: 'sprint16', accent: 'violet' },
       { id: 'transport', title: 'Rescue Transport', description: 'Custody-aware transfers between facilities and care providers.', icon: Truck, tab: 'sprint22', accent: 'blue' },
+      { id: 'automation', title: 'Rescue Action Center', description: 'Approval-aware coordination that never bypasses custody or welfare controls.', icon: Workflow, tab: 'sprint29', accent: 'sage' },
     ],
   },
   {
@@ -259,6 +264,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'finance', title: 'Marketplace Finance', description: 'Commissions, seller earnings, refunds, holds and payouts.', icon: CircleDollarSign, tab: 'sprint12', accent: 'sage' },
       { id: 'reviews', title: 'Reputation Boundary', description: 'Provider/service reviews remain distinct from commerce product trust.', icon: Star, tab: 'sprint23', accent: 'violet' },
       { id: 'provider', title: 'Business Identity Link', description: 'Optional linkage when a service business also operates as a seller.', icon: Building2, tab: 'sprint10', accent: 'blue' },
+      { id: 'automation', title: 'Commerce Actions', description: 'Cross-domain workflow coordination with finance movement explicitly protected.', icon: Workflow, tab: 'sprint29', accent: 'sage' },
     ],
   },
   {
@@ -287,6 +293,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'tracker-sub', title: 'Tracker Billing', description: 'Device plans, connectivity service and renewal state.', icon: Radio, tab: 'sprint25', accent: 'blue' },
       { id: 'provider-saas', title: 'Provider SaaS Billing', description: 'Business plans, seats, locations and continuity policy.', icon: Building2, tab: 'sprint26', accent: 'violet' },
       { id: 'commerce', title: 'Commerce Economics', description: 'Order economics, seller commission snapshots, refunds and payout references.', icon: ShoppingBag, tab: 'sprint27', accent: 'peach' },
+      { id: 'automation', title: 'Financial Action Policy', description: 'Inspect orchestration boundaries; generic fund movement remains forbidden.', icon: Workflow, tab: 'sprint29', accent: 'sage' },
     ],
   },
   {
@@ -319,6 +326,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'commerce', title: 'Commerce Trust', description: 'Seller verification, product moderation, safety reports and recalls.', icon: Store, tab: 'sprint27', accent: 'amber' },
       { id: 'saas', title: 'Continuity Controls', description: 'Ensure active care continues safely through SaaS billing changes.', icon: ShieldCheck, tab: 'sprint26', accent: 'sage' },
       { id: 'ai-safety', title: 'AI Safety Operations', description: 'Model governance, prompt safety, incidents, consent and release gates.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
+      { id: 'orchestration-safety', title: 'Orchestration Safety', description: 'Policy decisions, confirmations, incidents, loops and compensation truthfulness.', icon: Workflow, tab: 'sprint29', accent: 'sage' },
     ],
   },
   {
@@ -339,10 +347,11 @@ const workspaces: WorkspaceDef[] = [
     queue: [
       { title: 'Sprint 28 evaluation suite', meta: 'Emergency, medication and injection gates', status: 'Safety' },
       { title: 'External model providers', meta: 'Production adapter deferred until server-side secrets are available', status: 'Architecture' },
-      { title: 'Action orchestration', meta: 'Human-confirmed write tools begin in Sprint 29', status: 'Next' },
+      { title: 'Action orchestration', meta: 'Human-confirmed action tools are active in Sprint 29', status: 'Active' },
     ],
     modules: [
       { id: 'ai-platform', title: 'Pet Intelligence & AI', description: 'Assistant, recommendations, safety, models, consent and evaluations.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
+      { id: 'action-orchestration', title: 'AI Action Orchestration', description: 'AI proposes; Pet OS previews, confirms, authorizes and executes through domain commands.', icon: Workflow, tab: 'sprint29', accent: 'sage' },
       { id: 'health-source', title: 'Clinical Source Context', description: 'Review the canonical health records AI is permitted to summarize.', icon: HeartPulse, tab: 'sprint5', accent: 'peach' },
       { id: 'care-source', title: 'Care Source Context', description: 'Deterministic due-state remains the source for care recommendations.', icon: Calendar, tab: 'sprint6', accent: 'sage' },
       { id: 'training-source', title: 'Training Source Context', description: 'AI guidance respects active plans and professional provenance.', icon: GraduationCap, tab: 'sprint8', accent: 'violet' },
@@ -404,6 +413,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'provider-saas', title: 'Provider SaaS', description: 'Business SaaS console.', icon: Building2, tab: 'sprint26', accent: 'violet' },
       { id: 'commerce', title: 'Marketplace Commerce', description: 'Seller and commerce console.', icon: Store, tab: 'sprint27', accent: 'amber' },
       { id: 'ai', title: 'Pet Intelligence & AI', description: 'Governed context, model routing, recommendations and evaluation console.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
+      { id: 'orchestration', title: 'Automation & Orchestration', description: 'Action registry, policy gates, workflows, schedules, approvals and compensation.', icon: Workflow, tab: 'sprint29', accent: 'sage' },
     ],
   },
 ];
@@ -682,7 +692,7 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({
                 <span className="rounded-full bg-[#F0F3F0] px-3 py-1 text-xs font-semibold text-[#68746E]">{workspace.modules.length} modules</span>
               </div>
               <p className="mt-2 text-sm leading-6 text-[#7E8983]">
-                The product shell gives each side of Pet OS a clear home. Open any module to access the full operational implementation already built through Sprint 28.
+                The product shell gives each side of Pet OS a clear home. Open any module to access the full operational implementation already built through Sprint 29.
               </p>
             </section>
 
@@ -691,11 +701,11 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-[#6656A2] shadow-sm"><Sparkles className="h-5 w-5" /></span>
                 <div>
                   <p className="text-sm font-semibold text-[#26362E]">Pet OS intelligence</p>
-                  <p className="text-xs text-[#7E8983]">Sprint 28 active</p>
+                  <p className="text-xs text-[#7E8983]">Sprint 29 active</p>
                 </div>
               </div>
               <p className="mt-4 text-sm leading-6 text-[#61716A]">
-                AI sits across these workspaces as a governed assistive layer — never as a replacement for clinical, financial, safety or operational source-of-truth domains.
+                AI can now propose actions, but Sprint 29 keeps every state change behind policy, target-domain validation and the required human confirmation.
               </p>
             </section>
           </div>
@@ -707,7 +717,7 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({
                 <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#223129]">Open a domain</h2>
               </div>
               {workspace.id === 'platform' && (
-                <span className="hidden rounded-full bg-[#EEF1F5] px-3 py-1 text-xs font-semibold text-[#667381] sm:inline">Sprint 1–28 coverage</span>
+                <span className="hidden rounded-full bg-[#EEF1F5] px-3 py-1 text-xs font-semibold text-[#667381] sm:inline">Sprint 1–29 coverage</span>
               )}
             </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
