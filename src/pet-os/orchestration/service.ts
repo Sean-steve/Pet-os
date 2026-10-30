@@ -214,10 +214,15 @@ export class OrchestrationService {
     const proposal=store.getProposal(proposalId);if(!proposal)throw new Error('ACTION_PROPOSAL_NOT_FOUND');
     const def=getDefinition(proposal.actionType);
     if(def.confirmationLevel!=='MULTI_PARTY')throw new Error('APPROVAL_NOT_REQUIRED_FOR_ACTION');
-    if(!requestedFromUserIds.length)throw new Error('APPROVER_REQUIRED');
+    const distinctApprovers=Array.from(new Set(requestedFromUserIds)).filter(id=>id!==proposal.actorUserId);
+    if(!distinctApprovers.length)throw new Error('DISTINCT_APPROVER_REQUIRED');
+    for(const approver of distinctApprovers){
+      const membership=IdentityStore.findMembership(proposal.householdId,approver);
+      if(!membership||membership.status!=='ACTIVE')throw new Error('APPROVER_NOT_ACTIVE_IN_HOUSEHOLD');
+    }
     const approval:ApprovalRequest={
       approvalRequestId:`apr-${generateUUIDv7()}` as ApprovalRequestId,actionProposalId:proposalId,
-      requestedFromUserIds:[...requestedFromUserIds],status:'PENDING',reason,requestedAt:nowIso()
+      requestedFromUserIds:[...distinctApprovers],status:'PENDING',reason,requestedAt:nowIso()
     };
     store.saveApproval(approval);store.publish(OrchestrationEvents.approvalRequested(approval,proposal));return approval;
   }
@@ -226,15 +231,23 @@ export class OrchestrationService {
     const approval=store.getApproval(approvalId);if(!approval)throw new Error('APPROVAL_NOT_FOUND');
     if(approval.status!=='PENDING')throw new Error('APPROVAL_ALREADY_DECIDED');
     if(!approval.requestedFromUserIds.includes(actorUserId))throw new Error('APPROVER_NOT_AUTHORIZED');
+    const proposal=store.getProposal(approval.actionProposalId);
+    if(!proposal)throw new Error('ACTION_PROPOSAL_NOT_FOUND');
+    const membership=IdentityStore.findMembership(proposal.householdId,actorUserId);
+    if(!membership||membership.status!=='ACTIVE')throw new Error('APPROVER_NOT_ACTIVE_IN_HOUSEHOLD');
     approval.status=approve?'APPROVED':'REJECTED';approval.decidedAt=nowIso();approval.decidedBy=actorUserId;approval.decisionNote=note;
     store.saveApproval(approval);
-    const proposal=store.getProposal(approval.actionProposalId);
-    if(proposal){proposal.status=approve?'CONFIRMED':'FAILED';proposal.updatedAt=nowIso();store.saveProposal(proposal);}
+    proposal.status=approve?'CONFIRMED':'FAILED';proposal.updatedAt=nowIso();store.saveProposal(proposal);
     return approval;
   }
 
   private static verifyConfirmation(proposal:ActionProposal,def:ActionDefinition):void{
     if(def.confirmationLevel==='NONE')return;
+    if(def.confirmationLevel==='MULTI_PARTY'){
+      const approval=store.listApprovals().find(a=>a.actionProposalId===proposal.actionProposalId&&a.status==='APPROVED');
+      if(!approval)throw new Error('APPROVED_SECOND_PARTY_DECISION_REQUIRED');
+      return;
+    }
     if(!proposal.confirmationId)throw new Error('ACTION_CONFIRMATION_REQUIRED');
     const c=store.getConfirmation(proposal.confirmationId);if(!c)throw new Error('ACTION_CONFIRMATION_NOT_FOUND');
     if(c.usedAt)throw new Error('CONFIRMATION_REPLAY_BLOCKED');
