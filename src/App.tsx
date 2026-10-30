@@ -39,6 +39,7 @@ import { Sprint30CommandCenter } from './components/Sprint30CommandCenter';
 import { Sprint31DeveloperPlatform } from './components/Sprint31DeveloperPlatform';
 import { Sprint32AnalyticsConsole } from './components/Sprint32AnalyticsConsole';
 import { Sprint33EngagementConsole } from './components/Sprint33EngagementConsole';
+import { Sprint34SecurityConsole } from './components/Sprint34SecurityConsole';
 
 export default function App() {
   const [activeModule, setActiveModule] = useState<TabType | null>(null);
@@ -49,6 +50,7 @@ export default function App() {
 
   const renderModule = (tab: TabType): React.ReactNode => {
     switch (tab) {
+      case 'sprint34': return <Sprint34SecurityConsole />;
       case 'sprint33': return <Sprint33EngagementConsole onOpenModule={setActiveModule} />;
       case 'sprint32': return <Sprint32AnalyticsConsole onOpenModule={setActiveModule} />;
       case 'sprint31': return <Sprint31DeveloperPlatform />;
