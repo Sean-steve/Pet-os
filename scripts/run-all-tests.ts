@@ -201,6 +201,13 @@ async function main() {
         return OrchestrationTestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 30 (Unified Command Center)',
+      runner: async () => {
+        const { CommandCenterTestSuite } = await import('../src/pet-os/command-center/tests');
+        return CommandCenterTestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -229,7 +236,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 27 REGRESSION SUITES (SPRINTS 2-29; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 28 REGRESSION SUITES (SPRINTS 2-30; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 

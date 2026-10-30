@@ -122,6 +122,7 @@ const workspaces: WorkspaceDef[] = [
       { title: 'Luna · feeding plan review', meta: 'Nutrition plan has changed twice this month', status: 'Review' },
     ],
     modules: [
+      { id: 'command-center', title: 'Command Center', description: 'Today, global search, action inbox, household pulse and cross-domain navigation.', icon: Home, tab: 'sprint30', accent: 'sage' },
       { id: 'identity', title: 'Identity & Household', description: 'Accounts, caregivers, household roles and access.', icon: Users, tab: 'identity', accent: 'sage' },
       { id: 'pet-core', title: 'Pet Digital Twin', description: 'Canonical identity, lifecycle, ownership and core profile.', icon: Dog, tab: 'sprint3', accent: 'sage' },
       { id: 'passport', title: 'Timeline & Passport', description: 'Documents, provenance, lifecycle timeline and shareable passport.', icon: FileText, tab: 'sprint4', accent: 'blue' },
@@ -163,6 +164,7 @@ const workspaces: WorkspaceDef[] = [
       { title: 'Luna · sitter handoff', meta: 'Medication instructions updated', status: 'Needs review' },
     ],
     modules: [
+      { id: 'command-center', title: 'Command Center', description: 'Today, global search, action inbox, household pulse and cross-domain navigation.', icon: Home, tab: 'sprint30', accent: 'sage' },
       { id: 'providers', title: 'Professional Identity', description: 'Profiles, verification, credentials, offerings and availability.', icon: UserRoundCheck, tab: 'sprint10', accent: 'blue' },
       { id: 'booking', title: 'Appointments & Bookings', description: 'Availability, reservations, rescheduling and cancellation.', icon: Calendar, tab: 'sprint11', accent: 'violet' },
       { id: 'walks', title: 'Dog Walking', description: 'Live walk execution, custody, evidence and incidents.', icon: Footprints, tab: 'sprint13', accent: 'sage' },
@@ -196,6 +198,7 @@ const workspaces: WorkspaceDef[] = [
       { title: 'October payout reconciliation', meta: 'One provider reference needs review', status: 'Finance' },
     ],
     modules: [
+      { id: 'command-center', title: 'Command Center', description: 'Today, global search, action inbox, household pulse and cross-domain navigation.', icon: Home, tab: 'sprint30', accent: 'sage' },
       { id: 'provider', title: 'Provider Platform', description: 'Business profile, offerings, locations and professional identity.', icon: Briefcase, tab: 'sprint10', accent: 'blue' },
       { id: 'booking', title: 'Scheduling & Booking', description: 'Availability, reservations, capacity and recurring bookings.', icon: Calendar, tab: 'sprint11', accent: 'violet' },
       { id: 'finance', title: 'Payments & Earnings', description: 'Service payments, commissions, earnings, refunds and payouts.', icon: CircleDollarSign, tab: 'sprint12', accent: 'sage' },
@@ -229,6 +232,7 @@ const workspaces: WorkspaceDef[] = [
       { title: 'Reunification claim evidence', meta: 'Two competing claims', status: 'Review' },
     ],
     modules: [
+      { id: 'command-center', title: 'Command Center', description: 'Today, global search, action inbox, household pulse and cross-domain navigation.', icon: Home, tab: 'sprint30', accent: 'sage' },
       { id: 'rescue', title: 'Rescue Operations', description: 'Organizations, intake, custody, foster, reunification, adoption and welfare.', icon: HeartHandshake, tab: 'sprint18', accent: 'peach' },
       { id: 'passport', title: 'Identity & History', description: 'Pet identity reconciliation, documents and provenance.', icon: FileText, tab: 'sprint4', accent: 'blue' },
       { id: 'health', title: 'Veterinary Records', description: 'Clinical records and restricted health access.', icon: Stethoscope, tab: 'sprint5', accent: 'peach' },
@@ -260,6 +264,7 @@ const workspaces: WorkspaceDef[] = [
       { title: 'Damaged-item return', meta: 'Evidence submitted by buyer', status: 'Return' },
     ],
     modules: [
+      { id: 'command-center', title: 'Command Center', description: 'Today, global search, action inbox, household pulse and cross-domain navigation.', icon: Home, tab: 'sprint30', accent: 'sage' },
       { id: 'commerce', title: 'Seller Operations', description: 'Seller onboarding, products, listings, inventory, orders, returns and trust.', icon: Store, tab: 'sprint27', accent: 'amber' },
       { id: 'finance', title: 'Marketplace Finance', description: 'Commissions, seller earnings, refunds, holds and payouts.', icon: CircleDollarSign, tab: 'sprint12', accent: 'sage' },
       { id: 'reviews', title: 'Reputation Boundary', description: 'Provider/service reviews remain distinct from commerce product trust.', icon: Star, tab: 'sprint23', accent: 'violet' },
@@ -288,6 +293,7 @@ const workspaces: WorkspaceDef[] = [
       { title: 'Tracker renewal failed', meta: 'Grace period active', status: 'Billing' },
     ],
     modules: [
+      { id: 'command-center', title: 'Command Center', description: 'Today, global search, action inbox, household pulse and cross-domain navigation.', icon: Home, tab: 'sprint30', accent: 'sage' },
       { id: 'finance', title: 'Payments, Ledger & Payouts', description: 'Payment intents, journals, commissions, refunds, earnings and payouts.', icon: Receipt, tab: 'sprint12', accent: 'sage' },
       { id: 'consumer-sub', title: 'Consumer Billing', description: 'Pet-parent subscriptions, entitlements, trials, grace and renewal.', icon: CreditCard, tab: 'sprint24', accent: 'amber' },
       { id: 'tracker-sub', title: 'Tracker Billing', description: 'Device plans, connectivity service and renewal state.', icon: Radio, tab: 'sprint25', accent: 'blue' },
@@ -317,6 +323,7 @@ const workspaces: WorkspaceDef[] = [
       { title: 'Review privacy report', meta: 'Potential contact information exposure', status: 'Moderation' },
     ],
     modules: [
+      { id: 'command-center', title: 'Command Center', description: 'Today, global search, action inbox, household pulse and cross-domain navigation.', icon: Home, tab: 'sprint30', accent: 'sage' },
       { id: 'provider', title: 'Provider Verification', description: 'Professional/business verification and service eligibility.', icon: UserRoundCheck, tab: 'sprint10', accent: 'blue' },
       { id: 'reviews', title: 'Reviews & Moderation', description: 'Reports, disputes, appeals, abuse signals and reputation integrity.', icon: Star, tab: 'sprint23', accent: 'amber' },
       { id: 'community', title: 'Community Safety', description: 'Community moderation, blocking, reporting and recovery distribution.', icon: Users, tab: 'sprint16', accent: 'violet' },
@@ -350,6 +357,7 @@ const workspaces: WorkspaceDef[] = [
       { title: 'Action orchestration', meta: 'Human-confirmed action tools are active in Sprint 29', status: 'Active' },
     ],
     modules: [
+      { id: 'command-center', title: 'Command Center', description: 'Today, global search, action inbox, household pulse and cross-domain navigation.', icon: Home, tab: 'sprint30', accent: 'sage' },
       { id: 'ai-platform', title: 'Pet Intelligence & AI', description: 'Assistant, recommendations, safety, models, consent and evaluations.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
       { id: 'action-orchestration', title: 'AI Action Orchestration', description: 'AI proposes; Pet OS previews, confirms, authorizes and executes through domain commands.', icon: Workflow, tab: 'sprint29', accent: 'sage' },
       { id: 'health-source', title: 'Clinical Source Context', description: 'Review the canonical health records AI is permitted to summarize.', icon: HeartPulse, tab: 'sprint5', accent: 'peach' },
@@ -381,6 +389,7 @@ const workspaces: WorkspaceDef[] = [
       { title: 'Production persistence', meta: 'In-memory stores still need durable backend', status: 'Roadmap' },
     ],
     modules: [
+      { id: 'command-center', title: 'Command Center', description: 'Today, global search, action inbox, household pulse and cross-domain navigation.', icon: Home, tab: 'sprint30', accent: 'sage' },
       { id: 'foundation', title: 'Engineering Foundation', description: 'Repository baseline, build, testing and architecture overview.', icon: Activity, tab: 'overview', accent: 'blue' },
       { id: 'identity', title: 'Identity & Access', description: 'Authentication, households, memberships and authorization.', icon: Users, tab: 'identity', accent: 'sage' },
       { id: 'kernel', title: 'Shared Kernel', description: 'Canonical IDs, event envelope and shared technical primitives.', icon: Database, tab: 'kernel', accent: 'blue' },
@@ -596,7 +605,7 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({
             </div>
 
             <div className="ml-auto flex items-center gap-2">
-              <button className="hidden h-10 items-center gap-2 rounded-2xl border border-[#E1E5E1] bg-white px-3.5 text-sm text-[#858F8A] shadow-sm md:flex md:w-72">
+              <button onClick={() => onOpenModule('sprint30')} className="hidden h-10 items-center gap-2 rounded-2xl border border-[#E1E5E1] bg-white px-3.5 text-sm text-[#858F8A] shadow-sm md:flex md:w-72">
                 <Search className="h-4 w-4" />
                 <span className="truncate">Search Pet OS…</span>
                 <span className="ml-auto rounded-md border border-[#E7EAE7] px-1.5 py-0.5 text-[10px] text-[#A0A8A4]">⌘K</span>
@@ -692,7 +701,7 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({
                 <span className="rounded-full bg-[#F0F3F0] px-3 py-1 text-xs font-semibold text-[#68746E]">{workspace.modules.length} modules</span>
               </div>
               <p className="mt-2 text-sm leading-6 text-[#7E8983]">
-                The product shell gives each side of Pet OS a clear home. Open any module to access the full operational implementation already built through Sprint 29.
+                The product shell gives each side of Pet OS a clear home. Open any module to access the full operational implementation already built through Sprint 30.
               </p>
             </section>
 
@@ -701,11 +710,11 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-[#6656A2] shadow-sm"><Sparkles className="h-5 w-5" /></span>
                 <div>
                   <p className="text-sm font-semibold text-[#26362E]">Pet OS intelligence</p>
-                  <p className="text-xs text-[#7E8983]">Sprint 29 active</p>
+                  <p className="text-xs text-[#7E8983]">Sprint 30 active</p>
                 </div>
               </div>
               <p className="mt-4 text-sm leading-6 text-[#61716A]">
-                AI can now propose actions, but Sprint 29 keeps every state change behind policy, target-domain validation and the required human confirmation.
+                Sprint 30 adds a unified Today view, global search and action inbox while Sprint 29 continues to govern every state-changing action.
               </p>
             </section>
           </div>
@@ -717,7 +726,7 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({
                 <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#223129]">Open a domain</h2>
               </div>
               {workspace.id === 'platform' && (
-                <span className="hidden rounded-full bg-[#EEF1F5] px-3 py-1 text-xs font-semibold text-[#667381] sm:inline">Sprint 1–29 coverage</span>
+                <span className="hidden rounded-full bg-[#EEF1F5] px-3 py-1 text-xs font-semibold text-[#667381] sm:inline">Sprint 1–30 coverage</span>
               )}
             </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

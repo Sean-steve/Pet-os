@@ -25,3 +25,5 @@ export * from './commerce';
 export * from './ai';
 export * from './orchestration';
 export type { TestResult } from './health';
+
+export * from './command-center';
