@@ -200,6 +200,7 @@ export interface ActionPreview {
   generatedAt: string;
   expiresAt: string;
   previewHash: string;
+  targetStateFingerprint: string;
 }
 
 export interface AutomationPolicyDecision {
