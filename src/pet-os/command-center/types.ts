@@ -6,7 +6,7 @@ export type CommandCenterModuleTab =
   | 'sprint8' | 'sprint9' | 'sprint10' | 'sprint11' | 'sprint12' | 'sprint13'
   | 'sprint14' | 'sprint15' | 'sprint16' | 'sprint17' | 'sprint18' | 'sprint19'
   | 'sprint20' | 'sprint21' | 'sprint22' | 'sprint23' | 'sprint24' | 'sprint25'
-  | 'sprint26' | 'sprint27' | 'sprint28' | 'sprint29' | 'sprint30' | 'sprint31';
+  | 'sprint26' | 'sprint27' | 'sprint28' | 'sprint29' | 'sprint30' | 'sprint31' | 'sprint32';
 
 export type TodayItemKind = 'CARE' | 'BOOKING' | 'NOTIFICATION' | 'AUTOMATION' | 'ORDER';
 export type AttentionSeverity = 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
