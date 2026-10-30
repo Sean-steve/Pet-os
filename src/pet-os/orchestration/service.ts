@@ -439,7 +439,8 @@ export class OrchestrationService {
     activeMembership(input.ownerUserId,input.householdId);
     const def=getDefinition(input.actionType);
     if(!def.mayRunFromAutomationRule)throw new Error('AUTOMATION_RULE_ACTION_FORBIDDEN');
-    if((input.conditionExpression||'').includes('eval(')||(input.conditionExpression||'').includes('SELECT '))throw new Error('UNSAFE_AUTOMATION_CONDITION');
+    const conditionText=(input.conditionExpression||'').toLowerCase();
+    if(conditionText.includes('eval(')||conditionText.includes('select ')||conditionText.includes(';')||conditionText.includes('function('))throw new Error('UNSAFE_AUTOMATION_CONDITION');
     const now=nowIso(),ruleId=`ar-${generateUUIDv7()}` as AutomationRuleId,versionId=`arv-${generateUUIDv7()}` as AutomationRuleVersionId;
     const version:AutomationRuleVersion={
       automationRuleVersionId:versionId,automationRuleId:ruleId,version:1,triggerType:input.triggerType,triggerConfig:{...input.triggerConfig},
