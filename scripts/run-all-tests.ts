@@ -233,6 +233,11 @@ async function main() {
       const ok = failed === 0;
       if (!ok) allPassed = false;
       console.log(`[${ok ? 'OK' : 'FAIL'}] ${suite.name} -> passed: ${passed}, failed: ${failed}`);
+      if (!ok && res?.results) {
+        for (const failure of res.results.filter((item: any) => item && item.passed === false)) {
+          console.error(`  - ${failure.id ?? 'TEST'} ${failure.name ?? ''}: ${failure.message ?? failure.error ?? 'failed'}`);
+        }
+      }
     } catch (err: any) {
       allPassed = false;
       console.error(`[CRASH] ${suite.name} ->`, err.message || err);
