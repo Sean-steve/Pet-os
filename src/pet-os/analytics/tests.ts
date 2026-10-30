@@ -17,7 +17,7 @@ function householdCtx(){
     householdId:CANONICAL_IDS.MAIN_HOUSEHOLD,
     timezone:'Africa/Nairobi',
     windowStart:new Date(Date.now()-365*24*60*60*1000).toISOString(),
-    windowEnd:new Date(Date.now()+24*60*60*1000).toISOString(),
+    windowEnd:new Date().toISOString(),
   };
 }
 
@@ -56,7 +56,7 @@ export class AnalyticsTestSuite{
         await setup();
         const snap=AnalyticsService.getSnapshot({
           actorUserId:CANONICAL_IDS.WALKER_SARAH_USER,audience:'PROVIDER',providerId:CANONICAL_IDS.WALKER_SARAH,
-          windowStart:new Date(Date.now()-365*24*60*60*1000).toISOString(),windowEnd:new Date(Date.now()+24*60*60*1000).toISOString()
+          windowStart:new Date(Date.now()-365*24*60*60*1000).toISOString(),windowEnd:new Date().toISOString()
         });
         if(snap.scopeId!==String(CANONICAL_IDS.WALKER_SARAH))throw new Error('provider scope mismatch');
         let denied=false;try{AnalyticsService.getSnapshot({...householdCtx(),audience:'PROVIDER',providerId:CANONICAL_IDS.WALKER_SARAH} as any);}catch(e:any){denied=String(e.message).includes('ANALYTICS_PROVIDER_ACCESS_DENIED');}
@@ -65,7 +65,7 @@ export class AnalyticsTestSuite{
       {id:'AN-06',name:'Provider finance metric comes from Finance read model, not reconstructed booking value',fn:async()=>{
         await setup();const snap=AnalyticsService.getSnapshot({
           actorUserId:CANONICAL_IDS.WALKER_SARAH_USER,audience:'PROVIDER',providerId:CANONICAL_IDS.WALKER_SARAH,
-          windowStart:new Date(Date.now()-365*24*60*60*1000).toISOString(),windowEnd:new Date(Date.now()+24*60*60*1000).toISOString()
+          windowStart:new Date(Date.now()-365*24*60*60*1000).toISOString(),windowEnd:new Date().toISOString()
         });
         const m=snap.metrics.find(x=>x.metricId==='provider.available_earnings');
         if(!m||m.source!=='FinanceStore'||!/Authoritative Finance/.test(m.definition))throw new Error('finance provenance not authoritative');
