@@ -41,7 +41,7 @@ export const Sprint29OrchestrationConsole:React.FC=()=>{
   const approvals=store.listApprovals();
 
   const stats=useMemo(()=>[
-    {label:'Allowed actions',value:String(definitions.filter(d=>d.enabled).length,10),detail:'Strict registry only',icon:ListChecks},
+    {label:'Allowed actions',value:String(definitions.filter(d=>d.enabled).length),detail:'Strict registry only',icon:ListChecks},
     {label:'Proposals',value:String(proposals.length),detail:'Preview before execution',icon:FileCheck2},
     {label:'Workflows',value:String(workflows.length),detail:'Idempotent saga instances',icon:Workflow},
     {label:'Safety incidents',value:String(incidents.filter(i=>!['RESOLVED','CLOSED'].includes(i.status)).length),detail:'Open orchestration incidents',icon:ShieldCheck},
