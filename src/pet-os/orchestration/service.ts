@@ -426,8 +426,12 @@ export class OrchestrationService {
     store.saveRuleVersion(version);store.saveRule(rule);return rule;
   }
 
-  static async triggerRule(ruleId:AutomationRuleId,triggerEventId:string,payloadOverrides:Record<string,unknown>={}):Promise<ActionProposal>{
+  static async triggerRule(ruleId:AutomationRuleId,triggerEventId:string,payloadOverrides:Record<string,unknown>={},causalRuleIds:string[]=[]):Promise<ActionProposal>{
     const rule=store.getRule(ruleId);if(!rule||rule.status!=='ACTIVE')throw new Error('AUTOMATION_RULE_NOT_ACTIVE');
+    if(causalRuleIds.includes(String(ruleId))||causalRuleIds.length>=8){
+      this.openIncident('HIGH','ACTION_LOOP','Automation cycle/depth guard blocked a recursive rule invocation.');
+      throw new Error('AUTOMATION_CYCLE_DETECTED');
+    }
     activeMembership(rule.ownerUserId,rule.householdId);
     const version=store.getRuleVersion(rule.activeVersionId);if(!version)throw new Error('AUTOMATION_RULE_VERSION_NOT_FOUND');
     const today=nowIso().slice(0,10);
