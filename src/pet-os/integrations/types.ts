@@ -42,6 +42,15 @@ export type PublicIntegrationEventType =
   | 'tracker.health.changed'
   | 'command-center.attention.changed';
 
+export interface PlatformIntegrationReviewer {
+  userId: UserId;
+  status: 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
+  permissions: Array<'APP_REVIEW' | 'SECURITY_REVIEW' | 'INCIDENT_RESPONSE'>;
+  grantedAt: string;
+  grantedBy: string;
+  revokedAt?: string;
+}
+
 export interface DeveloperApp {
   developerAppId: DeveloperAppId;
   name: string;
