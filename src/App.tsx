@@ -34,6 +34,7 @@ import { Sprint25TrackerSubscriptionConsole } from './components/Sprint25Tracker
 import { Sprint26ProviderSaaSConsole } from './components/Sprint26ProviderSaaSConsole';
 import { Sprint27CommerceConsole } from './components/Sprint27CommerceConsole';
 import { Sprint28AIConsole } from './components/Sprint28AIConsole';
+import { Sprint29OrchestrationConsole } from './components/Sprint29OrchestrationConsole';
 
 export default function App() {
   const [activeModule, setActiveModule] = useState<TabType | null>(null);
@@ -44,6 +45,7 @@ export default function App() {
 
   const renderModule = (tab: TabType): React.ReactNode => {
     switch (tab) {
+      case 'sprint29': return <Sprint29OrchestrationConsole />;
       case 'sprint28': return <Sprint28AIConsole />;
       case 'sprint27': return <Sprint27CommerceConsole />;
       case 'sprint26': return <Sprint26ProviderSaaSConsole />;

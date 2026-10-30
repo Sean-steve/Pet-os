@@ -1,10 +1,10 @@
 # Pet OS Development Status
 
-Last audited against repository `main`: Sprint 28 implementation baseline.
+Last audited against repository `main`: Sprint 29 implementation baseline.
 
 ## Current implementation
 
-Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 28, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, marketplace commerce, and a governed Pet Intelligence & AI bounded context.
+Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 29, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, marketplace commerce, a governed Pet Intelligence & AI bounded context, and cross-domain Automation & Action Orchestration.
 
 ## Architecture assessment
 
@@ -17,6 +17,7 @@ The primary limitation is that persistence is currently in-memory/client-side do
 - CI now typechecks, runs regression suites, and builds the production bundle.
 - Regression runner now includes Sprint 22 through Sprint 28 suites.
 - Sprint 28 adds authorization-aware AI context assembly, scoped consent, provenance, deterministic safety routing, non-destructive recommendations, model/prompt registries, incident controls and release-gate evaluations.
+- Sprint 29 adds a strict action registry, preview/confirmation binding, runtime authorization, strong reauthentication for Lost Pet/tracker actions, real Care/Notification/Booking/Tracking/Lost Pet adapters, automation rules, scheduling, saga execution, compensation semantics, loop/flood guards and orchestration incidents.
 - The static demo deliberately uses a local deterministic model-provider adapter so GitHub Pages never exposes production model API keys.
 - Unified seed reset now resets newer domain stores as well as the earlier platform.
 - GitHub Pages deployment workflow builds and publishes the interactive prototype.
@@ -29,9 +30,9 @@ The primary limitation is that persistence is currently in-memory/client-side do
 
 Sprint 28: governed Pet Intelligence & AI Platform — implemented in the prototype.
 
-Sprint 29 next: cross-domain automation/action orchestration with user-confirmed actions, approvals, previews, policy gates, idempotency and compensating transactions. It must extend the unified workspace shell rather than create another parallel console.
+Sprint 29: cross-domain automation/action orchestration — implemented in the prototype with an allowlisted action registry, previews, policy decisions, actor-bound confirmations, strong reauth for safety-critical actions, workflow/saga execution, low-risk rules and scheduling, idempotency, cycle guards, compensation, incidents and unified workspace UI.
 
-Later sprints: external integrations/developer platform, consolidated analytics/operations, security/privacy/compliance hardening, resilience/performance/DR, full-system E2E certification, and final production readiness.
+Sprint 30 onward: external integrations/developer platform, consolidated analytics/operations, security/privacy/compliance hardening, resilience/performance/DR, full-system E2E certification, and final production readiness.
 
 ## Engineering rule for future sprints
 

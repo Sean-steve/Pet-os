@@ -47,6 +47,8 @@ import { TimelineStore } from '../timeline/store';
 import { PassportStore } from '../passport/store';
 import { DocumentStore } from '../documents/store';
 import { TrackingStore } from '../tracking/store';
+import { RecoveryStore } from '../recovery/store';
+import { CommunityStore } from '../community/store';
 import { seedTrackingData } from '../tracking/seed';
 
 // Domain Seeds
@@ -69,6 +71,7 @@ import { seedTrackerSubscriptionData } from '../tracker-service/seed';
 import { seedProviderSaaSData } from '../provider-saas/seed';
 import { seedCommerceData } from '../commerce/seed';
 import { seedAIData } from '../ai/seed';
+import { seedOrchestrationData } from '../orchestration/seed';
 import { RescueStore } from '../rescue/store';
 import { VetWorkspaceStore } from '../vet-workspace/store';
 import { ProfessionalCareStore } from '../professional-care/store';
@@ -79,6 +82,7 @@ import { TrackerSubscriptionStore } from '../tracker-service/store';
 import { ProviderSaaSStore } from '../provider-saas/store';
 import { CommerceStore } from '../commerce/store';
 import { AIStore } from '../ai/store';
+import { OrchestrationStore } from '../orchestration/store';
 
 // Canonical Identifiers
 export const CANONICAL_IDS = {
@@ -140,6 +144,8 @@ export function resetAllStores(): void {
   PassportStore.reset();
   DocumentStore.reset();
   TrackingStore.reset();
+  RecoveryStore.getInstance().clear();
+  CommunityStore.getInstance().clear();
   TrainerWorkspaceStore.getInstance().reset();
   RescueStore.getInstance().reset();
   VetWorkspaceStore.getInstance().reset();
@@ -151,6 +157,7 @@ export function resetAllStores(): void {
   ProviderSaaSStore.getInstance().reset();
   CommerceStore.getInstance().reset();
   AIStore.getInstance().reset();
+  OrchestrationStore.getInstance().reset();
 }
 
 /**
@@ -739,6 +746,11 @@ export async function seedUnifiedPetOS(options: { forceReset?: boolean } = {}): 
   // 19. SEED PET INTELLIGENCE & AI GOVERNANCE PLATFORM (Sprint 28)
   // ==========================================================================
   seedAIData();
+
+  // ==========================================================================
+  // 20. SEED CROSS-DOMAIN AUTOMATION & ACTION ORCHESTRATION (Sprint 29)
+  // ==========================================================================
+  seedOrchestrationData(CANONICAL_IDS.OWNER_ELENA, CANONICAL_IDS.MAIN_HOUSEHOLD);
 }
 
 
