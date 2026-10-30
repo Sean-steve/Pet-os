@@ -1,8 +1,8 @@
 # Pet OS
 
-Pet OS is a unified pet-lifecycle operating platform prototype. The repository currently implements the architecture and interactive domain consoles through **Sprint 32 — Analytics, Outcomes & Operations Intelligence**.
+Pet OS is a unified pet-lifecycle operating platform prototype. The repository currently implements the architecture and interactive domain consoles through **Sprint 33 — Engagement & Platform Intelligence**.
 
-The platform includes Pet identity and lifecycle, health, preventive care, nutrition, training, activity, professional services and bookings, finance, tracking and Lost Pet recovery, community, rescue/adoption, professional workspaces, reviews/reputation, subscriptions, tracker connectivity, Provider SaaS, marketplace commerce, governed Pet Intelligence & AI, human-confirmed cross-domain automation/action orchestration, a unified Command Center with authorized cross-domain search, Today, household pulse and action inbox, a scoped Developer Platform for connected apps, minimized read APIs and signed webhooks, plus governed analytics, descriptive outcome indicators and operations intelligence.
+The platform includes Pet identity and lifecycle, health, preventive care, nutrition, training, activity, professional services and bookings, finance, tracking and Lost Pet recovery, community, rescue/adoption, professional workspaces, reviews/reputation, subscriptions, tracker connectivity, Provider SaaS, marketplace commerce, governed Pet Intelligence & AI, human-confirmed cross-domain automation/action orchestration, a unified Command Center with authorized cross-domain search, Today, household pulse and action inbox, a scoped Developer Platform for connected apps, minimized read APIs and signed webhooks, governed analytics, descriptive outcome indicators and operations intelligence, plus privacy-safe engagement, activation and adoption intelligence that explicitly excludes attention-capture metrics.
 
 ## Run locally
 
@@ -37,7 +37,7 @@ The repository contains a GitHub Actions workflow that validates and deploys the
 
 ## Current engineering status
 
-See `docs/DEVELOPMENT_STATUS.md` for the current architectural assessment and the path from Sprint 32 into the remaining sprints.
+See `docs/DEVELOPMENT_STATUS.md` for the current architectural assessment and the path from Sprint 33 into the remaining sprints.
 
 ## Architecture rules
 
