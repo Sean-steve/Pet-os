@@ -1,10 +1,10 @@
 # Pet OS Development Status
 
-Last audited against repository `main`: Sprint 33 implementation baseline.
+Last audited against repository `main`: Sprint 34 implementation baseline.
 
 ## Current implementation
 
-Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 33, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, marketplace commerce, a governed Pet Intelligence & AI bounded context, cross-domain Automation & Action Orchestration, a unified read-model Command Center, an External Integrations & Developer Platform, a governed Analytics, Outcomes & Operations Intelligence layer, and a privacy-safe Engagement & Platform Intelligence layer.
+Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 34, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, marketplace commerce, a governed Pet Intelligence & AI bounded context, cross-domain Automation & Action Orchestration, a unified read-model Command Center, an External Integrations & Developer Platform, a governed Analytics, Outcomes & Operations Intelligence layer, a privacy-safe Engagement & Platform Intelligence layer, and a Security, Privacy & Compliance hardening layer.
 
 ## Architecture assessment
 
@@ -44,7 +44,7 @@ Sprint 32: Analytics, Outcomes & Operations Intelligence — implemented in the 
 
 Sprint 33: Engagement & Platform Intelligence — implemented in the prototype.
 
-Sprint 34 onward: security/privacy/compliance hardening, resilience/performance/DR, full-system E2E certification, and final production readiness.
+Sprint 34: Security, Privacy & Compliance Hardening — implemented in the prototype.\n\nSprint 35 onward: resilience/performance/DR, full-system E2E certification, and final production readiness.
 
 ## Engineering rule for future sprints
 
