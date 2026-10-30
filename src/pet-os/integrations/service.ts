@@ -152,6 +152,11 @@ export class IntegrationService {
 
   static getApiCatalog():ApiEndpointDefinition[]{return API_CATALOG.map(v=>({...v,sensitiveFieldsExcluded:[...v.sensitiveFieldsExcluded]}));}
 
+  static async verifyWebhookSignature(signingSecret:string,body:string,signature:string):Promise<boolean>{
+    const expected=await hmac(signingSecret,body);
+    return CryptoUtils.constantTimeCompare(expected,signature);
+  }
+
   static createDeveloperApp(actorUserId:UserId,input:{name:string;description:string;requestedScopes:IntegrationScope[];redirectUris?:string[];privacyPolicyUrl?:string;termsUrl?:string}):DeveloperApp{
     requireActiveUser(actorUserId);
     const scopes=uniqueScopes(input.requestedScopes);
