@@ -284,7 +284,7 @@ export class OrchestrationService {
     }
 
     const decision=OrchestrationPolicyEngine.evaluate(proposal,def);
-    if(['DENIED','UNAVAILABLE'].includes(decision.outcome))throw new Error(`ORCHESTRATION_POLICY_DENIED: ${decision.reasonCode}`);
+    if(['DENIED','UNAVAILABLE'].includes(decision.outcome))throw new Error(`ORCHESTRATION_POLICY_DENIED: ${decision.reasonCode}: ${decision.reason}`);
     if(def.requiresActiveHouseholdMembership)activeMembership(proposal.actorUserId,proposal.householdId);
     this.verifyConfirmation(proposal,def);
     if(!proposal.preview)throw new Error('ACTION_PREVIEW_REQUIRED');
