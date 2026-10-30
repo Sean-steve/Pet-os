@@ -47,6 +47,8 @@ import { TimelineStore } from '../timeline/store';
 import { PassportStore } from '../passport/store';
 import { DocumentStore } from '../documents/store';
 import { TrackingStore } from '../tracking/store';
+import { RecoveryStore } from '../recovery/store';
+import { CommunityStore } from '../community/store';
 import { seedTrackingData } from '../tracking/seed';
 
 // Domain Seeds
@@ -142,6 +144,8 @@ export function resetAllStores(): void {
   PassportStore.reset();
   DocumentStore.reset();
   TrackingStore.reset();
+  RecoveryStore.getInstance().clear();
+  CommunityStore.getInstance().clear();
   TrainerWorkspaceStore.getInstance().reset();
   RescueStore.getInstance().reset();
   VetWorkspaceStore.getInstance().reset();
