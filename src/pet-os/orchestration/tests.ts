@@ -179,6 +179,15 @@ export class OrchestrationTestSuite {
         const comps=OrchestrationStore.getInstance().listCompensations();
         if(!failed||!comps.some(c=>c.capability==='NONE'&&c.status==='NOT_REQUIRED'))throw new Error('non-reversible effect was misrepresented');
       }},
+      {id:'ORCH-21',name:'Automation conditions use deterministic safe evaluation',category:'AUTOMATION',fn:async()=>{
+        await setup();const rule=OrchestrationService.createRule({ownerUserId:CANONICAL_IDS.OWNER_ELENA,householdId:CANONICAL_IDS.MAIN_HOUSEHOLD,name:'Scoped condition',description:'test',triggerType:'DOMAIN_EVENT',triggerConfig:{eventType:'CareDue'},conditionExpression:'event.householdId == rule.householdId',actionType:'OPEN_DOMAIN_WORKSPACE',actionPayloadTemplate:{module:'care'}});
+        let blocked=false;try{await OrchestrationService.triggerRule(rule.automationRuleId,'evt-wrong',{householdId:String(CANONICAL_IDS.OUTSIDER_HOUSEHOLD)});}catch(e:any){blocked=e.message.includes('CONDITION_FALSE');}
+        if(!blocked)throw new Error('condition mismatch did not block action');
+        const p=await OrchestrationService.triggerRule(rule.automationRuleId,'evt-right',{householdId:String(CANONICAL_IDS.MAIN_HOUSEHOLD)});
+        if(p.status!=='COMPLETED')throw new Error('matching deterministic condition did not execute');
+        let unsafe=false;try{OrchestrationService.createRule({ownerUserId:CANONICAL_IDS.OWNER_ELENA,householdId:CANONICAL_IDS.MAIN_HOUSEHOLD,name:'Unsafe condition',description:'test',triggerType:'CONDITION',triggerConfig:{},conditionExpression:'select * from pets;',actionType:'OPEN_DOMAIN_WORKSPACE',actionPayloadTemplate:{module:'care'}});}catch(e:any){unsafe=e.message.includes('UNSAFE_AUTOMATION_CONDITION');}
+        if(!unsafe)throw new Error('unsafe condition syntax was accepted');
+      }},
       {id:'ORCH-20',name:'Proposal and execution idempotency prevent duplicate domain writes',category:'IDEMPOTENCY',fn:async()=>{
         await setup();const before=CareStore.getObligationsForPet(CANONICAL_IDS.PET_KIBO).length;
         const input={actionType:'CARE_CREATE_OWNER_TASK' as const,actorUserId:CANONICAL_IDS.OWNER_ELENA,householdId:CANONICAL_IDS.MAIN_HOUSEHOLD,petId:CANONICAL_IDS.PET_KIBO,origin:'USER_UI' as const,payload:{petId:CANONICAL_IDS.PET_KIBO,title:'Idempotent task',dueAt:future(5)},idempotencyKey:'idem-care'};
