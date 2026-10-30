@@ -8,6 +8,7 @@ import { BookingPlatformService } from '../booking/service';
 import { BookingStore } from '../booking/store';
 import { ProviderStore } from '../provider/store';
 import { RecoveryService } from '../recovery/service';
+import { CommunityService } from '../community/service';
 import { TrackingService } from '../tracking/service';
 import { TrackingStore } from '../tracking/store';
 import {
@@ -100,6 +101,8 @@ export class OrchestrationDomainAdapter {
       case 'LOST_PET_ACTIVATE_COMMUNITY_ALERT':{
         const p=proposal.payload as unknown as LostPetCommunityAlertPayload;
         if(!p.lostPetIncidentId)throw new Error('VALIDATION_ERROR: lostPetIncidentId is required');
+        // Ensure the Community domain subscriber is active before the Recovery event is emitted.
+        CommunityService.getInstance();
         const incident=RecoveryService.getInstance().activateCommunityAlert(asLostPetIncidentId(String(p.lostPetIncidentId)),proposal.actorUserId);
         return {resultReference:String(incident.lostPetIncidentId),summary:'Minimized Lost Pet recovery alert requested for Community distribution.',data:incident};
       }
