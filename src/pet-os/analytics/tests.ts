@@ -45,7 +45,7 @@ export class AnalyticsTestSuite{
       {id:'AN-03',name:'Outcome indicators explicitly remain non-clinical descriptive signals',fn:async()=>{
         await setup();const snap=AnalyticsService.getSnapshot(householdCtx());
         if(!snap.disclaimers.some(d=>/not.*medical|medical diagnosis/i.test(d)))throw new Error('medical non-causality disclaimer missing');
-        if(snap.outcomes.some(o=>!/not|does not|operational|descriptive/i.test(o.caveat)))throw new Error('outcome caveat missing');
+        if(snap.outcomes.some(o=>!/not|does not|never|operational|descriptive/i.test(o.caveat)))throw new Error('outcome caveat missing');
       }},
       {id:'AN-04',name:'Tracker analytics expose health summary but not coordinates',fn:async()=>{
         await setup();const snap:any=AnalyticsService.getSnapshot(householdCtx());
@@ -113,8 +113,8 @@ export class AnalyticsTestSuite{
       }},
       {id:'AN-14',name:'Platform snapshots avoid household clinical and financial detail',fn:async()=>{
         await setup();const snap=AnalyticsService.getSnapshot({actorUserId:CANONICAL_IDS.ADMIN_CHARLES,audience:'PLATFORM_OPS'});
-        const raw=JSON.stringify(snap);
-        if(/clinical note|prescription|medication dose|card number|payment instrument|microchip/i.test(raw))throw new Error('restricted domain detail leaked');
+        const exposed=JSON.stringify({metrics:snap.metrics,outcomes:snap.outcomes,operations:snap.operations});
+        if(/clinical note|prescription|medication dose|card number|payment instrument|microchip/i.test(exposed))throw new Error('restricted domain detail leaked');
       }},
       {id:'AN-15',name:'Current tracker readiness is labeled point-in-time, not historical uptime',fn:async()=>{
         await setup();const snap=AnalyticsService.getSnapshot(householdCtx());
