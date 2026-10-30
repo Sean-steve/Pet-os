@@ -222,6 +222,13 @@ async function main() {
         return AnalyticsTestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 33 (Engagement & Platform Intelligence)',
+      runner: async () => {
+        const { EngagementTestSuite } = await import('../src/pet-os/engagement/tests');
+        return EngagementTestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -255,7 +262,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 30 REGRESSION SUITES (SPRINTS 2-32; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 31 REGRESSION SUITES (SPRINTS 2-33; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 
