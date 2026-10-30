@@ -27,3 +27,5 @@ export * from './orchestration';
 export type { TestResult } from './health';
 
 export * from './command-center';
+
+export * from './integrations';
