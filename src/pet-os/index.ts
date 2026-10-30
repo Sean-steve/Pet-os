@@ -29,3 +29,5 @@ export type { TestResult } from './health';
 export * from './command-center';
 
 export * from './integrations';
+
+export * from './analytics';
