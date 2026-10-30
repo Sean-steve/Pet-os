@@ -188,6 +188,20 @@ export class OrchestrationTestSuite {
         let unsafe=false;try{OrchestrationService.createRule({ownerUserId:CANONICAL_IDS.OWNER_ELENA,householdId:CANONICAL_IDS.MAIN_HOUSEHOLD,name:'Unsafe condition',description:'test',triggerType:'CONDITION',triggerConfig:{},conditionExpression:'select * from pets;',actionType:'OPEN_DOMAIN_WORKSPACE',actionPayloadTemplate:{module:'care'}});}catch(e:any){unsafe=e.message.includes('UNSAFE_AUTOMATION_CONDITION');}
         if(!unsafe)throw new Error('unsafe condition syntax was accepted');
       }},
+      {id:'ORCH-22',name:'Multi-party approval requires a distinct active second household member',category:'CONFIRMATION',fn:async()=>{
+        await setup();
+        const store=OrchestrationStore.getInstance();
+        const original=store.getActionDefinitionByType('OPEN_DOMAIN_WORKSPACE')!;
+        store.saveActionDefinition({...original,confirmationLevel:'MULTI_PARTY'});
+        const p=OrchestrationService.propose({actionType:'OPEN_DOMAIN_WORKSPACE',actorUserId:CANONICAL_IDS.OWNER_ELENA,householdId:CANONICAL_IDS.MAIN_HOUSEHOLD,origin:'USER_UI',payload:{module:'care'},idempotencyKey:'multi-party-test'});
+        if(p.status!=='AWAITING_APPROVAL')throw new Error('multi-party action did not await approval');
+        let selfBlocked=false;try{OrchestrationService.requestApproval(p.actionProposalId,[CANONICAL_IDS.OWNER_ELENA],'Second-person review');}catch(e:any){selfBlocked=e.message.includes('DISTINCT_APPROVER_REQUIRED');}
+        if(!selfBlocked)throw new Error('proposer was allowed to self-approve');
+        const approval=OrchestrationService.requestApproval(p.actionProposalId,[CANONICAL_IDS.CAREGIVER_SEAN],'Second-person review');
+        OrchestrationService.decideApproval(approval.approvalRequestId,CANONICAL_IDS.CAREGIVER_SEAN,true,'Approved');
+        const result=await OrchestrationService.executeProposal(p.actionProposalId);
+        if(result.attempt.classification!=='SUCCESS')throw new Error('approved multi-party action did not execute');
+      }},
       {id:'ORCH-20',name:'Proposal and execution idempotency prevent duplicate domain writes',category:'IDEMPOTENCY',fn:async()=>{
         await setup();const before=CareStore.getObligationsForPet(CANONICAL_IDS.PET_KIBO).length;
         const input={actionType:'CARE_CREATE_OWNER_TASK' as const,actorUserId:CANONICAL_IDS.OWNER_ELENA,householdId:CANONICAL_IDS.MAIN_HOUSEHOLD,petId:CANONICAL_IDS.PET_KIBO,origin:'USER_UI' as const,payload:{petId:CANONICAL_IDS.PET_KIBO,title:'Idempotent task',dueAt:future(5)},idempotencyKey:'idem-care'};
