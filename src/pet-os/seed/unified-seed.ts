@@ -73,6 +73,7 @@ import { seedCommerceData } from '../commerce/seed';
 import { seedAIData } from '../ai/seed';
 import { seedOrchestrationData } from '../orchestration/seed';
 import { seedIntegrationData } from '../integrations/seed';
+import { seedEngagementData } from '../engagement/seed';
 import { RescueStore } from '../rescue/store';
 import { VetWorkspaceStore } from '../vet-workspace/store';
 import { ProfessionalCareStore } from '../professional-care/store';
@@ -85,6 +86,7 @@ import { CommerceStore } from '../commerce/store';
 import { AIStore } from '../ai/store';
 import { OrchestrationStore } from '../orchestration/store';
 import { IntegrationStore } from '../integrations/store';
+import { EngagementStore } from '../engagement/store';
 import { IntegrationService } from '../integrations/service';
 
 // Canonical Identifiers
@@ -162,6 +164,7 @@ export function resetAllStores(): void {
   AIStore.getInstance().reset();
   OrchestrationStore.getInstance().reset();
   IntegrationStore.getInstance().reset();
+  EngagementStore.getInstance().reset();
   IntegrationService.resetRuntime();
 }
 
@@ -761,6 +764,8 @@ export async function seedUnifiedPetOS(options: { forceReset?: boolean } = {}): 
   // 21. SEED EXTERNAL INTEGRATIONS & DEVELOPER PLATFORM (Sprint 31)
   // ==========================================================================
   await seedIntegrationData(CANONICAL_IDS.OWNER_ELENA, CANONICAL_IDS.ADMIN_CHARLES, CANONICAL_IDS.MAIN_HOUSEHOLD);
+
+  // ==========================================================================\n  // 22. SEED ENGAGEMENT & PLATFORM INTELLIGENCE (Sprint 33)\n  // ==========================================================================\n  seedEngagementData(CANONICAL_IDS.OWNER_ELENA, CANONICAL_IDS.WALKER_SARAH_USER, CANONICAL_IDS.WALKER_SARAH, CANONICAL_IDS.ADMIN_CHARLES, CANONICAL_IDS.MAIN_HOUSEHOLD);
 }
 
 
