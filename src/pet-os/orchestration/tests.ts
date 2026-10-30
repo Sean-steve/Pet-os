@@ -102,7 +102,7 @@ export class OrchestrationTestSuite {
         OrchestrationService.confirmProposal(p.actionProposalId,CANONICAL_IDS.CAREGIVER_SEAN);
         const m=IdentityStore.findMembership(CANONICAL_IDS.MAIN_HOUSEHOLD,CANONICAL_IDS.CAREGIVER_SEAN)!;
         IdentityStore.saveMembership({...m,status:'SUSPENDED',updatedAt:new Date().toISOString()});
-        let denied=false;try{await OrchestrationService.executeProposal(p.actionProposalId);}catch(e:any){denied=e.message.includes('active household membership');}
+        let denied=false;try{await OrchestrationService.executeProposal(p.actionProposalId);}catch(e:any){denied=e.message.includes('ACTIVE_MEMBERSHIP_REQUIRED');}
         if(!denied)throw new Error('revoked membership retained execution authority');
       }},
       {id:'ORCH-10',name:'Cross-household Pet target is denied',category:'AUTHORIZATION',fn:async()=>{
