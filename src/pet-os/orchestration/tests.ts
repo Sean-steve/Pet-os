@@ -202,6 +202,14 @@ export class OrchestrationTestSuite {
         const result=await OrchestrationService.executeProposal(p.actionProposalId);
         if(result.attempt.classification!=='SUCCESS')throw new Error('approved multi-party action did not execute');
       }},
+      {id:'ORCH-23',name:'Future low-risk schedules outlive the default proposal preview window',category:'AUTOMATION',fn:async()=>{
+        await setup();
+        const p=OrchestrationService.propose({actionType:'NOTIFICATION_SCHEDULE_SELF',actorUserId:CANONICAL_IDS.OWNER_ELENA,householdId:CANONICAL_IDS.MAIN_HOUSEHOLD,origin:'USER_UI',payload:{title:'Tomorrow reminder',body:'Future safe reminder'}});
+        const executeAt=future(6);
+        OrchestrationService.scheduleLowRisk(p.actionProposalId,executeAt);
+        const updated=OrchestrationStore.getInstance().getProposal(p.actionProposalId)!;
+        if(new Date(updated.expiresAt).getTime()<=new Date(executeAt).getTime())throw new Error('scheduled proposal expires before execution');
+      }},
       {id:'ORCH-20',name:'Proposal and execution idempotency prevent duplicate domain writes',category:'IDEMPOTENCY',fn:async()=>{
         await setup();const before=CareStore.getObligationsForPet(CANONICAL_IDS.PET_KIBO).length;
         const input={actionType:'CARE_CREATE_OWNER_TASK' as const,actorUserId:CANONICAL_IDS.OWNER_ELENA,householdId:CANONICAL_IDS.MAIN_HOUSEHOLD,petId:CANONICAL_IDS.PET_KIBO,origin:'USER_UI' as const,payload:{petId:CANONICAL_IDS.PET_KIBO,title:'Idempotent task',dueAt:future(5)},idempotencyKey:'idem-care'};
