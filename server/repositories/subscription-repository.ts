@@ -209,6 +209,9 @@ export async function createProviderSaaSSubscription(client:PoolClient,input:{
   const sub=result.rows[0];
   if(status==='ACTIVE'||status==='TRIALING') await writeProviderEntitlements(client,sub,p.entitlements||[],true);
   const response={subscriptionId,subscriberType:input.subscriberType,businessId:input.businessId,providerId:input.providerId,planCode:input.planCode,priceId:p.price_id,amountMinor:Number(p.amount_minor),currency:input.currency,status,currentPeriodStart:now.toISOString(),currentPeriodEnd:end.toISOString()};
+  await client.query(`INSERT INTO provider_saas_status_history(history_id,subscription_id,previous_status,new_status,reason,triggered_by_user_id)
+     VALUES($1,$2,'INCOMPLETE',$3,'Provider SaaS subscription created',$4)`,
+    [`provider-saas-history-${generateUUIDv7()}`,subscriptionId,status,input.actorUserId]);
   await client.query(`INSERT INTO outbox_events(event_id,aggregate_type,aggregate_id,event_type,payload) VALUES($1,'ProviderSaaSSubscription',$2,'ProviderSaaSSubscriptionCreated',$3::jsonb)`,
     [`evt-${generateUUIDv7()}`,subscriptionId,JSON.stringify(response)]);
   await client.query(`INSERT INTO idempotency_records(actor_user_id,scope,idempotency_key,request_fingerprint,resource_id,response_status,response_body) VALUES($1,$2,$3,$4,$5,201,$6::jsonb)`,
@@ -257,6 +260,9 @@ export async function settleProviderSaaSSubscription(client:PoolClient,input:{
     const end=addInterval(now,s.price_interval);
     await client.query(`UPDATE provider_saas_subscriptions SET status='ACTIVE',external_billing_ref=COALESCE($2,external_billing_ref),current_period_start=$3,current_period_end=$4,grace_period_end=NULL,consecutive_failed_payments=0,version=version+1,updated_at=now() WHERE subscription_id=$1`,
       [input.subscriptionId,input.externalBillingRef||null,now.toISOString(),end.toISOString()]);
+    await client.query(`INSERT INTO provider_saas_status_history(history_id,subscription_id,previous_status,new_status,reason)
+      VALUES($1,$2,$3,'ACTIVE','Billing payment succeeded')`,
+      [`provider-saas-history-${generateUUIDv7()}`,input.subscriptionId,s.status]);
     await client.query(`INSERT INTO provider_saas_invoices(invoice_id,subscription_id,period_start,period_end,amount_minor,currency,status,provider_invoice_reference,issued_at,due_at,paid_at) VALUES($1,$2,$3,$4,$5,$6,'PAID',$7,now(),now(),now())`,
       [invoiceId,input.subscriptionId,now.toISOString(),end.toISOString(),input.amountMinor,input.currency,input.providerInvoiceReference]);
     await writeProviderEntitlements(client,{...s,current_period_end:end.toISOString()},s.entitlements||[],true);
@@ -269,6 +275,9 @@ export async function settleProviderSaaSSubscription(client:PoolClient,input:{
   const nextStatus=failures>=3?'RESTRICTED':'GRACE_PERIOD';
   const graceEnd=new Date(Date.now()+Number(s.grace_period_days||7)*24*60*60*1000).toISOString();
   await client.query(`UPDATE provider_saas_subscriptions SET status=$2,grace_period_end=$3,consecutive_failed_payments=$4,version=version+1,updated_at=now() WHERE subscription_id=$1`,[input.subscriptionId,nextStatus,graceEnd,failures]);
+  await client.query(`INSERT INTO provider_saas_status_history(history_id,subscription_id,previous_status,new_status,reason)
+    VALUES($1,$2,$3,$4,'Billing payment failed')`,
+    [`provider-saas-history-${generateUUIDv7()}`,input.subscriptionId,s.status,nextStatus]);
   await client.query(`INSERT INTO provider_saas_invoices(invoice_id,subscription_id,period_start,period_end,amount_minor,currency,status,provider_invoice_reference,issued_at,due_at) VALUES($1,$2,$3,$4,$5,$6,'FAILED',$7,now(),now())`,
     [invoiceId,input.subscriptionId,s.current_period_start,s.current_period_end,input.amountMinor,input.currency,input.providerInvoiceReference]);
   let continuityGrants=0;
@@ -309,7 +318,10 @@ export async function cancelProviderSaaSSubscription(client:PoolClient,input:{ac
     if(prior.rows[0].request_fingerprint!==requestFingerprint) throw Object.assign(new Error('IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_REQUEST'),{statusCode:409});
     return {subscription:prior.rows[0].response_body,replayed:true};
   }
-  await client.query(`UPDATE provider_saas_subscriptions SET status='CANCEL_AT_PERIOD_END',cancel_at_period_end=true,version=version+1,updated_at=now() WHERE subscription_id=$1`,[input.subscriptionId]);
+  await client.query(`UPDATE provider_saas_subscriptions SET status='CANCEL_AT_PERIOD_END',cancel_at_period_end=true,cancellation_reason=$2,version=version+1,updated_at=now() WHERE subscription_id=$1`,[input.subscriptionId,input.reason]);
+  await client.query(`INSERT INTO provider_saas_status_history(history_id,subscription_id,previous_status,new_status,reason,triggered_by_user_id)
+    VALUES($1,$2,$3,'CANCEL_AT_PERIOD_END',$4,$5)`,
+    [`provider-saas-history-${generateUUIDv7()}`,input.subscriptionId,s.status,input.reason,input.actorUserId]);
   const response={subscriptionId:input.subscriptionId,status:'CANCEL_AT_PERIOD_END',currentPeriodEnd:new Date(s.current_period_end).toISOString()};
   await client.query(`INSERT INTO idempotency_records(actor_user_id,scope,idempotency_key,request_fingerprint,resource_id,response_status,response_body) VALUES($1,$2,$3,$4,$5,200,$6::jsonb)`,
     [input.actorUserId,scope,input.idempotencyKey,requestFingerprint,input.subscriptionId,JSON.stringify(response)]);
