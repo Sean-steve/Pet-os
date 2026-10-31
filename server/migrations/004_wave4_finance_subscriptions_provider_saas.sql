@@ -449,6 +449,10 @@ CREATE TABLE IF NOT EXISTS provider_saas_subscriptions (
   grace_period_end timestamptz,
   auto_renew boolean NOT NULL DEFAULT true,
   cancel_at_period_end boolean NOT NULL DEFAULT false,
+  cancelled_at timestamptz,
+  cancellation_reason text,
+  suspended_at timestamptz,
+  suspension_reason text,
   consecutive_failed_payments integer NOT NULL DEFAULT 0 CHECK(consecutive_failed_payments>=0),
   external_billing_ref text,
   version integer NOT NULL DEFAULT 1 CHECK(version>0),
@@ -457,6 +461,16 @@ CREATE TABLE IF NOT EXISTS provider_saas_subscriptions (
   CHECK ((subscriber_type='SERVICE_BUSINESS' AND business_id IS NOT NULL AND provider_id IS NULL)
       OR (subscriber_type='INDIVIDUAL_PROVIDER' AND provider_id IS NOT NULL AND business_id IS NULL))
 );
+CREATE TABLE IF NOT EXISTS provider_saas_status_history (
+  history_id text PRIMARY KEY,
+  subscription_id text NOT NULL REFERENCES provider_saas_subscriptions(subscription_id) ON DELETE CASCADE,
+  previous_status text NOT NULL,
+  new_status text NOT NULL,
+  reason text NOT NULL,
+  triggered_by_user_id text REFERENCES users(user_id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE UNIQUE INDEX IF NOT EXISTS uq_active_provider_saas_target
   ON provider_saas_subscriptions(subscriber_type,COALESCE(business_id,provider_id))
   WHERE status IN ('INCOMPLETE','TRIALING','ACTIVE','PAST_DUE','GRACE_PERIOD','RESTRICTED','CANCEL_AT_PERIOD_END');
@@ -566,7 +580,7 @@ GRANT SELECT,INSERT,UPDATE ON finance_payment_intents,finance_provider_earnings,
 GRANT SELECT ON finance_payment_transactions,finance_receipts TO petos_app;
 GRANT SELECT ON consumer_plan_catalog,consumer_plan_prices,provider_saas_plan_catalog,provider_saas_prices TO petos_app;
 GRANT SELECT,INSERT,UPDATE ON consumer_subscriptions,subscription_status_history,subscription_invoices,subscription_entitlement_grants,
-  provider_saas_subscriptions,provider_saas_entitlement_grants,provider_saas_invoices,provider_saas_continuity_grants,
+  provider_saas_subscriptions,provider_saas_status_history,provider_saas_entitlement_grants,provider_saas_invoices,provider_saas_continuity_grants,
   billing_reconciliation_runs,billing_reconciliation_items TO petos_app;
 
 ALTER TABLE finance_payment_intents ENABLE ROW LEVEL SECURITY;
