@@ -477,7 +477,17 @@ CREATE POLICY review_eligibility_read ON review_eligibilities FOR SELECT USING (
 );
 DROP POLICY IF EXISTS review_eligibility_insert ON review_eligibilities;
 CREATE POLICY review_eligibility_insert ON review_eligibilities FOR INSERT WITH CHECK (
-  reviewer_user_id = current_setting('app.user_id', true)
+  EXISTS (
+    SELECT 1
+    FROM bookings b
+    WHERE b.booking_id = review_eligibilities.booking_id
+      AND b.status = 'COMPLETED'
+      AND b.owner_user_id = review_eligibilities.reviewer_user_id
+      AND b.household_id = review_eligibilities.reviewer_household_id
+      AND b.provider_id = review_eligibilities.provider_id
+      AND b.offering_id = review_eligibilities.offering_id
+      AND petos_can_access_booking(b.booking_id, current_setting('app.user_id', true))
+  )
 );
 
 DROP POLICY IF EXISTS review_read ON reviews;
