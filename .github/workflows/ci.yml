@@ -19,6 +19,7 @@ jobs:
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://petos:petos_ci@127.0.0.1:5432/petos
+      DATABASE_RUNTIME_ROLE: petos_app
       REDIS_URL: redis://127.0.0.1:6379
       CORS_ORIGINS: http://localhost:3000
       AUTH_ISSUER: https://auth.test.petos.local
