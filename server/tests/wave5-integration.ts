@@ -151,7 +151,7 @@ async function main(){
 
     response=await api(base,'/v1/businesses/business-w5/transport/drivers',business,{method:'POST',headers:{'idempotency-key':'w5-driver'},body:JSON.stringify({
       providerId:'provider-w5',userId:'usr-w5-driver',fullName:'Driver W5',phoneNumberMasked:'+2547****1111',
-      drivingLicenseRefMasked:'DL-***-111',approvedServiceTypes:['SINGLE_PET_DIRECT'],emergencyContactMasked:'+2547****2222',
+      drivingLicenseRefMasked:'DL-***-111',approvedServiceTypes:['ONE_WAY'],emergencyContactMasked:'+2547****2222',
     })});assert.equal(response.status,201);payload=await readJson(response);const driverProfileId=payload.driver.driver_profile_id;
     response=await api(base,`/v1/transport/drivers/${driverProfileId}/verify`,business,{method:'POST'});assert.equal(response.status,200);
 
@@ -163,7 +163,7 @@ async function main(){
     response=await api(base,`/v1/transport/vehicles/${vehicleId}/verify`,business,{method:'POST'});assert.equal(response.status,200);
 
     response=await api(base,'/v1/transport/trips',business,{method:'POST',headers:{'idempotency-key':'w5-trip-bad-address'},body:JSON.stringify({
-      bookingId:'booking-w5',assignedDriverId:driverProfileId,assignedVehicleId:vehicleId,tripType:'SINGLE_PET_DIRECT',
+      bookingId:'booking-w5',assignedDriverId:driverProfileId,assignedVehicleId:vehicleId,tripType:'ONE_WAY',
       stops:[
         {stopType:'PICKUP',title:'Pickup',addressPublicSnippet:'Kilimani, Nairobi',exactAddressCiphertext:'Plain exact home',scheduledArrival:'2026-11-15T07:00:00Z',recipientContactName:'Owner',recipientContactPhoneMasked:'+2547****0000',petIdsBoarding:['pet-w5']},
         {stopType:'DROP_OFF',title:'Drop off',addressPublicSnippet:'Westlands, Nairobi',exactAddressCiphertext:'enc:v1:dropoff',scheduledArrival:'2026-11-15T09:00:00Z',recipientContactName:'Owner',recipientContactPhoneMasked:'+2547****0000',petIdsExiting:['pet-w5']},
@@ -171,7 +171,7 @@ async function main(){
     })});assert.equal(response.status,400);
 
     response=await api(base,'/v1/transport/trips',business,{method:'POST',headers:{'idempotency-key':'w5-trip'},body:JSON.stringify({
-      bookingId:'booking-w5',assignedDriverId:driverProfileId,assignedVehicleId:vehicleId,tripType:'SINGLE_PET_DIRECT',
+      bookingId:'booking-w5',assignedDriverId:driverProfileId,assignedVehicleId:vehicleId,tripType:'ONE_WAY',
       stops:[
         {stopType:'PICKUP',title:'Pickup',addressPublicSnippet:'Kilimani, Nairobi',exactAddressCiphertext:'enc:v1:pickup',scheduledArrival:'2026-11-15T07:00:00Z',recipientContactName:'Owner',recipientContactPhoneMasked:'+2547****0000',petIdsBoarding:['pet-w5']},
         {stopType:'DROP_OFF',title:'Drop off',addressPublicSnippet:'Westlands, Nairobi',exactAddressCiphertext:'vault:dropoff-ref',scheduledArrival:'2026-11-15T09:00:00Z',recipientContactName:'Owner',recipientContactPhoneMasked:'+2547****0000',petIdsExiting:['pet-w5']},
