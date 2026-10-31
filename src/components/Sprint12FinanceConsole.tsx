@@ -102,7 +102,7 @@ export const Sprint12FinanceConsole: React.FC = () => {
   const [refundStatusMsg, setRefundStatusMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   // Test Runner State
-  const [testResults, setTestResults] = useState<Array<{ id: number; name: string; passed: boolean; error?: string }>>([]);
+  const [testResults, setTestResults] = useState<Array<{ name: string; passed: boolean; durationMs: number; error?: string }>>([]);
   const [isRunningTests, setIsRunningTests] = useState(false);
 
   // Initialize seed demo data if store is empty
@@ -165,8 +165,8 @@ export const Sprint12FinanceConsole: React.FC = () => {
 
       // Seed Initial Opening Ledger Journal
       ledger.postJournal({
-        journalType: 'PAYMENT_CAPTURED',
-        sourceType: 'PAYMENT_TRANSACTION',
+        journalType: 'CUSTOMER_PAYMENT',
+        sourceType: 'BOOKING_PAYMENT',
         sourceId: 'seed_init_01',
         currency: 'KES',
         description: 'Initial Seed: M-PESA clearing for Kibo Trail Adventure',
@@ -198,7 +198,7 @@ export const Sprint12FinanceConsole: React.FC = () => {
       accountCode: acc.code,
       name: acc.name,
       type: acc.type,
-      balanceMinor: ledger.getAccountBalance(acc.code, { currency: 'KES' }).minorUnits,
+      balanceMinor: ledger.getAccountBalance(acc.code, { currency: 'KES' }).amountMinor,
     }));
   }, [ledger, refreshCount]);
   const intents = useMemo(() => Array.from(store.paymentIntents.values()), [store, refreshCount]);
@@ -210,7 +210,7 @@ export const Sprint12FinanceConsole: React.FC = () => {
   // Calculate platform totals
   const totalVolumeMinor = useMemo(() => {
     return journals
-      .filter(j => j.journalType === 'PAYMENT_CAPTURED')
+      .filter(j => j.journalType === 'CUSTOMER_PAYMENT')
       .reduce((sum, j) => sum + j.entries.filter(l => l.direction === 'DEBIT').reduce((s, l) => s + l.amountMinor, 0), 0);
   }, [journals]);
 
@@ -241,29 +241,25 @@ export const Sprint12FinanceConsole: React.FC = () => {
       const res = await service.initiatePayment({
         paymentIntentId: intent.paymentIntentId,
         payerUserId: elenaId,
-        mpesaPhoneNumber: mpesaPhone,
+        customerPhoneNumber: mpesaPhone,
       });
 
-      // 3. Simulate customer entering M-PESA PIN and receiving Safaricom Webhook
+      // 3. Simulate customer entering M-PESA PIN and receiving the authoritative Safaricom webhook.
       const simulatedWebhookPayload = {
-        TransactionType: 'CustomerPayBillOnline',
-        TransID: `WS_${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
-        TransAmount: (intent.amountMinor / 100).toFixed(2),
-        BusinessShortCode: '600000',
-        BillRefNumber: intent.paymentIntentId,
-        MSISDN: mpesaPhone,
-        TransTime: new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14),
-        ResultCode: 0,
-        ResultDesc: 'The service request is processed successfully.',
+        Body: {
+          stkCallback: {
+            CheckoutRequestID: res.transaction.providerTransactionId,
+            ResultCode: 0,
+            ResultDesc: 'The service request is processed successfully.',
+          },
+        },
       };
 
-      const webhookResult = await service.handlePaymentWebhook({
-        provider: 'MPESA_SAFARICOM',
-        rawPayload: JSON.stringify(simulatedWebhookPayload),
-        signature: 'simulated_valid_sha256_sig',
-        eventType: 'charge.completed',
-        idempotencyKey: `evt_${simulatedWebhookPayload.TransID}`,
-      });
+      await service.processProviderWebhook(
+        'MPESA_SAFARICOM',
+        { 'x-mpesa-signature': 'simulated_valid_sha256_sig' },
+        JSON.stringify(simulatedWebhookPayload)
+      );
 
       setCheckoutStatusMsg({
         type: 'success',
@@ -298,7 +294,7 @@ export const Sprint12FinanceConsole: React.FC = () => {
     try {
       const provId = asProviderId('prov-sarah-walking-0000-000000000001');
       const sarahId = asUserId('usr-sarah-mwangi-0000-0000-00000000002');
-      const destinations = store.getPayoutDestinationsForProvider(provId);
+      const destinations = store.getDestinationsForProvider(provId);
       if (destinations.length === 0) {
         throw new Error('No verified payout destination found');
       }
@@ -329,11 +325,11 @@ export const Sprint12FinanceConsole: React.FC = () => {
       const bookingId = asBookingId(checkoutBookingId);
       const actor = refundReason === 'PROVIDER_CANCELLATION' ? 'PROVIDER' : 'OWNER';
 
-      const res = await service.handleBookingCancelled(
+      const res = await service.handleBookingCancellation(
         bookingId,
+        elenaId,
         actor,
-        'Cancellation simulated via Pet OS Sprint 12 Financial Console',
-        elenaId
+        'Cancellation simulated via Pet OS Sprint 12 Financial Console'
       );
 
       setRefundStatusMsg({
@@ -437,7 +433,7 @@ export const Sprint12FinanceConsole: React.FC = () => {
               )}
             </div>
             <span className="text-[10px] text-[#64748B] font-mono">
-              Dr {(trialBalance.totalDebitsMinor / 100).toLocaleString()} = Cr {(trialBalance.totalCreditsMinor / 100).toLocaleString()}
+              Dr {(trialBalance.totalDebits.amountMinor / 100).toLocaleString()} = Cr {(trialBalance.totalCredits.amountMinor / 100).toLocaleString()}
             </span>
           </div>
 
@@ -1094,7 +1090,7 @@ export const Sprint12FinanceConsole: React.FC = () => {
             ) : (
               testResults.map(test => (
                 <div
-                  key={test.id}
+                  key={test.name}
                   className={`p-3 rounded-xl border flex items-center justify-between text-xs font-mono transition-all ${
                     test.passed
                       ? 'bg-[#0B0D10] border-[#1E293B] text-slate-200'
