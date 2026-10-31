@@ -16,7 +16,7 @@
     "certification:check": "tsx scripts/run-certification.ts",
     "production-readiness:check": "tsx scripts/run-production-readiness.ts",
     "server:dev": "tsx server/index.ts",
-    "server:build": "esbuild server/index.ts server/migrate.ts --bundle --platform=node --format=esm --outdir=dist-server",
+    "server:build": "esbuild server/index.ts server/migrate.ts --bundle --platform=node --format=esm --packages=external --outdir=dist-server",
     "server:start": "node dist-server/index.js",
     "db:migrate": "tsx server/migrate.ts",
     "backend:integration": "tsx server/tests/integration.ts"
