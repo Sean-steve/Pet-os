@@ -103,7 +103,7 @@ export class AnalyticsTestSuite{
         if(!blocked)throw new Error('unknown metric accepted');
       }},
       {id:'AN-13',name:'Provider completion rate reconciles with BookingStore',fn:async()=>{
-        await setup();const start=new Date(Date.now()-365*DAY).toISOString(),end=new Date(Date.now()+DAY).toISOString();
+        await setup();const end=new Date().toISOString(),start=new Date(new Date(end).getTime()-365*DAY).toISOString();
         const snap=AnalyticsService.getSnapshot({actorUserId:CANONICAL_IDS.WALKER_SARAH_USER,audience:'PROVIDER',providerId:CANONICAL_IDS.WALKER_SARAH,windowStart:start,windowEnd:end});
         const metric=snap.metrics.find(m=>m.metricId==='provider.completion_rate')!;
         const rows=BookingStore.getInstance().listBookingsByProvider(CANONICAL_IDS.WALKER_SARAH).filter(b=>new Date(b.startAt)>=new Date(start)&&new Date(b.startAt)<=new Date(end));
