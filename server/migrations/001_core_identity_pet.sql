@@ -77,6 +77,20 @@ CREATE TABLE IF NOT EXISTS idempotency_records (
   PRIMARY KEY (actor_user_id, scope, idempotency_key)
 );
 
+DO $
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'petos_app') THEN
+    CREATE ROLE petos_app NOLOGIN;
+  END IF;
+END
+$;
+
+GRANT petos_app TO CURRENT_USER;
+GRANT SELECT ON users, households, household_members TO petos_app;
+GRANT SELECT, INSERT, UPDATE ON pets TO petos_app;
+GRANT SELECT, INSERT ON idempotency_records TO petos_app;
+GRANT SELECT, INSERT ON outbox_events TO petos_app;
+
 ALTER TABLE households ENABLE ROW LEVEL SECURITY;
 ALTER TABLE household_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pets ENABLE ROW LEVEL SECURITY;
