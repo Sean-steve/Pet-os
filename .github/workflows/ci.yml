@@ -26,6 +26,7 @@ jobs:
       AUTH_JWT_SECRET: ci-test-only-pet-os-secret-32-bytes-minimum
       RATE_LIMIT_PER_MINUTE: 200
       BILLING_ADAPTER_SECRET: ci-billing-adapter-secret-32-bytes-minimum
+      LOCATION_ADAPTER_SECRET: ci-location-adapter-secret-32-bytes-minimum
     services:
       postgres:
         image: postgres:17-alpine
