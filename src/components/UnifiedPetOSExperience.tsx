@@ -129,6 +129,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'engagement', title: 'Engagement & Platform Intelligence', description: 'Meaningful adoption, activation funnels, workflow continuity and privacy-safe product intelligence.', icon: Activity, tab: 'sprint33', accent: 'violet' },
       { id: 'security', title: 'Security, Privacy & Compliance', description: 'Step-up controls, privacy rights, retention, incident response and compliance evidence.', icon: ShieldCheck, tab: 'sprint34', accent: 'sage' },
       { id: 'resilience', title: 'Resilience, Performance & DR', description: 'Circuit breakers, graceful degradation, recovery objectives, restore drills and performance budgets.', icon: Database, tab: 'sprint35', accent: 'blue' },
+      { id: 'certification', title: 'Full-System Certification', description: 'Cross-role E2E journeys, release gates and prototype certification across every Pet OS side.', icon: ShieldCheck, tab: 'sprint36', accent: 'sage' },
       { id: 'identity', title: 'Identity & Household', description: 'Accounts, caregivers, household roles and access.', icon: Users, tab: 'identity', accent: 'sage' },
       { id: 'pet-core', title: 'Pet Digital Twin', description: 'Canonical identity, lifecycle, ownership and core profile.', icon: Dog, tab: 'sprint3', accent: 'sage' },
       { id: 'passport', title: 'Timeline & Passport', description: 'Documents, provenance, lifecycle timeline and shareable passport.', icon: FileText, tab: 'sprint4', accent: 'blue' },
@@ -176,6 +177,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'engagement', title: 'Engagement & Platform Intelligence', description: 'Meaningful adoption, activation funnels, workflow continuity and privacy-safe product intelligence.', icon: Activity, tab: 'sprint33', accent: 'violet' },
       { id: 'security', title: 'Security, Privacy & Compliance', description: 'Step-up controls, privacy rights, retention, incident response and compliance evidence.', icon: ShieldCheck, tab: 'sprint34', accent: 'sage' },
       { id: 'resilience', title: 'Resilience, Performance & DR', description: 'Circuit breakers, graceful degradation, recovery objectives, restore drills and performance budgets.', icon: Database, tab: 'sprint35', accent: 'blue' },
+      { id: 'certification', title: 'Full-System Certification', description: 'Cross-role E2E journeys, release gates and prototype certification across every Pet OS side.', icon: ShieldCheck, tab: 'sprint36', accent: 'sage' },
       { id: 'providers', title: 'Professional Identity', description: 'Profiles, verification, credentials, offerings and availability.', icon: UserRoundCheck, tab: 'sprint10', accent: 'blue' },
       { id: 'booking', title: 'Appointments & Bookings', description: 'Availability, reservations, rescheduling and cancellation.', icon: Calendar, tab: 'sprint11', accent: 'violet' },
       { id: 'walks', title: 'Dog Walking', description: 'Live walk execution, custody, evidence and incidents.', icon: Footprints, tab: 'sprint13', accent: 'sage' },
@@ -215,6 +217,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'engagement', title: 'Engagement & Platform Intelligence', description: 'Meaningful adoption, activation funnels, workflow continuity and privacy-safe product intelligence.', icon: Activity, tab: 'sprint33', accent: 'violet' },
       { id: 'security', title: 'Security, Privacy & Compliance', description: 'Step-up controls, privacy rights, retention, incident response and compliance evidence.', icon: ShieldCheck, tab: 'sprint34', accent: 'sage' },
       { id: 'resilience', title: 'Resilience, Performance & DR', description: 'Circuit breakers, graceful degradation, recovery objectives, restore drills and performance budgets.', icon: Database, tab: 'sprint35', accent: 'blue' },
+      { id: 'certification', title: 'Full-System Certification', description: 'Cross-role E2E journeys, release gates and prototype certification across every Pet OS side.', icon: ShieldCheck, tab: 'sprint36', accent: 'sage' },
       { id: 'provider', title: 'Provider Platform', description: 'Business profile, offerings, locations and professional identity.', icon: Briefcase, tab: 'sprint10', accent: 'blue' },
       { id: 'booking', title: 'Scheduling & Booking', description: 'Availability, reservations, capacity and recurring bookings.', icon: Calendar, tab: 'sprint11', accent: 'violet' },
       { id: 'finance', title: 'Payments & Earnings', description: 'Service payments, commissions, earnings, refunds and payouts.', icon: CircleDollarSign, tab: 'sprint12', accent: 'sage' },
@@ -254,6 +257,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'engagement', title: 'Engagement & Platform Intelligence', description: 'Meaningful adoption, activation funnels, workflow continuity and privacy-safe product intelligence.', icon: Activity, tab: 'sprint33', accent: 'violet' },
       { id: 'security', title: 'Security, Privacy & Compliance', description: 'Step-up controls, privacy rights, retention, incident response and compliance evidence.', icon: ShieldCheck, tab: 'sprint34', accent: 'sage' },
       { id: 'resilience', title: 'Resilience, Performance & DR', description: 'Circuit breakers, graceful degradation, recovery objectives, restore drills and performance budgets.', icon: Database, tab: 'sprint35', accent: 'blue' },
+      { id: 'certification', title: 'Full-System Certification', description: 'Cross-role E2E journeys, release gates and prototype certification across every Pet OS side.', icon: ShieldCheck, tab: 'sprint36', accent: 'sage' },
       { id: 'rescue', title: 'Rescue Operations', description: 'Organizations, intake, custody, foster, reunification, adoption and welfare.', icon: HeartHandshake, tab: 'sprint18', accent: 'peach' },
       { id: 'passport', title: 'Identity & History', description: 'Pet identity reconciliation, documents and provenance.', icon: FileText, tab: 'sprint4', accent: 'blue' },
       { id: 'health', title: 'Veterinary Records', description: 'Clinical records and restricted health access.', icon: Stethoscope, tab: 'sprint5', accent: 'peach' },
@@ -291,6 +295,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'engagement', title: 'Engagement & Platform Intelligence', description: 'Meaningful adoption, activation funnels, workflow continuity and privacy-safe product intelligence.', icon: Activity, tab: 'sprint33', accent: 'violet' },
       { id: 'security', title: 'Security, Privacy & Compliance', description: 'Step-up controls, privacy rights, retention, incident response and compliance evidence.', icon: ShieldCheck, tab: 'sprint34', accent: 'sage' },
       { id: 'resilience', title: 'Resilience, Performance & DR', description: 'Circuit breakers, graceful degradation, recovery objectives, restore drills and performance budgets.', icon: Database, tab: 'sprint35', accent: 'blue' },
+      { id: 'certification', title: 'Full-System Certification', description: 'Cross-role E2E journeys, release gates and prototype certification across every Pet OS side.', icon: ShieldCheck, tab: 'sprint36', accent: 'sage' },
       { id: 'commerce', title: 'Seller Operations', description: 'Seller onboarding, products, listings, inventory, orders, returns and trust.', icon: Store, tab: 'sprint27', accent: 'amber' },
       { id: 'finance', title: 'Marketplace Finance', description: 'Commissions, seller earnings, refunds, holds and payouts.', icon: CircleDollarSign, tab: 'sprint12', accent: 'sage' },
       { id: 'reviews', title: 'Reputation Boundary', description: 'Provider/service reviews remain distinct from commerce product trust.', icon: Star, tab: 'sprint23', accent: 'violet' },
@@ -325,6 +330,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'engagement', title: 'Engagement & Platform Intelligence', description: 'Meaningful adoption, activation funnels, workflow continuity and privacy-safe product intelligence.', icon: Activity, tab: 'sprint33', accent: 'violet' },
       { id: 'security', title: 'Security, Privacy & Compliance', description: 'Step-up controls, privacy rights, retention, incident response and compliance evidence.', icon: ShieldCheck, tab: 'sprint34', accent: 'sage' },
       { id: 'resilience', title: 'Resilience, Performance & DR', description: 'Circuit breakers, graceful degradation, recovery objectives, restore drills and performance budgets.', icon: Database, tab: 'sprint35', accent: 'blue' },
+      { id: 'certification', title: 'Full-System Certification', description: 'Cross-role E2E journeys, release gates and prototype certification across every Pet OS side.', icon: ShieldCheck, tab: 'sprint36', accent: 'sage' },
       { id: 'finance', title: 'Payments, Ledger & Payouts', description: 'Payment intents, journals, commissions, refunds, earnings and payouts.', icon: Receipt, tab: 'sprint12', accent: 'sage' },
       { id: 'consumer-sub', title: 'Consumer Billing', description: 'Pet-parent subscriptions, entitlements, trials, grace and renewal.', icon: CreditCard, tab: 'sprint24', accent: 'amber' },
       { id: 'tracker-sub', title: 'Tracker Billing', description: 'Device plans, connectivity service and renewal state.', icon: Radio, tab: 'sprint25', accent: 'blue' },
@@ -360,6 +366,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'engagement', title: 'Engagement & Platform Intelligence', description: 'Meaningful adoption, activation funnels, workflow continuity and privacy-safe product intelligence.', icon: Activity, tab: 'sprint33', accent: 'violet' },
       { id: 'security', title: 'Security, Privacy & Compliance', description: 'Step-up controls, privacy rights, retention, incident response and compliance evidence.', icon: ShieldCheck, tab: 'sprint34', accent: 'sage' },
       { id: 'resilience', title: 'Resilience, Performance & DR', description: 'Circuit breakers, graceful degradation, recovery objectives, restore drills and performance budgets.', icon: Database, tab: 'sprint35', accent: 'blue' },
+      { id: 'certification', title: 'Full-System Certification', description: 'Cross-role E2E journeys, release gates and prototype certification across every Pet OS side.', icon: ShieldCheck, tab: 'sprint36', accent: 'sage' },
       { id: 'provider', title: 'Provider Verification', description: 'Professional/business verification and service eligibility.', icon: UserRoundCheck, tab: 'sprint10', accent: 'blue' },
       { id: 'reviews', title: 'Reviews & Moderation', description: 'Reports, disputes, appeals, abuse signals and reputation integrity.', icon: Star, tab: 'sprint23', accent: 'amber' },
       { id: 'community', title: 'Community Safety', description: 'Community moderation, blocking, reporting and recovery distribution.', icon: Users, tab: 'sprint16', accent: 'violet' },
@@ -399,6 +406,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'engagement', title: 'Engagement & Platform Intelligence', description: 'Meaningful adoption, activation funnels, workflow continuity and privacy-safe product intelligence.', icon: Activity, tab: 'sprint33', accent: 'violet' },
       { id: 'security', title: 'Security, Privacy & Compliance', description: 'Step-up controls, privacy rights, retention, incident response and compliance evidence.', icon: ShieldCheck, tab: 'sprint34', accent: 'sage' },
       { id: 'resilience', title: 'Resilience, Performance & DR', description: 'Circuit breakers, graceful degradation, recovery objectives, restore drills and performance budgets.', icon: Database, tab: 'sprint35', accent: 'blue' },
+      { id: 'certification', title: 'Full-System Certification', description: 'Cross-role E2E journeys, release gates and prototype certification across every Pet OS side.', icon: ShieldCheck, tab: 'sprint36', accent: 'sage' },
       { id: 'ai-platform', title: 'Pet Intelligence & AI', description: 'Assistant, recommendations, safety, models, consent and evaluations.', icon: Sparkles, tab: 'sprint28', accent: 'violet' },
       { id: 'action-orchestration', title: 'AI Action Orchestration', description: 'AI proposes; Pet OS previews, confirms, authorizes and executes through domain commands.', icon: Workflow, tab: 'sprint29', accent: 'sage' },
       { id: 'health-source', title: 'Clinical Source Context', description: 'Review the canonical health records AI is permitted to summarize.', icon: HeartPulse, tab: 'sprint5', accent: 'peach' },
@@ -436,6 +444,7 @@ const workspaces: WorkspaceDef[] = [
       { id: 'engagement', title: 'Engagement & Platform Intelligence', description: 'Meaningful adoption, activation funnels, workflow continuity and privacy-safe product intelligence.', icon: Activity, tab: 'sprint33', accent: 'violet' },
       { id: 'security', title: 'Security, Privacy & Compliance', description: 'Step-up controls, privacy rights, retention, incident response and compliance evidence.', icon: ShieldCheck, tab: 'sprint34', accent: 'sage' },
       { id: 'resilience', title: 'Resilience, Performance & DR', description: 'Circuit breakers, graceful degradation, recovery objectives, restore drills and performance budgets.', icon: Database, tab: 'sprint35', accent: 'blue' },
+      { id: 'certification', title: 'Full-System Certification', description: 'Cross-role E2E journeys, release gates and prototype certification across every Pet OS side.', icon: ShieldCheck, tab: 'sprint36', accent: 'sage' },
       { id: 'foundation', title: 'Engineering Foundation', description: 'Repository baseline, build, testing and architecture overview.', icon: Activity, tab: 'overview', accent: 'blue' },
       { id: 'identity', title: 'Identity & Access', description: 'Authentication, households, memberships and authorization.', icon: Users, tab: 'identity', accent: 'sage' },
       { id: 'kernel', title: 'Shared Kernel', description: 'Canonical IDs, event envelope and shared technical primitives.', icon: Database, tab: 'kernel', accent: 'blue' },
@@ -747,7 +756,7 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({
                 <span className="rounded-full bg-[#F0F3F0] px-3 py-1 text-xs font-semibold text-[#68746E]">{workspace.modules.length} modules</span>
               </div>
               <p className="mt-2 text-sm leading-6 text-[#7E8983]">
-                The product shell gives each side of Pet OS a clear home. Open any module to access the full operational implementation already built through Sprint 35.
+                The product shell gives each side of Pet OS a clear home. Open any module to access the full operational implementation already built through Sprint 36.
               </p>
             </section>
 
@@ -756,11 +765,11 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-[#6656A2] shadow-sm"><Sparkles className="h-5 w-5" /></span>
                 <div>
                   <p className="text-sm font-semibold text-[#26362E]">Pet OS intelligence</p>
-                  <p className="text-xs text-[#7E8983]">Sprint 35 active</p>
+                  <p className="text-xs text-[#7E8983]">Sprint 36 active</p>
                 </div>
               </div>
               <p className="mt-4 text-sm leading-6 text-[#61716A]">
-                Sprint 35 adds safe degradation, bounded recovery behavior, disaster-recovery objectives and measurable performance budgets across every side of Pet OS.
+                Sprint 36 certifies cross-role journeys, tenant isolation, canonical finance continuity and release gates across all nine Pet OS workspaces.
               </p>
             </section>
           </div>
@@ -772,7 +781,7 @@ export const UnifiedPetOSExperience: React.FC<UnifiedPetOSExperienceProps> = ({
                 <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#223129]">Open a domain</h2>
               </div>
               {workspace.id === 'platform' && (
-                <span className="hidden rounded-full bg-[#EEF1F5] px-3 py-1 text-xs font-semibold text-[#667381] sm:inline">Sprint 1–35 coverage</span>
+                <span className="hidden rounded-full bg-[#EEF1F5] px-3 py-1 text-xs font-semibold text-[#667381] sm:inline">Sprint 1–36 coverage</span>
               )}
             </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
