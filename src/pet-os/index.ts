@@ -41,3 +41,4 @@ export * from './certification';
 export * from './readiness';
 export * from './backend-foundation';
 export * from './migration-wave2';
+export * from './migration-wave3';
