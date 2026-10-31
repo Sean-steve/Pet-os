@@ -43,10 +43,15 @@ const implemented: BackendFoundationCapability[] = [
     status: 'IMPLEMENTED',
     evidence: ['CI runs migrations and HTTP integration tests against PostgreSQL and Redis services'],
   },
+  {
+    id: 'BFD-08',
+    title: 'Wave 2 longitudinal care-domain persistence',
+    status: 'IMPLEMENTED',
+    evidence: ['Health, Care, Nutrition, Training and Activity have separate PostgreSQL stores, authenticated APIs, RLS, idempotency, outbox and revision controls'],
+  },
 ];
 
 const remaining: BackendFoundationCapability[] = [
-  { id: 'BFD-NEXT-01', title: 'Health, Care, Nutrition, Training and Activity persistence', status: 'NEXT_MIGRATION', evidence: ['still backed by prototype stores'] },
   { id: 'BFD-NEXT-02', title: 'Provider, Booking and Professional Care persistence', status: 'NEXT_MIGRATION', evidence: ['still backed by prototype stores'] },
   { id: 'BFD-NEXT-03', title: 'Finance ledger and production payment reconciliation', status: 'NEXT_MIGRATION', evidence: ['prototype finance remains non-production money movement'] },
   { id: 'BFD-NEXT-04', title: 'Tracking, Transport and Recovery durable event ingestion', status: 'NEXT_MIGRATION', evidence: ['device/location runtime is not yet production-backed'] },
@@ -58,7 +63,7 @@ const remaining: BackendFoundationCapability[] = [
 
 const migrationWaves: DomainMigrationWave[] = [
   { wave: 1, domains: ['Identity', 'Household', 'Pet Core'], objective: 'Establish durable tenant, API and aggregate foundations.', status: 'FOUNDATION_COMPLETE' },
-  { wave: 2, domains: ['Health', 'Care', 'Nutrition', 'Training', 'Activity'], objective: 'Migrate longitudinal Pet care data and provenance.', status: 'PENDING' },
+  { wave: 2, domains: ['Health', 'Care', 'Nutrition', 'Training', 'Activity'], objective: 'Migrate longitudinal Pet care data and provenance.', status: 'DURABLE_BACKEND_COMPLETE' },
   { wave: 3, domains: ['Provider', 'Booking', 'Professional Care', 'Reviews'], objective: 'Move professional service lifecycle to durable server authority.', status: 'PENDING' },
   { wave: 4, domains: ['Finance', 'Subscriptions', 'Provider SaaS'], objective: 'Establish production-grade ledger, billing and reconciliation.', status: 'PENDING' },
   { wave: 5, domains: ['Tracking', 'Transport', 'Recovery', 'Community'], objective: 'Migrate high-volume event/location and recovery workflows.', status: 'PENDING' },
