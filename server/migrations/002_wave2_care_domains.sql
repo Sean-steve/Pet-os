@@ -139,7 +139,8 @@ CREATE TABLE IF NOT EXISTS pet_domain_record_revisions (
 CREATE INDEX IF NOT EXISTS idx_domain_revisions_record ON pet_domain_record_revisions(domain, record_id, created_at DESC);
 
 GRANT EXECUTE ON FUNCTION petos_can_access_pet(text, text, text, boolean) TO petos_app;
-GRANT SELECT, INSERT, UPDATE ON health_records, care_records, nutrition_records, training_records, activity_records TO petos_app;
+GRANT SELECT, INSERT ON health_records TO petos_app;
+GRANT SELECT, INSERT, UPDATE ON care_records, nutrition_records, training_records, activity_records TO petos_app;
 GRANT SELECT, INSERT ON pet_domain_record_revisions TO petos_app;
 
 ALTER TABLE health_records ENABLE ROW LEVEL SECURITY;
@@ -159,9 +160,6 @@ CREATE POLICY health_record_insert ON health_records FOR INSERT
     AND petos_can_access_pet(pet_id, household_id, current_setting('app.user_id', true), true)
   );
 DROP POLICY IF EXISTS health_record_update ON health_records;
-CREATE POLICY health_record_update ON health_records FOR UPDATE
-  USING (petos_can_access_pet(pet_id, household_id, current_setting('app.user_id', true), true))
-  WITH CHECK (petos_can_access_pet(pet_id, household_id, current_setting('app.user_id', true), true));
 
 DROP POLICY IF EXISTS care_record_read ON care_records;
 CREATE POLICY care_record_read ON care_records FOR SELECT
