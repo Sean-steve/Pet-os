@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShieldCheck, Database, Layers, BookOpen, Terminal, Sparkles, Activity, Users, Dog, Clock, Shield, Stethoscope, CalendarCheck, Utensils, GraduationCap, Footprints, Briefcase, Receipt, Scale, Radio, AlertOctagon, HeartHandshake, Scissors, Truck, Star, CreditCard, ShoppingBag } from 'lucide-react';
 
-export type TabType = 'sprint39' | 'sprint38' | 'sprint37' | 'sprint36' | 'sprint35' | 'sprint34' | 'sprint33' | 'sprint32' | 'sprint31' | 'sprint30' | 'sprint29' | 'sprint28' | 'sprint27' | 'sprint26' | 'sprint25' | 'sprint24' | 'sprint23' | 'sprint22' | 'sprint21' | 'sprint20' | 'sprint19' | 'sprint18' | 'sprint17' | 'sprint16' | 'sprint15' | 'sprint14' | 'sprint13' | 'sprint12' | 'sprint11' | 'sprint10' | 'sprint9' | 'sprint8' | 'sprint7' | 'sprint6' | 'sprint5' | 'sprint4' | 'sprint3' | 'identity' | 'overview' | 'kernel' | 'documentation' | 'adrs' | 'sprint2';
+export type TabType = 'sprint40' | 'sprint39' | 'sprint38' | 'sprint37' | 'sprint36' | 'sprint35' | 'sprint34' | 'sprint33' | 'sprint32' | 'sprint31' | 'sprint30' | 'sprint29' | 'sprint28' | 'sprint27' | 'sprint26' | 'sprint25' | 'sprint24' | 'sprint23' | 'sprint22' | 'sprint21' | 'sprint20' | 'sprint19' | 'sprint18' | 'sprint17' | 'sprint16' | 'sprint15' | 'sprint14' | 'sprint13' | 'sprint12' | 'sprint11' | 'sprint10' | 'sprint9' | 'sprint8' | 'sprint7' | 'sprint6' | 'sprint5' | 'sprint4' | 'sprint3' | 'identity' | 'overview' | 'kernel' | 'documentation' | 'adrs' | 'sprint2';
 
 interface HeaderProps {
   activeTab: TabType;
@@ -20,14 +20,14 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-lg text-[#F8FAFC] tracking-tight">Pet OS</span>
-                <span className="text-[#64748B] font-mono text-xs hidden sm:inline">Kernel v0.39.0-sprint39</span>
+                <span className="text-[#64748B] font-mono text-xs hidden sm:inline">Kernel v0.40.0-sprint40</span>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)] mr-1.5 animate-pulse"></span>
-                  Sprint 39 Active
+                  Sprint 40 Active
                 </span>
               </div>
               <p className="text-[10px] uppercase tracking-widest text-[#475569] font-bold hidden sm:block">
-                Migration Wave 2 · Health · Care · Nutrition · Training · Activity
+                Migration Wave 3 · Provider · Booking · Professional Care · Reviews
               </p>
             </div>
           </div>
