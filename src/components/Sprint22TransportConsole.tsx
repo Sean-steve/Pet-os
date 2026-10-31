@@ -63,9 +63,10 @@ const getTransportEventTimestamp = (event: TransportEvent): string => {
 };
 
 const getTransportEventReference = (event: TransportEvent): string => {
+  const eventId = event.eventId;
   if ('tripId' in event) return String(event.tripId);
   if ('bookingId' in event) return String(event.bookingId);
-  return event.eventId;
+  return eventId;
 };
 
 export const Sprint22TransportConsole: React.FC = () => {
