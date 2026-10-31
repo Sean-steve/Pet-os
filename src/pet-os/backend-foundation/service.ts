@@ -49,10 +49,15 @@ const implemented: BackendFoundationCapability[] = [
     status: 'IMPLEMENTED',
     evidence: ['Health, Care, Nutrition, Training and Activity have separate PostgreSQL stores, authenticated APIs, RLS, idempotency, outbox and revision controls'],
   },
+  {
+    id: 'BFD-09',
+    title: 'Wave 3 professional service lifecycle persistence',
+    status: 'IMPLEMENTED',
+    evidence: ['Provider, Booking, Professional Care and Reviews have relational PostgreSQL authority, cross-party authorization, idempotency, lifecycle revisions and outbox continuity'],
+  },
 ];
 
 const remaining: BackendFoundationCapability[] = [
-  { id: 'BFD-NEXT-02', title: 'Provider, Booking and Professional Care persistence', status: 'NEXT_MIGRATION', evidence: ['still backed by prototype stores'] },
   { id: 'BFD-NEXT-03', title: 'Finance ledger and production payment reconciliation', status: 'NEXT_MIGRATION', evidence: ['prototype finance remains non-production money movement'] },
   { id: 'BFD-NEXT-04', title: 'Tracking, Transport and Recovery durable event ingestion', status: 'NEXT_MIGRATION', evidence: ['device/location runtime is not yet production-backed'] },
   { id: 'BFD-NEXT-05', title: 'Commerce, subscriptions and Provider SaaS persistence', status: 'NEXT_MIGRATION', evidence: ['commercial bounded contexts remain prototype stores'] },
@@ -64,7 +69,7 @@ const remaining: BackendFoundationCapability[] = [
 const migrationWaves: DomainMigrationWave[] = [
   { wave: 1, domains: ['Identity', 'Household', 'Pet Core'], objective: 'Establish durable tenant, API and aggregate foundations.', status: 'FOUNDATION_COMPLETE' },
   { wave: 2, domains: ['Health', 'Care', 'Nutrition', 'Training', 'Activity'], objective: 'Migrate longitudinal Pet care data and provenance.', status: 'DURABLE_BACKEND_COMPLETE' },
-  { wave: 3, domains: ['Provider', 'Booking', 'Professional Care', 'Reviews'], objective: 'Move professional service lifecycle to durable server authority.', status: 'PENDING' },
+  { wave: 3, domains: ['Provider', 'Booking', 'Professional Care', 'Reviews'], objective: 'Move professional service lifecycle to durable server authority.', status: 'DURABLE_BACKEND_COMPLETE' },
   { wave: 4, domains: ['Finance', 'Subscriptions', 'Provider SaaS'], objective: 'Establish production-grade ledger, billing and reconciliation.', status: 'PENDING' },
   { wave: 5, domains: ['Tracking', 'Transport', 'Recovery', 'Community'], objective: 'Migrate high-volume event/location and recovery workflows.', status: 'PENDING' },
   { wave: 6, domains: ['Commerce', 'Integrations', 'AI', 'Automation', 'Analytics'], objective: 'Complete commercial, integration and intelligence backend migration.', status: 'PENDING' },
