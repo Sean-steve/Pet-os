@@ -28,7 +28,8 @@ async function seed() {
   await db.query(
     `INSERT INTO users (user_id, normalized_email, account_status) VALUES
       ('usr-int-owner','owner@integration.test','ACTIVE'),
-      ('usr-int-outsider','outsider@integration.test','ACTIVE')`,
+      ('usr-int-outsider','outsider@integration.test','ACTIVE'),
+      ('usr-int-suspended','suspended@integration.test','SUSPENDED')`,
   );
   await db.query(
     `INSERT INTO households (household_id, name, owner_user_id, status)
@@ -59,6 +60,7 @@ async function main() {
   const base = `http://127.0.0.1:${port}`;
   const ownerToken = await token('usr-int-owner');
   const outsiderToken = await token('usr-int-outsider');
+  const suspendedToken = await token('usr-int-suspended');
 
   try {
     let response = await request(base, '/health/ready');
@@ -69,6 +71,9 @@ async function main() {
 
     response = await request(base, '/v1/me/households', 'not-a-token');
     assert.equal(response.status, 401);
+
+    response = await request(base, '/v1/me/households', suspendedToken);
+    assert.equal(response.status, 403);
 
     response = await request(base, '/v1/me/households', ownerToken);
     assert.equal(response.status, 200);
@@ -114,6 +119,19 @@ async function main() {
     assert.equal(payload.replayed, true);
     assert.equal(payload.pet.petId, petId);
 
+    response = await request(base, '/v1/households/hh-int-owner/pets', ownerToken, {
+      method: 'POST',
+      headers: { 'idempotency-key': 'pet-create-integration-1' },
+      body: JSON.stringify({
+        name: 'Different Pet',
+        speciesCode: 'SPECIES_CAT',
+        breedCode: 'BREED_UNKNOWN',
+        primaryColor: 'White',
+        sex: 'FEMALE',
+      }),
+    });
+    assert.equal(response.status, 409);
+
     response = await request(base, '/v1/households/hh-int-owner/pets', ownerToken);
     assert.equal(response.status, 200);
     payload = await response.json();
@@ -137,11 +155,11 @@ async function main() {
 
     console.log('BACKEND-INTEGRATION: PASS');
     console.log('PostgreSQL persistence: PASS');
-    console.log('JWT authentication: PASS');
+    console.log('JWT authentication + active-account enforcement: PASS');
     console.log('Cross-tenant API denial: PASS');
     console.log('PostgreSQL RLS foreign-tenant denial: PASS');
     console.log('Redis readiness/rate-limit backend: PASS');
-    console.log('Transactional outbox + idempotency: PASS');
+    console.log('Transactional outbox + payload-bound idempotency: PASS');
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await Promise.allSettled([closeDatabase(), closeRedis()]);
