@@ -578,7 +578,8 @@ GRANT EXECUTE ON FUNCTION petos_recovery_accepting_sightings(text) TO petos_app;
 
 GRANT SELECT,UPDATE ON tracking_devices TO petos_app;
 GRANT SELECT,INSERT,UPDATE ON tracking_device_assignments,tracking_sessions TO petos_app;
-GRANT SELECT ON tracking_location_observations,tracking_live_locations,tracking_routes TO petos_app;
+GRANT SELECT ON tracking_location_observations,tracking_live_locations TO petos_app;
+GRANT SELECT,INSERT,UPDATE ON tracking_routes TO petos_app;
 
 GRANT SELECT,INSERT,UPDATE ON transport_driver_profiles,transport_vehicles TO petos_app;
 GRANT SELECT,INSERT,UPDATE ON transport_trips,transport_trip_pets,transport_stops,transport_incidents TO petos_app;
@@ -664,8 +665,16 @@ DROP POLICY IF EXISTS tracking_live_access ON tracking_live_locations;
 CREATE POLICY tracking_live_access ON tracking_live_locations FOR SELECT
  USING (petos_can_access_tracking_pet(pet_id,current_setting('app.user_id',true)));
 DROP POLICY IF EXISTS tracking_route_access ON tracking_routes;
-CREATE POLICY tracking_route_access ON tracking_routes FOR SELECT
+DROP POLICY IF EXISTS tracking_route_read ON tracking_routes;
+DROP POLICY IF EXISTS tracking_route_insert ON tracking_routes;
+DROP POLICY IF EXISTS tracking_route_update ON tracking_routes;
+CREATE POLICY tracking_route_read ON tracking_routes FOR SELECT
  USING (petos_can_access_tracking_pet(pet_id,current_setting('app.user_id',true)));
+CREATE POLICY tracking_route_insert ON tracking_routes FOR INSERT
+ WITH CHECK (petos_can_manage_tracking_pet(pet_id,current_setting('app.user_id',true)));
+CREATE POLICY tracking_route_update ON tracking_routes FOR UPDATE
+ USING (petos_can_manage_tracking_pet(pet_id,current_setting('app.user_id',true)))
+ WITH CHECK (petos_can_manage_tracking_pet(pet_id,current_setting('app.user_id',true)));
 
 DROP POLICY IF EXISTS transport_driver_access ON transport_driver_profiles;
 DROP POLICY IF EXISTS transport_driver_read ON transport_driver_profiles;
