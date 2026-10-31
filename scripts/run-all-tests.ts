@@ -264,6 +264,13 @@ async function main() {
         return BackendFoundationTestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 39 (Migration Wave 2 — Durable Care Domains)',
+      runner: async () => {
+        const { MigrationWave2TestSuite } = await import('../src/pet-os/migration-wave2/tests');
+        return MigrationWave2TestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -297,7 +304,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 36 REGRESSION SUITES (SPRINTS 2-38; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 37 REGRESSION SUITES (SPRINTS 2-39; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 
