@@ -43,7 +43,12 @@ export async function createEngagementFromBooking(client:PoolClient,input:{
   const b=bookingResult.rows[0];
   if(!['CONFIRMED','IN_PROGRESS'].includes(b.status)) throw Object.assign(new Error('CARE_ENGAGEMENT_REQUIRES_CONFIRMED_BOOKING'),{statusCode:409});
   await assertProviderActor(client,b.provider_id,input.actorUserId,b.business_id||undefined,input.assignedStaffId);
-  if(b.business_id && input.assignedStaffId!==input.actorUserId){
+  const providerActor=await client.query(`SELECT user_id FROM provider_profiles WHERE provider_id=$1 LIMIT 1`,[b.provider_id]);
+  const providerUserId=String(providerActor.rows[0]?.user_id||'');
+  if(!b.business_id && input.assignedStaffId!==providerUserId){
+    throw Object.assign(new Error('PERSONAL_PROVIDER_MUST_SELF_ASSIGN'),{statusCode:409});
+  }
+  if(b.business_id && input.assignedStaffId!==providerUserId){
     const staff=await client.query(`SELECT 1 FROM business_memberships WHERE business_id=$1 AND user_id=$2 AND is_active LIMIT 1`,[b.business_id,input.assignedStaffId]);
     if(!staff.rowCount) throw Object.assign(new Error('ASSIGNED_STAFF_NOT_IN_BUSINESS'),{statusCode:409});
   }
