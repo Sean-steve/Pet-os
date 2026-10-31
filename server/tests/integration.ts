@@ -4,7 +4,7 @@ import type { AddressInfo } from 'node:net';
 import { SignJWT } from 'jose';
 import { createApp } from '../app';
 import { loadServerConfig } from '../config';
-import { closeDatabase, getDatabase } from '../db';
+import { closeDatabase, getDatabase, withTenantTransaction } from '../db';
 import { closeRedis, getRedis } from '../redis';
 import { runMigrations } from '../migrate';
 
@@ -72,6 +72,7 @@ async function main() {
 
     response = await request(base, '/v1/me/households', ownerToken);
     assert.equal(response.status, 200);
+    assert.equal(response.headers.get('x-ratelimit-limit'), String(config.rateLimitPerMinute));
     let payload: any = await response.json();
     assert.equal(payload.households.length, 1);
     assert.equal(payload.households[0].householdId, 'hh-int-owner');
@@ -119,6 +120,11 @@ async function main() {
     assert.equal(payload.pets.length, 1);
     assert.equal(payload.pets[0].petId, petId);
 
+    const rlsForeignRead = await withTenantTransaction(config, 'usr-int-outsider', 'hh-int-owner', (client) =>
+      client.query(`SELECT pet_id FROM pets WHERE household_id = $1`, ['hh-int-owner']),
+    );
+    assert.equal(rlsForeignRead.rowCount, 0);
+
     const outbox = await db.query(`SELECT event_type, aggregate_id FROM outbox_events WHERE aggregate_id = $1`, [petId]);
     assert.equal(outbox.rowCount, 1);
     assert.equal(outbox.rows[0].event_type, 'PetRegistered');
@@ -132,7 +138,8 @@ async function main() {
     console.log('BACKEND-INTEGRATION: PASS');
     console.log('PostgreSQL persistence: PASS');
     console.log('JWT authentication: PASS');
-    console.log('Cross-tenant denial: PASS');
+    console.log('Cross-tenant API denial: PASS');
+    console.log('PostgreSQL RLS foreign-tenant denial: PASS');
     console.log('Redis readiness/rate-limit backend: PASS');
     console.log('Transactional outbox + idempotency: PASS');
   } finally {
