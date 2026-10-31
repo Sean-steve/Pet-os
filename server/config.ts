@@ -12,6 +12,7 @@ export interface ServerConfig {
   authJwtSecret?: string;
   authJwksUrl?: string;
   rateLimitPerMinute: number;
+  billingAdapterSecret: string;
 }
 
 function requireValue(name: string): string {
@@ -45,6 +46,9 @@ export function loadServerConfig(): ServerConfig {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+  const billingAdapterSecret = requireValue('BILLING_ADAPTER_SECRET');
+  if (Buffer.byteLength(billingAdapterSecret) < 32) throw new Error('BILLING_ADAPTER_SECRET must be at least 32 bytes');
+
   return {
     nodeEnv,
     port: parsePositiveInt('API_PORT', 3001),
@@ -57,5 +61,6 @@ export function loadServerConfig(): ServerConfig {
     authJwtSecret,
     authJwksUrl,
     rateLimitPerMinute: parsePositiveInt('RATE_LIMIT_PER_MINUTE', 120),
+    billingAdapterSecret,
   };
 }
