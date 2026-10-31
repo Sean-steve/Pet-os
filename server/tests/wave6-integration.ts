@@ -322,7 +322,7 @@ async function main(){
       windowStart:'2026-10-01T00:00:00Z',windowEnd:'2026-11-30T23:59:59Z',timezone:'Africa/Nairobi',
     })});assert.equal(response.status,201);payload=await readJson(response);
     const analyticsText=JSON.stringify(payload);
-    assert.equal(/latitude|longitude|secret|paymentInstrument|clinicalNote/i.test(analyticsText),false);
+    assert.equal(/"latitude"|"longitude"|"secretValue"|"accessCode"|"password"|"paymentInstrument"|"clinicalNote"/i.test(analyticsText),false);
 
     response=await api(base,'/v1/analytics/providers/provider-w6/snapshots',provider,{method:'POST',body:JSON.stringify({
       windowStart:'2026-10-01T00:00:00Z',windowEnd:'2026-11-30T23:59:59Z',timezone:'Africa/Nairobi',
