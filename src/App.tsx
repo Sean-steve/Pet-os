@@ -1,7 +1,6 @@
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import type { TabType } from './components/Header';
 import { UnifiedPetOSExperience } from './components/UnifiedPetOSExperience';
-import { seedUnifiedPetOS } from './pet-os/seed/unified-seed';
 
 const lazyNamed = (loader: () => Promise<any>, exportName: string) =>
   React.lazy(async () => ({ default: (await loader())[exportName] as React.ComponentType<any> }));
@@ -58,10 +57,23 @@ const ModuleLoading = () => (
 
 export default function App() {
   const [activeModule, setActiveModule] = useState<TabType | null>(null);
+  const seedPromiseRef = useRef<Promise<void> | null>(null);
+
+  const ensureSeeded = useCallback(() => {
+    if (!seedPromiseRef.current) {
+      seedPromiseRef.current = import('./pet-os/seed/unified-seed').then(({ seedUnifiedPetOS }) => seedUnifiedPetOS());
+    }
+    return seedPromiseRef.current;
+  }, []);
 
   useEffect(() => {
-    seedUnifiedPetOS();
-  }, []);
+    const timer = window.setTimeout(() => { void ensureSeeded(); }, 250);
+    return () => window.clearTimeout(timer);
+  }, [ensureSeeded]);
+
+  const openModule = (tab: TabType) => {
+    void ensureSeeded().then(() => setActiveModule(tab));
+  };
 
   const renderModule = (tab: TabType): React.ReactNode => {
     let content: React.ReactNode;
@@ -122,7 +134,7 @@ export default function App() {
   return (
     <UnifiedPetOSExperience
       activeModule={activeModule}
-      onOpenModule={setActiveModule}
+      onOpenModule={openModule}
       onCloseModule={() => setActiveModule(null)}
       renderModule={renderModule}
     />
