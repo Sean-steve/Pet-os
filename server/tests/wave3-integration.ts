@@ -335,6 +335,13 @@ async function main() {
     });
     assert.equal(response.status, 200);
 
+    response = await request(base, `/v1/bookings/${bookingId}/transitions`, providerToken, {
+      method: 'POST',
+      headers: { 'idempotency-key': 'w3-booking-premature-complete' },
+      body: JSON.stringify({ expectedVersion: 3, nextStatus: 'COMPLETED', reason: 'Must fail before care completion' }),
+    });
+    assert.equal(response.status, 409, 'Booking cannot complete before linked Professional Care completes');
+
     const remainingCareTransitions = [
       ['RETURN_PENDING', 'RETURN_PENDING'],
       ['COMPLETION_PENDING', 'RETURNED'],
@@ -389,7 +396,7 @@ async function main() {
         publicIdentityMode: 'ANONYMOUS_TO_PUBLIC',
       }),
     });
-    assert.equal(response.status, 403);
+    assert.equal(response.status, 404, 'Hidden review eligibility must not be disclosed to unrelated users');
 
     response = await request(base, '/v1/reviews', ownerToken, {
       method: 'POST',
@@ -446,15 +453,12 @@ async function main() {
     }
 
     // Provider cannot change a customer's published review.
-    let providerReviewMutationDenied = false;
-    try {
-      await withTenantTransaction(config, 'usr-w3-provider', undefined, (client) =>
-        client.query(`UPDATE reviews SET overall_rating = 1 WHERE review_id = $1`, [reviewId]),
-      );
-    } catch {
-      providerReviewMutationDenied = true;
-    }
-    assert.equal(providerReviewMutationDenied, true);
+    const providerMutation = await withTenantTransaction(config, 'usr-w3-provider', undefined, (client) =>
+      client.query(`UPDATE reviews SET overall_rating = 1 WHERE review_id = $1`, [reviewId]),
+    );
+    assert.equal(providerMutation.rowCount, 0);
+    const ratingAfterProviderAttempt = await db.query(`SELECT overall_rating FROM reviews WHERE review_id = $1`, [reviewId]);
+    assert.equal(Number(ratingAfterProviderAttempt.rows[0].overall_rating), 5);
 
     const bookingRevisions = await db.query('SELECT prior_version,new_version FROM booking_revisions WHERE booking_id=$1 ORDER BY new_version', [bookingId]);
     assert.equal(bookingRevisions.rowCount, 3);
