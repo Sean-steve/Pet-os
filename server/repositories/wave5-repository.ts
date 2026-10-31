@@ -511,6 +511,11 @@ export async function createTransportTrip(client:PoolClient,input:{
   if(!booking.business_id) throw httpError('TRANSPORT_REQUIRES_SERVICE_BUSINESS',409);
   if(!['CONFIRMED','IN_PROGRESS'].includes(String(booking.status))) throw httpError('TRANSPORT_BOOKING_STATUS_INVALID',409);
   if(input.stops.length<2) throw httpError('TRANSPORT_REQUIRES_PICKUP_AND_DROPOFF',400);
+  for(const stop of input.stops){
+    if(stop.exactAddressCiphertext && !/^(enc:|vault:)/.test(stop.exactAddressCiphertext)){
+      throw httpError('TRANSPORT_EXACT_ADDRESS_MUST_BE_ENCRYPTED_REFERENCE',400);
+    }
+  }
   const scope=`transport:trip:create:${input.bookingId}`;
   const requestFingerprint=fingerprint(input);
   const prior=await client.query(`SELECT request_fingerprint,response_body FROM idempotency_records WHERE actor_user_id=$1 AND scope=$2 AND idempotency_key=$3`,[input.actorUserId,scope,input.idempotencyKey]);
@@ -552,7 +557,6 @@ export async function createTransportTrip(client:PoolClient,input:{
     );
   }
   for(const stop of input.stops){
-    if(stop.exactAddressCiphertext && !/^(enc:|vault:)/.test(stop.exactAddressCiphertext)) throw httpError('TRANSPORT_EXACT_ADDRESS_MUST_BE_ENCRYPTED_REFERENCE',400);
     await client.query(
       `INSERT INTO transport_stops(stop_id,trip_id,sequence,stop_type,title,address_public_snippet,exact_address_ciphertext,scheduled_arrival,
         recipient_contact_name,recipient_contact_phone_masked,status,pet_ids_boarding,pet_ids_exiting,required_actions)
