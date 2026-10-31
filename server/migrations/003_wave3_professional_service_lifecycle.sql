@@ -453,7 +453,8 @@ CREATE POLICY offering_update ON provider_service_offerings FOR UPDATE
 
 DROP POLICY IF EXISTS booking_read ON bookings;
 CREATE POLICY booking_read ON bookings FOR SELECT USING (
-  petos_can_access_booking(booking_id, current_setting('app.user_id', true))
+  owner_user_id = current_setting('app.user_id', true)
+  OR petos_can_access_booking(booking_id, current_setting('app.user_id', true))
 );
 DROP POLICY IF EXISTS booking_insert ON bookings;
 CREATE POLICY booking_insert ON bookings FOR INSERT WITH CHECK (
