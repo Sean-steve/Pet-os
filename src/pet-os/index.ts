@@ -39,3 +39,4 @@ export * from './security';
 export * from './resilience';
 export * from './certification';
 export * from './readiness';
+export * from './backend-foundation';
