@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS commerce_sellers (
   agreement_accepted_at timestamptz,
   standard_lead_time_hours integer NOT NULL DEFAULT 24 CHECK(standard_lead_time_hours>=0),
   is_first_party boolean NOT NULL DEFAULT false,
+  reviewed_at timestamptz,
+  reviewed_by text REFERENCES users(user_id) ON DELETE SET NULL,
   version integer NOT NULL DEFAULT 1 CHECK(version>0),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -295,9 +297,11 @@ CREATE TABLE IF NOT EXISTS integration_developer_apps (
   owner_user_id text NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
   name text NOT NULL,
   description text NOT NULL DEFAULT '',
+  app_type text NOT NULL DEFAULT 'THIRD_PARTY' CHECK(app_type IN ('FIRST_PARTY','THIRD_PARTY')),
   status text NOT NULL CHECK(status IN ('DRAFT','UNDER_REVIEW','ACTIVE','SUSPENDED','REVOKED')),
   requested_scopes jsonb NOT NULL DEFAULT '[]'::jsonb CHECK(jsonb_typeof(requested_scopes)='array'),
   approved_scopes jsonb NOT NULL DEFAULT '[]'::jsonb CHECK(jsonb_typeof(approved_scopes)='array'),
+  redirect_uris jsonb NOT NULL DEFAULT '[]'::jsonb CHECK(jsonb_typeof(redirect_uris)='array'),
   privacy_policy_url text,
   terms_url text,
   version integer NOT NULL DEFAULT 1 CHECK(version>0),
@@ -312,8 +316,11 @@ CREATE TABLE IF NOT EXISTS integration_installations (
   installed_by_user_id text NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
   granted_scopes jsonb NOT NULL CHECK(jsonb_typeof(granted_scopes)='array'),
   status text NOT NULL CHECK(status IN ('ACTIVE','SUSPENDED','REVOKED')),
+  consent_version text NOT NULL DEFAULT 'integration-consent-v1',
   installed_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
   revoked_at timestamptz,
+  revoked_by text REFERENCES users(user_id) ON DELETE SET NULL,
   UNIQUE(developer_app_id,household_id)
 );
 
@@ -323,6 +330,8 @@ CREATE TABLE IF NOT EXISTS integration_api_credentials (
   installation_id text NOT NULL REFERENCES integration_installations(installation_id) ON DELETE CASCADE,
   secret_prefix text NOT NULL,
   secret_hash text NOT NULL UNIQUE,
+  scopes jsonb NOT NULL DEFAULT '[]'::jsonb CHECK(jsonb_typeof(scopes)='array'),
+  rate_limit_per_minute integer NOT NULL DEFAULT 60 CHECK(rate_limit_per_minute BETWEEN 1 AND 1000),
   status text NOT NULL CHECK(status IN ('ACTIVE','ROTATED','REVOKED','EXPIRED')),
   expires_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -336,6 +345,7 @@ CREATE TABLE IF NOT EXISTS integration_webhook_subscriptions (
   event_types jsonb NOT NULL CHECK(jsonb_typeof(event_types)='array'),
   signing_secret_hash text NOT NULL,
   signing_secret_prefix text NOT NULL,
+  created_by text NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
   status text NOT NULL CHECK(status IN ('ACTIVE','PAUSED','REVOKED')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
