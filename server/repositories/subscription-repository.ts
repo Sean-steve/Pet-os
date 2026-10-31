@@ -23,7 +23,8 @@ async function writeConsumerEntitlements(client:PoolClient,subscription:any,plan
     if(mode==='SAFETY_ONLY'&&!SAFETY_ENTITLEMENTS.has(code)) continue;
     await client.query(
       `INSERT INTO subscription_entitlement_grants(grant_id,subscription_id,subject_type,subject_id,entitlement_code,value,source_type,valid_from,valid_until,status)
-       VALUES($1,$2,$3,$4,$5,$6::jsonb,$7,now(),$8,'ACTIVE')`,
+       VALUES($1,$2,$3,$4,$5,$6::jsonb,$7,now(),$8,'ACTIVE')
+       ON CONFLICT(subscription_id,entitlement_code) DO UPDATE SET value=EXCLUDED.value,source_type=EXCLUDED.source_type,valid_from=EXCLUDED.valid_from,valid_until=EXCLUDED.valid_until,status='ACTIVE'`,
       [`entitlement-grant-${generateUUIDv7()}`,subscription.subscription_id,subscription.owner_type,subscription.owner_id,code,JSON.stringify(value),
        mode==='SAFETY_ONLY'?'FREE_BASELINE':'CONSUMER_SUBSCRIPTION',subscription.current_period_end],
     );
@@ -165,7 +166,8 @@ async function writeProviderEntitlements(client:PoolClient,subscription:any,enti
   for(const key of entitlements){
     await client.query(
       `INSERT INTO provider_saas_entitlement_grants(grant_id,subscription_id,entitlement_key,valid_from,valid_until,status)
-       VALUES($1,$2,$3,now(),$4,'ACTIVE')`,
+       VALUES($1,$2,$3,now(),$4,'ACTIVE')
+       ON CONFLICT(subscription_id,entitlement_key) DO UPDATE SET valid_from=EXCLUDED.valid_from,valid_until=EXCLUDED.valid_until,status='ACTIVE'`,
       [`provider-entitlement-${generateUUIDv7()}`,subscription.subscription_id,key,subscription.current_period_end],
     );
   }
