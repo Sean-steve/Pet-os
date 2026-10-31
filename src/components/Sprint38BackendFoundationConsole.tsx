@@ -34,7 +34,7 @@ export const Sprint38BackendFoundationConsole: React.FC = () => {
           ['Implemented capabilities', report.implemented.length, CheckCircle2],
           ['Remaining boundaries', report.remaining.length, ShieldCheck],
           ['Migration waves', report.migrationWaves.length, Workflow],
-          ['Foundation wave', '1 / 6', Database],
+          ['Completed waves', '2 / 6', Database],
         ].map(([label, value, Icon]) => {
           const MetricIcon = Icon as React.ElementType;
           return (
@@ -94,7 +94,7 @@ export const Sprint38BackendFoundationConsole: React.FC = () => {
             <article key={wave.wave} className="rounded-2xl border border-[#E4EAE6] bg-[#FBFCFB] p-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-black uppercase tracking-wider text-[#537061]">Wave {wave.wave}</p>
-                <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${wave.status === 'FOUNDATION_COMPLETE' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${wave.status === 'PENDING' ? 'bg-slate-100 text-slate-600' : 'bg-emerald-50 text-emerald-700'}`}>
                   {wave.status.replaceAll('_', ' ')}
                 </span>
               </div>
