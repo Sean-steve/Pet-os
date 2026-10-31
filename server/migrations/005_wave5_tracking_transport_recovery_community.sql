@@ -176,8 +176,8 @@ CREATE TABLE IF NOT EXISTS transport_driver_profiles (
   business_id text NOT NULL REFERENCES service_businesses(business_id) ON DELETE RESTRICT,
   full_name text NOT NULL,
   phone_number_masked text NOT NULL,
-  operational_status text NOT NULL CHECK(operational_status IN ('ACTIVE','INACTIVE','SUSPENDED','RESTRICTED')),
-  verification_status text NOT NULL CHECK(verification_status IN ('UNVERIFIED','PENDING','VERIFIED','REJECTED','EXPIRED')),
+  operational_status text NOT NULL CHECK(operational_status IN ('PENDING','ELIGIBLE','ACTIVE','RESTRICTED','SUSPENDED','INACTIVE')),
+  verification_status text NOT NULL CHECK(verification_status IN ('UNVERIFIED','VERIFIED','EXPIRED','REJECTED')),
   driving_license_ref_masked text NOT NULL,
   approved_service_types jsonb NOT NULL DEFAULT '[]'::jsonb CHECK(jsonb_typeof(approved_service_types)='array'),
   emergency_contact_masked text NOT NULL,
@@ -217,7 +217,7 @@ CREATE TABLE IF NOT EXISTS transport_trips (
     'SCHEDULED','READY','DRIVER_EN_ROUTE_TO_PICKUP','ARRIVED_AT_PICKUP','PICKUP_VERIFICATION','PET_IN_CUSTODY',
     'IN_TRANSIT','STOP_IN_PROGRESS','ARRIVED_AT_DESTINATION','HANDOVER_PENDING','COMPLETED','ABORTED','CANCELLED','INCIDENT_ACTIVE'
   )),
-  trip_type text NOT NULL,
+  trip_type text NOT NULL CHECK(trip_type IN ('ONE_WAY','RETURN','MULTI_STOP','WAIT_AND_RETURN','FACILITY_TRANSFER','RESCUE_TRANSFER','VET_TRANSFER','OTHER_APPROVED')),
   scheduled_pickup_at timestamptz NOT NULL,
   actual_pickup_at timestamptz,
   scheduled_completion_at timestamptz NOT NULL,
@@ -556,11 +556,21 @@ AS $recovery_access$
   )
 $recovery_access$;
 
+CREATE OR REPLACE FUNCTION petos_recovery_accepting_sightings(target_incident_id text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public
+AS $recovery_sighting_open$
+  SELECT EXISTS(
+    SELECT 1 FROM recovery_incidents r
+    WHERE r.lost_pet_incident_id=target_incident_id AND r.status IN ('ACTIVE','SEARCH_IN_PROGRESS')
+  )
+$recovery_sighting_open$;
+
 GRANT EXECUTE ON FUNCTION petos_can_access_tracking_pet(text,text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_can_manage_tracking_pet(text,text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_can_access_transport_trip(text,text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_can_manage_transport_trip(text,text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_can_access_recovery_incident(text,text) TO petos_app;
+GRANT EXECUTE ON FUNCTION petos_recovery_accepting_sightings(text) TO petos_app;
 
 -- ============================================================================
 -- PRIVILEGES
@@ -748,8 +758,7 @@ CREATE POLICY recovery_sighting_read ON recovery_sightings FOR SELECT
 DROP POLICY IF EXISTS recovery_sighting_insert ON recovery_sightings;
 CREATE POLICY recovery_sighting_insert ON recovery_sightings FOR INSERT
  WITH CHECK (reporter_user_id=current_setting('app.user_id',true)
-   AND EXISTS(SELECT 1 FROM recovery_incidents r WHERE r.lost_pet_incident_id=recovery_sightings.lost_pet_incident_id
-     AND r.status IN ('ACTIVE','SEARCH_IN_PROGRESS')));
+   AND petos_recovery_accepting_sightings(lost_pet_incident_id));
 DROP POLICY IF EXISTS recovery_sighting_update ON recovery_sightings;
 CREATE POLICY recovery_sighting_update ON recovery_sightings FOR UPDATE
  USING (petos_can_access_recovery_incident(lost_pet_incident_id,current_setting('app.user_id',true)))
