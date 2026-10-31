@@ -89,6 +89,11 @@ jobs:
           NODE_ENV: test
         run: npm run backend:wave2-integration
 
+      - name: Wave 3 professional-service lifecycle integration
+        env:
+          NODE_ENV: test
+        run: npm run backend:wave3-integration
+
       - name: Backend production bundle
         run: npm run server:build
 
