@@ -215,6 +215,21 @@ async function main() {
     response = await request(base, `/v1/bookings/${bookingId}`, outsiderToken);
     assert.equal(response.status, 403);
 
+    response = await request(base, '/v1/bookings', ownerToken, {
+      method: 'POST',
+      headers: { 'idempotency-key': 'w3-overlap-booking' },
+      body: JSON.stringify({
+        householdId: 'hh-w3-owner',
+        offeringId,
+        petIds: ['pet-w3'],
+        startAt: '2026-11-05T07:30:00.000Z',
+        endAt: '2026-11-05T08:30:00.000Z',
+        timezone: 'Africa/Nairobi',
+        instructions: { emergencyContactName: 'Owner', emergencyContactPhone: '+254700000000' },
+      }),
+    });
+    assert.equal(response.status, 409, 'Overlapping active provider booking must be rejected');
+
     // Provider confirms booking.
     response = await request(base, `/v1/bookings/${bookingId}/transitions`, providerToken, {
       method: 'POST',
@@ -476,7 +491,7 @@ async function main() {
     console.log('WAVE3-INTEGRATION: PASS');
     console.log('Provider verification boundary + offering activation: PASS');
     console.log('Server-derived Booking snapshots + idempotency: PASS');
-    console.log('Booking optimistic concurrency + revision history: PASS');
+    console.log('Booking conflict lock + optimistic concurrency + revision history: PASS');
     console.log('Booking-derived Professional Care authority: PASS');
     console.log('Owner read / provider write separation: PASS');
     console.log('Professional care secret-exclusion boundary: PASS');
