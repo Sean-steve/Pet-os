@@ -130,8 +130,23 @@ $ledger_immutable$;
 
 DROP TRIGGER IF EXISTS trg_finance_entries_immutable ON finance_ledger_entries;
 CREATE TRIGGER trg_finance_entries_immutable
-BEFORE UPDATE OR DELETE ON finance_ledger_entries
+BEFORE INSERT OR UPDATE OR DELETE ON finance_ledger_entries
 FOR EACH ROW EXECUTE FUNCTION petos_prevent_posted_ledger_mutation();
+
+CREATE OR REPLACE FUNCTION petos_prevent_posted_journal_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $journal_immutable$
+BEGIN
+  IF OLD.status='POSTED' THEN RAISE EXCEPTION 'POSTED_JOURNAL_IS_IMMUTABLE'; END IF;
+  RETURN COALESCE(NEW,OLD);
+END
+$journal_immutable$;
+
+DROP TRIGGER IF EXISTS trg_finance_journal_immutable ON finance_ledger_journals;
+CREATE TRIGGER trg_finance_journal_immutable
+BEFORE UPDATE OR DELETE ON finance_ledger_journals
+FOR EACH ROW EXECUTE FUNCTION petos_prevent_posted_journal_mutation();
 
 CREATE TABLE IF NOT EXISTS finance_provider_earnings (
   earning_id text PRIMARY KEY,
@@ -365,6 +380,9 @@ CREATE TABLE IF NOT EXISTS subscription_invoices (
   paid_at timestamptz
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS uq_subscription_invoice_provider_ref
+  ON subscription_invoices(provider_invoice_reference) WHERE provider_invoice_reference IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS subscription_entitlement_grants (
   grant_id text PRIMARY KEY,
   subscription_id text NOT NULL REFERENCES consumer_subscriptions(subscription_id) ON DELETE CASCADE,
@@ -468,6 +486,9 @@ CREATE TABLE IF NOT EXISTS provider_saas_invoices (
   paid_at timestamptz
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS uq_provider_saas_invoice_provider_ref
+  ON provider_saas_invoices(provider_invoice_reference) WHERE provider_invoice_reference IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS provider_saas_continuity_grants (
   grant_id text PRIMARY KEY,
   subscription_id text NOT NULL REFERENCES provider_saas_subscriptions(subscription_id) ON DELETE CASCADE,
@@ -534,15 +555,15 @@ AS $psaas$
   ELSE false END
 $psaas$;
 
-GRANT EXECUTE ON FUNCTION petos_post_financial_journal(text) TO petos_app;
+REVOKE ALL ON finance_ledger_accounts,finance_ledger_journals,finance_ledger_entries,finance_reconciliation_runs,finance_reconciliation_items,finance_webhook_events FROM petos_app;
+REVOKE EXECUTE ON FUNCTION petos_post_financial_journal(text) FROM petos_app;
 GRANT EXECUTE ON FUNCTION petos_finance_booking_access(text,text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_provider_finance_access(text,text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_consumer_subscription_access(text,text,text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_provider_saas_access(text,text,text,text) TO petos_app;
 
-GRANT SELECT,INSERT,UPDATE ON finance_payment_intents,finance_payment_transactions,finance_ledger_accounts,finance_ledger_journals,finance_ledger_entries,
-  finance_provider_earnings,finance_payout_destinations,finance_provider_payouts,finance_payout_allocations,finance_refunds,finance_receipts,
-  finance_reconciliation_runs,finance_reconciliation_items,finance_webhook_events TO petos_app;
+GRANT SELECT,INSERT,UPDATE ON finance_payment_intents,finance_provider_earnings,finance_payout_destinations,finance_provider_payouts,finance_payout_allocations,finance_refunds TO petos_app;
+GRANT SELECT ON finance_payment_transactions,finance_receipts TO petos_app;
 GRANT SELECT ON consumer_plan_catalog,consumer_plan_prices,provider_saas_plan_catalog,provider_saas_prices TO petos_app;
 GRANT SELECT,INSERT,UPDATE ON consumer_subscriptions,subscription_status_history,subscription_invoices,subscription_entitlement_grants,
   provider_saas_subscriptions,provider_saas_entitlement_grants,provider_saas_invoices,provider_saas_continuity_grants,
