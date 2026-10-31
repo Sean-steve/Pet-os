@@ -67,10 +67,15 @@ const implemented: BackendFoundationCapability[] = [
     status: 'IMPLEMENTED',
     evidence: ['Tracking, Transport, Recovery and Community now use PostgreSQL authority with trusted telemetry ingestion, exact-location privacy boundaries, immutable custody records, recovery projections and cross-tenant RLS'],
   },
+  {
+    id: 'BFD-12',
+    title: 'Wave 6 durable commercial, integration and intelligence authority',
+    status: 'IMPLEMENTED',
+    evidence: ['Commerce, Integrations, AI, Automation and Analytics now use durable PostgreSQL authority with server pricing, scoped credentials, governed AI, confirmation-bound actions and privacy-minimized analytics'],
+  },
 ];
 
 const remaining: BackendFoundationCapability[] = [
-  { id: 'BFD-NEXT-05', title: 'Commerce durable persistence', status: 'NEXT_MIGRATION', evidence: ['marketplace commerce remains a later migration wave'] },
   { id: 'BFD-NEXT-06', title: 'Durable worker/outbox publisher and dead-letter processing', status: 'NEXT_MIGRATION', evidence: ['outbox table exists; asynchronous publisher infrastructure is the next runtime step'] },
   { id: 'BFD-NEXT-07', title: 'Frontend API adapter migration', status: 'NEXT_MIGRATION', evidence: ['the current static prototype still reads browser stores until runtime adapters are switched to the server API'] },
   { id: 'BFD-NEXT-08', title: 'Production observability, backups, independent security and DR evidence', status: 'EXTERNAL_EVIDENCE_REQUIRED', evidence: ['must be proven in deployed environments'] },
@@ -82,7 +87,7 @@ const migrationWaves: DomainMigrationWave[] = [
   { wave: 3, domains: ['Provider', 'Booking', 'Professional Care', 'Reviews'], objective: 'Move professional service lifecycle to durable server authority.', status: 'DURABLE_BACKEND_COMPLETE' },
   { wave: 4, domains: ['Finance', 'Subscriptions', 'Provider SaaS'], objective: 'Establish durable ledger, billing, entitlements and reconciliation authority.', status: 'DURABLE_BACKEND_COMPLETE' },
   { wave: 5, domains: ['Tracking', 'Transport', 'Recovery', 'Community'], objective: 'Migrate high-volume event/location and recovery workflows.', status: 'DURABLE_BACKEND_COMPLETE' },
-  { wave: 6, domains: ['Commerce', 'Integrations', 'AI', 'Automation', 'Analytics'], objective: 'Complete commercial, integration and intelligence backend migration.', status: 'PENDING' },
+  { wave: 6, domains: ['Commerce', 'Integrations', 'AI', 'Automation', 'Analytics'], objective: 'Complete commercial, integration and intelligence backend migration.', status: 'DURABLE_BACKEND_COMPLETE' },
 ];
 
 export class BackendFoundationService {
