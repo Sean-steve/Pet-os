@@ -1,10 +1,10 @@
 # Pet OS Development Status
 
-Last audited against repository `main`: Sprint 35 implementation baseline.
+Last audited against repository `main`: Sprint 36 implementation baseline.
 
 ## Current implementation
 
-Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 35, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, marketplace commerce, a governed Pet Intelligence & AI bounded context, cross-domain Automation & Action Orchestration, a unified read-model Command Center, an External Integrations & Developer Platform, a governed Analytics, Outcomes & Operations Intelligence layer, a privacy-safe Engagement & Platform Intelligence layer, and a Security, Privacy & Compliance hardening layer, and a Resilience, Performance & Disaster Recovery hardening layer.
+Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 36, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, marketplace commerce, a governed Pet Intelligence & AI bounded context, cross-domain Automation & Action Orchestration, a unified read-model Command Center, an External Integrations & Developer Platform, a governed Analytics, Outcomes & Operations Intelligence layer, a privacy-safe Engagement & Platform Intelligence layer, and a Security, Privacy & Compliance hardening layer, a Resilience, Performance & Disaster Recovery hardening layer, and a Full-System End-to-End Certification layer.
 
 ## Architecture assessment
 
@@ -24,6 +24,7 @@ The primary limitation is that persistence is currently in-memory/client-side do
 - Sprint 33 adds consent-aware product telemetry, canonical activation milestones, meaningful-value adoption breadth, privacy-safe activation funnels, workflow continuity, provider adoption intelligence and aggregate platform product-health signals. Time spent, click volume, streaks and navigation volume are explicitly excluded from success calculations.
 - Sprint 34 adds cross-platform sensitive-action step-up policy, privacy rights workflows, retention governance, security incident handling and compliance evidence boundaries.
 - Sprint 35 adds bounded retry and circuit-breaker policy, safe degradation contracts, recovery objectives and restore drills, lazy-loaded operational modules, deferred heavy seed initialization and CI-enforced production bundle budgets.
+- Sprint 36 adds a cross-role certification matrix for all nine workspaces, 15 cross-domain release journeys, canonical Booking → Finance seed continuity, tenant-isolation certification, privileged control-plane validation and a dedicated CI/Pages certification gate.
 - The static demo deliberately uses a local deterministic model-provider adapter so GitHub Pages never exposes production model API keys.
 - Unified seed reset now resets newer domain stores as well as the earlier platform.
 - GitHub Pages deployment workflow builds and publishes the interactive prototype.
@@ -50,7 +51,9 @@ Sprint 34: Security, Privacy & Compliance Hardening — implemented in the proto
 
 Sprint 35: Resilience, Performance & Disaster Recovery Hardening — implemented in the prototype.
 
-Sprint 36 onward: full-system E2E certification and final production readiness.
+Sprint 36: Full-System End-to-End Certification & Cross-Role Workflow Validation — implemented in the prototype.
+
+Sprint 37 onward: production-readiness closure, mandatory clean typechecking, backend/persistence migration boundaries and final blocker elimination.
 
 ## Engineering rule for future sprints
 
