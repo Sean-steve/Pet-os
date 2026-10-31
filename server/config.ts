@@ -14,6 +14,8 @@ export interface ServerConfig {
   rateLimitPerMinute: number;
   billingAdapterSecret: string;
   locationAdapterSecret: string;
+  aiAdapterSecret: string;
+  integrationAdapterSecret: string;
 }
 
 function requireValue(name: string): string {
@@ -51,6 +53,10 @@ export function loadServerConfig(): ServerConfig {
   if (Buffer.byteLength(billingAdapterSecret) < 32) throw new Error('BILLING_ADAPTER_SECRET must be at least 32 bytes');
   const locationAdapterSecret = requireValue('LOCATION_ADAPTER_SECRET');
   if (Buffer.byteLength(locationAdapterSecret) < 32) throw new Error('LOCATION_ADAPTER_SECRET must be at least 32 bytes');
+  const aiAdapterSecret = requireValue('AI_ADAPTER_SECRET');
+  if (Buffer.byteLength(aiAdapterSecret) < 32) throw new Error('AI_ADAPTER_SECRET must be at least 32 bytes');
+  const integrationAdapterSecret = requireValue('INTEGRATION_ADAPTER_SECRET');
+  if (Buffer.byteLength(integrationAdapterSecret) < 32) throw new Error('INTEGRATION_ADAPTER_SECRET must be at least 32 bytes');
 
   return {
     nodeEnv,
@@ -66,5 +72,7 @@ export function loadServerConfig(): ServerConfig {
     rateLimitPerMinute: parsePositiveInt('RATE_LIMIT_PER_MINUTE', 120),
     billingAdapterSecret,
     locationAdapterSecret,
+    aiAdapterSecret,
+    integrationAdapterSecret,
   };
 }
