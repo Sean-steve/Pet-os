@@ -258,10 +258,27 @@ CREATE TABLE IF NOT EXISTS review_responses (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE OR REPLACE FUNCTION petos_can_manage_business(target_business_id text, actor_user_id text)
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $
+  SELECT EXISTS (
+    SELECT 1 FROM service_businesses b
+    WHERE b.business_id = target_business_id AND b.owner_user_id = actor_user_id
+  )
+  OR EXISTS (
+    SELECT 1 FROM business_memberships bm
+    WHERE bm.business_id = target_business_id
+      AND bm.user_id = actor_user_id
+      AND bm.is_active
+      AND bm.role IN ('OWNER','ADMIN','MANAGER')
+  )
+$;
+
 CREATE OR REPLACE FUNCTION petos_can_manage_provider(target_provider_id text, actor_user_id text)
 RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
+AS $
   SELECT EXISTS (
     SELECT 1 FROM provider_profiles p
     WHERE p.provider_id = target_provider_id AND p.user_id = actor_user_id
@@ -269,13 +286,11 @@ AS $$
   OR EXISTS (
     SELECT 1
     FROM provider_profiles p
-    JOIN business_memberships bm ON bm.business_id = p.primary_business_id
     WHERE p.provider_id = target_provider_id
-      AND bm.user_id = actor_user_id
-      AND bm.is_active
-      AND bm.role IN ('OWNER','ADMIN','MANAGER')
+      AND p.primary_business_id IS NOT NULL
+      AND petos_can_manage_business(p.primary_business_id, actor_user_id)
   )
-$$;
+$;
 
 CREATE OR REPLACE FUNCTION petos_can_access_booking(target_booking_id text, actor_user_id text)
 RETURNS boolean
@@ -317,6 +332,7 @@ AS $$
   )
 $$;
 
+GRANT EXECUTE ON FUNCTION petos_can_manage_business(text, text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_can_manage_provider(text, text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_can_access_booking(text, text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_can_access_engagement(text, text) TO petos_app;
@@ -358,13 +374,7 @@ CREATE POLICY provider_update ON provider_profiles FOR UPDATE
 DROP POLICY IF EXISTS business_read ON service_businesses;
 CREATE POLICY business_read ON service_businesses FOR SELECT USING (
   (verification_status = 'VERIFIED' AND is_active)
-  OR owner_user_id = current_setting('app.user_id', true)
-  OR EXISTS (
-    SELECT 1 FROM business_memberships bm
-    WHERE bm.business_id = service_businesses.business_id
-      AND bm.user_id = current_setting('app.user_id', true)
-      AND bm.is_active
-  )
+  OR petos_can_manage_business(business_id, current_setting('app.user_id', true))
 );
 DROP POLICY IF EXISTS business_insert ON service_businesses;
 CREATE POLICY business_insert ON service_businesses FOR INSERT WITH CHECK (
@@ -372,33 +382,17 @@ CREATE POLICY business_insert ON service_businesses FOR INSERT WITH CHECK (
 );
 DROP POLICY IF EXISTS business_update ON service_businesses;
 CREATE POLICY business_update ON service_businesses FOR UPDATE
-  USING (
-    owner_user_id = current_setting('app.user_id', true)
-    OR EXISTS (
-      SELECT 1 FROM business_memberships bm
-      WHERE bm.business_id = service_businesses.business_id
-        AND bm.user_id = current_setting('app.user_id', true)
-        AND bm.is_active
-        AND bm.role IN ('OWNER','ADMIN','MANAGER')
-    )
-  );
+  USING (petos_can_manage_business(business_id, current_setting('app.user_id', true)))
+  WITH CHECK (petos_can_manage_business(business_id, current_setting('app.user_id', true)));
 
 DROP POLICY IF EXISTS business_membership_read ON business_memberships;
 CREATE POLICY business_membership_read ON business_memberships FOR SELECT USING (
   user_id = current_setting('app.user_id', true)
-  OR EXISTS (
-    SELECT 1 FROM service_businesses b
-    WHERE b.business_id = business_memberships.business_id
-      AND b.owner_user_id = current_setting('app.user_id', true)
-  )
+  OR petos_can_manage_business(business_id, current_setting('app.user_id', true))
 );
 DROP POLICY IF EXISTS business_membership_insert ON business_memberships;
 CREATE POLICY business_membership_insert ON business_memberships FOR INSERT WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM service_businesses b
-    WHERE b.business_id = business_memberships.business_id
-      AND b.owner_user_id = current_setting('app.user_id', true)
-  )
+  petos_can_manage_business(business_id, current_setting('app.user_id', true))
 );
 
 DROP POLICY IF EXISTS offering_read ON provider_service_offerings;
