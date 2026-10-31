@@ -50,6 +50,17 @@ export async function createBooking(client:PoolClient,input:{
   if(offering.maxPetsPerBooking && uniquePetIds.length>offering.maxPetsPerBooking) throw Object.assign(new Error('BOOKING_PET_CAPACITY_EXCEEDED'),{statusCode:409});
   const start=new Date(input.startAt),end=new Date(input.endAt);
   if(Number.isNaN(start.getTime())||Number.isNaN(end.getTime())||end<=start) throw Object.assign(new Error('BOOKING_TIME_RANGE_INVALID'),{statusCode:400});
+  await client.query(`SELECT pg_advisory_xact_lock(hashtext($1))`,[offering.providerId]);
+  const overlap=await client.query(
+    `SELECT booking_id FROM bookings
+      WHERE provider_id=$1
+        AND status IN ('PENDING_PROVIDER','CONFIRMED','RESCHEDULE_PENDING','IN_PROGRESS')
+        AND start_at < $3
+        AND end_at > $2
+      LIMIT 1`,
+    [offering.providerId,start.toISOString(),end.toISOString()],
+  );
+  if(overlap.rowCount) throw Object.assign(new Error('BOOKING_PROVIDER_TIME_CONFLICT'),{statusCode:409});
   const duration=Math.round((end.getTime()-start.getTime())/60000);
   const scope=`booking:create:${input.householdId}`;
   const requestFingerprint=fingerprint({...input,petIds:uniquePetIds});
