@@ -52,7 +52,8 @@ const remaining: BackendFoundationCapability[] = [
   { id: 'BFD-NEXT-04', title: 'Tracking, Transport and Recovery durable event ingestion', status: 'NEXT_MIGRATION', evidence: ['device/location runtime is not yet production-backed'] },
   { id: 'BFD-NEXT-05', title: 'Commerce, subscriptions and Provider SaaS persistence', status: 'NEXT_MIGRATION', evidence: ['commercial bounded contexts remain prototype stores'] },
   { id: 'BFD-NEXT-06', title: 'Durable worker/outbox publisher and dead-letter processing', status: 'NEXT_MIGRATION', evidence: ['outbox table exists; asynchronous publisher infrastructure is the next runtime step'] },
-  { id: 'BFD-NEXT-07', title: 'Production observability, backups, independent security and DR evidence', status: 'EXTERNAL_EVIDENCE_REQUIRED', evidence: ['must be proven in deployed environments'] },
+  { id: 'BFD-NEXT-07', title: 'Frontend API adapter migration', status: 'NEXT_MIGRATION', evidence: ['the current static prototype still reads browser stores until runtime adapters are switched to the server API'] },
+  { id: 'BFD-NEXT-08', title: 'Production observability, backups, independent security and DR evidence', status: 'EXTERNAL_EVIDENCE_REQUIRED', evidence: ['must be proven in deployed environments'] },
 ];
 
 const migrationWaves: DomainMigrationWave[] = [
