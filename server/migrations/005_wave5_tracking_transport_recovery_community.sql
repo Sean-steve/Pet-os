@@ -586,7 +586,8 @@ GRANT SELECT,INSERT,UPDATE ON transport_trips,transport_trip_pets,transport_stop
 GRANT SELECT,INSERT ON transport_custody_records TO petos_app;
 
 GRANT SELECT,INSERT,UPDATE ON recovery_safe_zones,recovery_incidents,recovery_sightings TO petos_app;
-GRANT SELECT ON recovery_geofence_transitions,recovery_public_profiles TO petos_app;
+GRANT SELECT ON recovery_geofence_transitions TO petos_app;
+GRANT SELECT,UPDATE ON recovery_public_profiles TO petos_app;
 
 GRANT SELECT,INSERT,UPDATE ON community_profiles,community_posts,community_recovery_alerts,community_recovery_volunteers TO petos_app;
 
@@ -757,8 +758,12 @@ CREATE POLICY recovery_incident_access ON recovery_incidents FOR ALL
  WITH CHECK (petos_can_manage_tracking_pet(pet_id,current_setting('app.user_id',true)));
 
 DROP POLICY IF EXISTS recovery_public_profile_read ON recovery_public_profiles;
+DROP POLICY IF EXISTS recovery_public_profile_update ON recovery_public_profiles;
 CREATE POLICY recovery_public_profile_read ON recovery_public_profiles FOR SELECT
  USING (is_active OR petos_can_access_recovery_incident(lost_pet_incident_id,current_setting('app.user_id',true)));
+CREATE POLICY recovery_public_profile_update ON recovery_public_profiles FOR UPDATE
+ USING (petos_can_access_recovery_incident(lost_pet_incident_id,current_setting('app.user_id',true)))
+ WITH CHECK (petos_can_access_recovery_incident(lost_pet_incident_id,current_setting('app.user_id',true)));
 
 DROP POLICY IF EXISTS recovery_sighting_read ON recovery_sightings;
 CREATE POLICY recovery_sighting_read ON recovery_sightings FOR SELECT
