@@ -840,25 +840,25 @@ export const Sprint5HealthConsole: React.FC = () => {
                 <div
                   key={idx}
                   className={`p-3.5 rounded-xl border flex items-start gap-3 ${
-                    alert.severity === 'CRITICAL'
+                    alert.severity === 'HIGH'
                       ? 'bg-red-950/40 border-red-800/60 text-red-200'
-                      : alert.severity === 'WARNING'
+                      : alert.severity === 'MEDIUM'
                       ? 'bg-amber-950/40 border-amber-800/60 text-amber-200'
                       : 'bg-blue-950/40 border-blue-800/60 text-blue-200'
                   }`}
                 >
                   <AlertCircle
                     className={`w-5 h-5 shrink-0 mt-0.5 ${
-                      alert.severity === 'CRITICAL'
+                      alert.severity === 'HIGH'
                         ? 'text-red-400'
-                        : alert.severity === 'WARNING'
+                        : alert.severity === 'MEDIUM'
                         ? 'text-amber-400'
                         : 'text-blue-400'
                     }`}
                   />
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-xs uppercase tracking-wider">{alert.title}</h4>
+                      <h4 className="font-bold text-xs uppercase tracking-wider">{alert.source}</h4>
                       <span className="text-[10px] font-mono opacity-70">Source: {alert.source}</span>
                     </div>
                     <p className="text-xs mt-0.5 opacity-90">{alert.message}</p>
@@ -893,7 +893,7 @@ export const Sprint5HealthConsole: React.FC = () => {
                 <span>Active Medications</span>
                 <Pill className="w-4 h-4 text-emerald-400" />
               </div>
-              <p className="text-2xl font-bold text-white mt-1">{healthSummary.activeMedicationsCount}</p>
+              <p className="text-2xl font-bold text-white mt-1">{healthSummary.currentMedicationsCount}</p>
               <p className="text-[11px] text-[#94A3B8] mt-0.5">Under current administration</p>
             </div>
 
@@ -916,7 +916,7 @@ export const Sprint5HealthConsole: React.FC = () => {
                 {(healthSummary.vaccinationStatus || 'UP_TO_DATE').replace(/_/g, ' ')}
               </p>
               <p className="text-[11px] text-[#94A3B8] mt-0.5">
-                {vaccinations.filter(v => v.status === 'ACTIVE').length} recorded doses
+                {vaccinations.filter(v => !v.enteredInErrorAt).length} recorded doses
               </p>
             </div>
           </div>
@@ -1273,7 +1273,7 @@ export const Sprint5HealthConsole: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {vac.status !== 'ENTERED_IN_ERROR' && (
+                    {!vac.enteredInErrorAt && (
                       <button
                         onClick={() =>
                           setShowEnteredInErrorModal({
@@ -1436,7 +1436,7 @@ export const Sprint5HealthConsole: React.FC = () => {
 
           <div className="space-y-4">
             {diagnostics.map((diag) => (
-              <div key={diag.diagnosticId} className="p-5 bg-[#131722] border border-[#1E293B] rounded-xl space-y-3">
+              <div key={diag.resultId} className="p-5 bg-[#131722] border border-[#1E293B] rounded-xl space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
@@ -1535,7 +1535,7 @@ export const Sprint5HealthConsole: React.FC = () => {
               Projected Health Events ({timelineEvents.length})
             </h3>
             {timelineEvents.map((ev) => (
-              <div key={ev.eventId} className="p-3.5 bg-[#131722] border border-[#1E293B] rounded-xl flex items-start gap-3">
+              <div key={ev.timelineEventId} className="p-3.5 bg-[#131722] border border-[#1E293B] rounded-xl flex items-start gap-3">
                 <Clock className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
@@ -1571,8 +1571,8 @@ export const Sprint5HealthConsole: React.FC = () => {
                     </strong>
                     <span className="font-mono text-[10px] text-[#64748B]">{am.amendedAt}</span>
                   </div>
-                  <p>Reason: {am.reason}</p>
-                  <p className="text-[10px] font-mono text-[#64748B]">Actor: {am.amendedByUserId}</p>
+                  <p>Reason: {am.amendmentReason}</p>
+                  <p className="text-[10px] font-mono text-[#64748B]">Actor: {am.amendedBy}</p>
                 </div>
               ))}
             </div>
