@@ -106,7 +106,7 @@ export function createApp(config: ServerConfig) {
 
   app.use((req: Request, res: Response) => res.status(404).json({ error: 'NOT_FOUND' }));
   app.use((error: any, _req: Request, res: Response, _next: NextFunction) => {
-    const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
+    const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : Number.isInteger(error?.status) ? error.status : 500;
     if (statusCode >= 500) console.error('API request failed', error);
     res.status(statusCode).json({ error: statusCode >= 500 ? 'INTERNAL_SERVER_ERROR' : error.message });
   });
