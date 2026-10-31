@@ -97,11 +97,7 @@ DROP POLICY IF EXISTS membership_read ON household_members;
 CREATE POLICY membership_read ON household_members
   FOR SELECT USING (
     user_id = current_setting('app.user_id', true)
-    OR EXISTS (
-      SELECT 1 FROM households h
-      WHERE h.household_id = household_members.household_id
-        AND h.owner_user_id = current_setting('app.user_id', true)
-    )
+    OR household_id = NULLIF(current_setting('app.household_id', true), '')
   );
 
 DROP POLICY IF EXISTS pet_member_read ON pets;
