@@ -84,6 +84,11 @@ jobs:
           NODE_ENV: test
         run: npm run backend:integration
 
+      - name: Wave 2 durable-domain integration
+        env:
+          NODE_ENV: test
+        run: npm run backend:wave2-integration
+
       - name: Backend production bundle
         run: npm run server:build
 

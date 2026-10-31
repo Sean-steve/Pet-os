@@ -12,7 +12,7 @@ export interface DomainMigrationWave {
   wave: number;
   domains: string[];
   objective: string;
-  status: 'FOUNDATION_COMPLETE' | 'PENDING';
+  status: 'FOUNDATION_COMPLETE' | 'DURABLE_BACKEND_COMPLETE' | 'PENDING';
 }
 
 export interface BackendFoundationReport {

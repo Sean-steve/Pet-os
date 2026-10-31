@@ -53,10 +53,14 @@ export class BackendFoundationTestSuite {
       },
       {
         id: 'BFD-T06',
-        name: 'Wave 1 is complete and later migration waves remain pending',
+        name: 'Wave 1 foundation and Wave 2 durable backend are complete; later waves remain pending',
         fn: () => {
           const waves = BackendFoundationService.run().migrationWaves;
-          if (waves[0]?.status !== 'FOUNDATION_COMPLETE' || waves.slice(1).some((wave) => wave.status !== 'PENDING')) {
+          if (
+            waves[0]?.status !== 'FOUNDATION_COMPLETE'
+            || waves[1]?.status !== 'DURABLE_BACKEND_COMPLETE'
+            || waves.slice(2).some((wave) => wave.status !== 'PENDING')
+          ) {
             throw new Error('migration wave status is inaccurate');
           }
         },

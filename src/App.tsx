@@ -47,6 +47,7 @@ const Sprint35ResilienceConsole = lazyNamed(() => import('./components/Sprint35R
 const Sprint36CertificationConsole = lazyNamed(() => import('./components/Sprint36CertificationConsole'), 'Sprint36CertificationConsole');
 const Sprint37ReadinessConsole = lazyNamed(() => import('./components/Sprint37ReadinessConsole'), 'Sprint37ReadinessConsole');
 const Sprint38BackendFoundationConsole = lazyNamed(() => import('./components/Sprint38BackendFoundationConsole'), 'Sprint38BackendFoundationConsole');
+const Sprint39MigrationWave2Console = lazyNamed(() => import('./components/Sprint39MigrationWave2Console'), 'Sprint39MigrationWave2Console');
 
 const ModuleLoading = () => (
   <div className="grid min-h-[360px] place-items-center rounded-[28px] border border-[#E4E9E5] bg-white">
@@ -81,6 +82,7 @@ export default function App() {
   const renderModule = (tab: TabType): React.ReactNode => {
     let content: React.ReactNode;
     switch (tab) {
+      case 'sprint39': content = <Sprint39MigrationWave2Console />; break;
       case 'sprint38': content = <Sprint38BackendFoundationConsole />; break;
       case 'sprint37': content = <Sprint37ReadinessConsole />; break;
       case 'sprint36': content = <Sprint36CertificationConsole />; break;

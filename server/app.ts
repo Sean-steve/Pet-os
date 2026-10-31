@@ -6,6 +6,7 @@ import { getDatabase, withTenantTransaction } from './db';
 import { getRedis } from './redis';
 import { createRateLimitMiddleware } from './rate-limit';
 import { createPet, listHouseholdsForUser, listPetsForHousehold } from './repositories/core-repository';
+import { amendDomainRecord, createDomainRecord, getDomainRecord, listDomainRecords, type DurableDomain } from './repositories/wave2-repository';
 
 function stringField(value: unknown, name: string, max = 120): string {
   if (typeof value !== 'string' || !value.trim()) throw Object.assign(new Error(`${name}_REQUIRED`), { statusCode: 400 });
@@ -17,6 +18,71 @@ function stringField(value: unknown, name: string, max = 120): string {
 function sexField(value: unknown): 'MALE' | 'FEMALE' | 'UNKNOWN' {
   if (value === 'MALE' || value === 'FEMALE' || value === 'UNKNOWN') return value;
   throw Object.assign(new Error('SEX_INVALID'), { statusCode: 400 });
+}
+
+function objectField(value: unknown, name: string): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw Object.assign(new Error(`${name}_OBJECT_REQUIRED`), { statusCode: 400 });
+  }
+  return value as Record<string, unknown>;
+}
+
+function isoDateField(value: unknown, name: string): string {
+  const raw = stringField(value, name, 80);
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) throw Object.assign(new Error(`${name}_INVALID`), { statusCode: 400 });
+  return parsed.toISOString();
+}
+
+function optionalStringField(value: unknown, name: string, max = 120): string | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  return stringField(value, name, max);
+}
+
+function positiveIntField(value: unknown, name: string): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw Object.assign(new Error(`${name}_POSITIVE_INTEGER_REQUIRED`), { statusCode: 400 });
+  }
+  return parsed;
+}
+
+function containsRestrictedExactLocation(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  if (Array.isArray(value)) return value.some((item) => containsRestrictedExactLocation(item));
+  const restrictedKeys = new Set(['latitude','longitude','lat','lng','coordinates','gps','rawgps','geopoint','geojson','position']);
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    if (restrictedKeys.has(key.toLowerCase())) return true;
+    if (containsRestrictedExactLocation(nested)) return true;
+  }
+  return false;
+}
+
+function validateWave2Payload(
+  domain: DurableDomain,
+  recordType: string,
+  provenance: string | undefined,
+  verificationStatus: string | undefined,
+  payload: Record<string, unknown>,
+): void {
+  if (domain === 'health') {
+    if (recordType === 'AMENDMENT') {
+      throw Object.assign(new Error('HEALTH_AMENDMENT_ROUTE_REQUIRED'), { statusCode: 400 });
+    }
+    if (verificationStatus === 'VERIFIED') {
+      throw Object.assign(new Error('PROFESSIONAL_HEALTH_VERIFICATION_REQUIRED'), { statusCode: 403 });
+    }
+    if (provenance === 'VETERINARY_PROFESSIONAL' || provenance === 'CLINIC_SYSTEM') {
+      throw Object.assign(new Error('PROFESSIONAL_HEALTH_WRITE_REQUIRES_WAVE3'), { statusCode: 403 });
+    }
+    if (recordType === 'CONDITION' && payload.isDiagnosis === true) {
+      throw Object.assign(new Error('PROFESSIONAL_DIAGNOSIS_WRITE_REQUIRES_WAVE3'), { statusCode: 403 });
+    }
+  }
+
+  if (domain === 'activity' && containsRestrictedExactLocation(payload)) {
+    throw Object.assign(new Error('ACTIVITY_EXACT_LOCATION_FORBIDDEN_USE_TRACKING_REFERENCE'), { statusCode: 400 });
+  }
 }
 
 export function createApp(config: ServerConfig) {
@@ -112,6 +178,143 @@ export function createApp(config: ServerConfig) {
         }),
       );
       res.status(result.replayed ? 200 : 201).json({ pet: result.pet, replayed: result.replayed });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  const wave2Domains: DurableDomain[] = ['health', 'care', 'nutrition', 'training', 'activity'];
+  for (const domain of wave2Domains) {
+    const basePath = `/v1/pets/:petId/${domain}/records`;
+
+    app.get(basePath, async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const { userId } = requireAuthenticated(req);
+        const petId = stringField(req.params.petId, 'PET_ID', 180);
+        const recordType = optionalStringField(req.query.type, 'RECORD_TYPE', 80);
+        const limit = req.query.limit === undefined ? 100 : positiveIntField(req.query.limit, 'LIMIT');
+        const records = await withTenantTransaction(config, userId, undefined, (client) =>
+          listDomainRecords(client, domain, petId, userId, recordType, limit),
+        );
+        res.json({ domain, records });
+      } catch (error) {
+        next(error);
+      }
+    });
+
+    app.get(`${basePath}/:recordId`, async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const { userId } = requireAuthenticated(req);
+        const petId = stringField(req.params.petId, 'PET_ID', 180);
+        const recordId = stringField(req.params.recordId, 'RECORD_ID', 220);
+        const record = await withTenantTransaction(config, userId, undefined, (client) =>
+          getDomainRecord(client, domain, petId, recordId, userId),
+        );
+        res.json({ record });
+      } catch (error) {
+        next(error);
+      }
+    });
+
+    app.post(basePath, async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const { userId } = requireAuthenticated(req);
+        const petId = stringField(req.params.petId, 'PET_ID', 180);
+        const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+        const body = req.body || {};
+        const recordType = stringField(body.recordType, 'RECORD_TYPE', 80);
+        const provenance = optionalStringField(body.provenance, 'PROVENANCE', 100);
+        const verificationStatus = optionalStringField(body.verificationStatus, 'VERIFICATION_STATUS', 80);
+        const payload = objectField(body.payload, 'PAYLOAD');
+        validateWave2Payload(domain, recordType, provenance, verificationStatus, payload);
+        const result = await withTenantTransaction(config, userId, undefined, (client) =>
+          createDomainRecord(client, {
+            domain,
+            petId,
+            actorUserId: userId,
+            idempotencyKey,
+            recordType,
+            occurredAt: body.occurredAt ? isoDateField(body.occurredAt, 'OCCURRED_AT') : new Date().toISOString(),
+            status: optionalStringField(body.status, 'STATUS', 80),
+            provenance,
+            verificationStatus,
+            payload,
+          }),
+        );
+        res.status(result.replayed ? 200 : 201).json({ record: result.record, replayed: result.replayed });
+      } catch (error) {
+        next(error);
+      }
+    });
+
+    if (domain !== 'health') {
+      app.patch(`${basePath}/:recordId`, async (req: AuthenticatedRequest, res, next) => {
+        try {
+          const { userId } = requireAuthenticated(req);
+          const petId = stringField(req.params.petId, 'PET_ID', 180);
+          const recordId = stringField(req.params.recordId, 'RECORD_ID', 220);
+          const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+          const body = req.body || {};
+          const payloadPatch = objectField(body.payloadPatch || {}, 'PAYLOAD_PATCH');
+          if (domain === 'activity' && containsRestrictedExactLocation(payloadPatch)) {
+            throw Object.assign(new Error('ACTIVITY_EXACT_LOCATION_FORBIDDEN_USE_TRACKING_REFERENCE'), { statusCode: 400 });
+          }
+          const result = await withTenantTransaction(config, userId, undefined, (client) =>
+            amendDomainRecord(client, {
+              domain,
+              petId,
+              recordId,
+              actorUserId: userId,
+              idempotencyKey,
+              expectedVersion: positiveIntField(body.expectedVersion, 'EXPECTED_VERSION'),
+              reason: stringField(body.reason, 'REASON', 500),
+              status: optionalStringField(body.status, 'STATUS', 80),
+              payloadPatch,
+            }),
+          );
+          res.status(200).json({ record: result.record, replayed: result.replayed });
+        } catch (error) {
+          next(error);
+        }
+      });
+    }
+  }
+
+  app.post('/v1/pets/:petId/health/records/:recordId/amendments', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const petId = stringField(req.params.petId, 'PET_ID', 180);
+      const targetRecordId = stringField(req.params.recordId, 'RECORD_ID', 220);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const provenance = optionalStringField(body.provenance, 'PROVENANCE', 100);
+      const verificationStatus = optionalStringField(body.verificationStatus, 'VERIFICATION_STATUS', 80);
+      if (verificationStatus === 'VERIFIED') {
+        throw Object.assign(new Error('PROFESSIONAL_HEALTH_VERIFICATION_REQUIRED'), { statusCode: 403 });
+      }
+      if (provenance === 'VETERINARY_PROFESSIONAL' || provenance === 'CLINIC_SYSTEM') {
+        throw Object.assign(new Error('PROFESSIONAL_HEALTH_WRITE_REQUIRES_WAVE3'), { statusCode: 403 });
+      }
+      const result = await withTenantTransaction(config, userId, undefined, async (client) => {
+        await getDomainRecord(client, 'health', petId, targetRecordId, userId);
+        return createDomainRecord(client, {
+          domain: 'health',
+          petId,
+          actorUserId: userId,
+          idempotencyKey,
+          recordType: 'AMENDMENT',
+          occurredAt: new Date().toISOString(),
+          status: 'RECORDED',
+          provenance,
+          verificationStatus,
+          payload: {
+            targetRecordId,
+            reason: stringField(body.reason, 'REASON', 500),
+            changes: objectField(body.changes, 'CHANGES'),
+          },
+        });
+      });
+      res.status(result.replayed ? 200 : 201).json({ record: result.record, replayed: result.replayed });
     } catch (error) {
       next(error);
     }
