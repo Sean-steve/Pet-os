@@ -39,6 +39,9 @@ jobs:
       - name: Regression suites
         run: npm test
 
+      - name: Full-system certification
+        run: npm run certification:check
+
       - name: Build for GitHub Pages
         env:
           VITE_BASE_PATH: /Pet-os/

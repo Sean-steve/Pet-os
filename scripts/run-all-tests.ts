@@ -243,6 +243,13 @@ async function main() {
         return ResilienceTestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 36 (Full-System E2E Certification & Cross-Role Validation)',
+      runner: async () => {
+        const { FullSystemCertificationTestSuite } = await import('../src/pet-os/certification/tests');
+        return FullSystemCertificationTestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -276,7 +283,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 33 REGRESSION SUITES (SPRINTS 2-35; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 34 REGRESSION SUITES (SPRINTS 2-36; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 

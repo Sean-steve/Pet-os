@@ -37,6 +37,9 @@ jobs:
       - name: Regression suites
         run: npm test
 
+      - name: Full-system certification
+        run: npm run certification:check
+
       - name: Production build
         run: npm run build
 
