@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { PoolClient } from 'pg';
 import { asPetId, generateUUIDv7 } from '../../src/pet-os/kernel/ids';
 
@@ -90,12 +91,29 @@ export async function listPetsForHousehold(client: PoolClient, householdId: stri
 export async function createPet(client: PoolClient, input: CreatePetInput): Promise<{ pet: PersistedPet; replayed: boolean }> {
   await assertHouseholdMembership(client, input.householdId, input.actorUserId, true);
   const scope = `pet:create:${input.householdId}`;
+  const requestFingerprint = createHash('sha256')
+    .update(JSON.stringify({
+      householdId: input.householdId,
+      name: input.name,
+      speciesCode: input.speciesCode,
+      breedCode: input.breedCode,
+      primaryColor: input.primaryColor,
+      sex: input.sex,
+      reproductiveStatus: input.reproductiveStatus || 'UNKNOWN',
+      sizeClassification: input.sizeClassification || 'MEDIUM',
+    }))
+    .digest('hex');
   const existing = await client.query(
-    `SELECT response_body FROM idempotency_records
+    `SELECT request_fingerprint, response_body FROM idempotency_records
       WHERE actor_user_id = $1 AND scope = $2 AND idempotency_key = $3`,
     [input.actorUserId, scope, input.idempotencyKey],
   );
-  if (existing.rowCount) return { pet: existing.rows[0].response_body as PersistedPet, replayed: true };
+  if (existing.rowCount) {
+    if (existing.rows[0].request_fingerprint !== requestFingerprint) {
+      throw Object.assign(new Error('IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_REQUEST'), { statusCode: 409 });
+    }
+    return { pet: existing.rows[0].response_body as PersistedPet, replayed: true };
+  }
 
   const petId = asPetId(`pet-${generateUUIDv7()}`);
   const inserted = await client.query(
@@ -131,9 +149,9 @@ export async function createPet(client: PoolClient, input: CreatePetInput): Prom
   );
 
   await client.query(
-    `INSERT INTO idempotency_records (actor_user_id, scope, idempotency_key, resource_id, response_status, response_body)
-     VALUES ($1,$2,$3,$4,201,$5::jsonb)`,
-    [input.actorUserId, scope, input.idempotencyKey, pet.petId, JSON.stringify(pet)],
+    `INSERT INTO idempotency_records (actor_user_id, scope, idempotency_key, request_fingerprint, resource_id, response_status, response_body)
+     VALUES ($1,$2,$3,$4,$5,201,$6::jsonb)`,
+    [input.actorUserId, scope, input.idempotencyKey, requestFingerprint, pet.petId, JSON.stringify(pet)],
   );
 
   return { pet, replayed: false };
