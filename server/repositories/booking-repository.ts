@@ -50,6 +50,16 @@ export async function createBooking(client:PoolClient,input:{
   if(offering.maxPetsPerBooking && uniquePetIds.length>offering.maxPetsPerBooking) throw Object.assign(new Error('BOOKING_PET_CAPACITY_EXCEEDED'),{statusCode:409});
   const start=new Date(input.startAt),end=new Date(input.endAt);
   if(Number.isNaN(start.getTime())||Number.isNaN(end.getTime())||end<=start) throw Object.assign(new Error('BOOKING_TIME_RANGE_INVALID'),{statusCode:400});
+  const scope=`booking:create:${input.householdId}`;
+  const requestFingerprint=fingerprint({...input,petIds:uniquePetIds});
+  const prior=await client.query(
+    `SELECT request_fingerprint,response_body FROM idempotency_records WHERE actor_user_id=$1 AND scope=$2 AND idempotency_key=$3`,
+    [input.actorUserId,scope,input.idempotencyKey],
+  );
+  if(prior.rowCount){
+    if(prior.rows[0].request_fingerprint!==requestFingerprint) throw Object.assign(new Error('IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_REQUEST'),{statusCode:409});
+    return {booking:prior.rows[0].response_body as BookingRow,replayed:true};
+  }
   await client.query(`SELECT pg_advisory_xact_lock(hashtext($1))`,[offering.providerId]);
   const overlap=await client.query(
     `SELECT booking_id FROM bookings
@@ -62,16 +72,6 @@ export async function createBooking(client:PoolClient,input:{
   );
   if(overlap.rowCount) throw Object.assign(new Error('BOOKING_PROVIDER_TIME_CONFLICT'),{statusCode:409});
   const duration=Math.round((end.getTime()-start.getTime())/60000);
-  const scope=`booking:create:${input.householdId}`;
-  const requestFingerprint=fingerprint({...input,petIds:uniquePetIds});
-  const prior=await client.query(
-    `SELECT request_fingerprint,response_body FROM idempotency_records WHERE actor_user_id=$1 AND scope=$2 AND idempotency_key=$3`,
-    [input.actorUserId,scope,input.idempotencyKey],
-  );
-  if(prior.rowCount){
-    if(prior.rows[0].request_fingerprint!==requestFingerprint) throw Object.assign(new Error('IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_REQUEST'),{statusCode:409});
-    return {booking:prior.rows[0].response_body as BookingRow,replayed:true};
-  }
   const bookingId=`booking-${generateUUIDv7()}`;
   const amount=offering.basePriceMinorUnits * (offering.pricingModel==='PER_PET'?uniquePetIds.length:1);
   const serviceSnapshot={
