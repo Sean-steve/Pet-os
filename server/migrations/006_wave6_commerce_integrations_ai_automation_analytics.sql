@@ -723,14 +723,17 @@ GRANT SELECT ON commerce_checkouts,commerce_checkout_items,commerce_inventory_re
 GRANT UPDATE ON commerce_seller_orders,commerce_shipments,commerce_return_requests TO petos_app;
 
 GRANT SELECT,INSERT,UPDATE ON integration_developer_apps, integration_installations, integration_webhook_subscriptions TO petos_app;
-GRANT SELECT ON integration_webhook_deliveries, integration_audit_events TO petos_app;
+GRANT SELECT ON integration_webhook_deliveries TO petos_app;
+GRANT SELECT,INSERT ON integration_audit_events TO petos_app;
 REVOKE ALL ON integration_api_credentials FROM petos_app;
 
 GRANT SELECT,INSERT,UPDATE ON ai_consents,ai_requests,ai_recommendations TO petos_app;
-GRANT SELECT ON ai_safety_decisions,ai_responses,ai_model_deployments,ai_prompt_versions TO petos_app;
+GRANT SELECT,INSERT ON ai_safety_decisions TO petos_app;
+GRANT SELECT ON ai_responses,ai_model_deployments,ai_prompt_versions TO petos_app;
 
 GRANT SELECT,INSERT,UPDATE ON automation_rules,automation_rule_versions,automation_action_proposals,automation_confirmations TO petos_app;
-GRANT SELECT ON automation_action_definitions,automation_execution_attempts TO petos_app;
+GRANT SELECT ON automation_action_definitions TO petos_app;
+GRANT SELECT,INSERT ON automation_execution_attempts TO petos_app;
 
 GRANT SELECT,INSERT ON analytics_snapshots TO petos_app;
 
@@ -842,6 +845,11 @@ CREATE POLICY integration_delivery_read ON integration_webhook_deliveries FOR SE
 CREATE POLICY integration_audit_read ON integration_audit_events FOR SELECT
  USING((developer_app_id IS NOT NULL AND petos_can_manage_integration_app(developer_app_id,current_setting('app.user_id',true)))
    OR (installation_id IS NOT NULL AND petos_can_access_installation(installation_id,current_setting('app.user_id',true))));
+CREATE POLICY integration_audit_insert ON integration_audit_events FOR INSERT
+ WITH CHECK(
+   (developer_app_id IS NOT NULL AND petos_can_manage_integration_app(developer_app_id,current_setting('app.user_id',true)))
+   OR (installation_id IS NOT NULL AND petos_can_access_installation(installation_id,current_setting('app.user_id',true)))
+ );
 
 ALTER TABLE ai_consents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_requests ENABLE ROW LEVEL SECURITY;
@@ -858,6 +866,8 @@ CREATE POLICY ai_request_insert ON ai_requests FOR INSERT
  WITH CHECK(user_id=current_setting('app.user_id',true) AND petos_can_access_ai_household(household_id,current_setting('app.user_id',true)));
 CREATE POLICY ai_safety_read ON ai_safety_decisions FOR SELECT
  USING(EXISTS(SELECT 1 FROM ai_requests r WHERE r.request_id=ai_safety_decisions.request_id AND r.user_id=current_setting('app.user_id',true)));
+CREATE POLICY ai_safety_insert ON ai_safety_decisions FOR INSERT
+ WITH CHECK(EXISTS(SELECT 1 FROM ai_requests r WHERE r.request_id=ai_safety_decisions.request_id AND r.user_id=current_setting('app.user_id',true)));
 CREATE POLICY ai_response_read ON ai_responses FOR SELECT
  USING(EXISTS(SELECT 1 FROM ai_requests r WHERE r.request_id=ai_responses.request_id AND r.user_id=current_setting('app.user_id',true)));
 CREATE POLICY ai_recommendation_access ON ai_recommendations FOR ALL
@@ -884,6 +894,8 @@ CREATE POLICY automation_confirmation_access ON automation_confirmations FOR ALL
  WITH CHECK(actor_user_id=current_setting('app.user_id',true));
 CREATE POLICY automation_attempt_read ON automation_execution_attempts FOR SELECT
  USING(EXISTS(SELECT 1 FROM automation_action_proposals p WHERE p.action_proposal_id=automation_execution_attempts.action_proposal_id AND p.actor_user_id=current_setting('app.user_id',true)));
+CREATE POLICY automation_attempt_insert ON automation_execution_attempts FOR INSERT
+ WITH CHECK(EXISTS(SELECT 1 FROM automation_action_proposals p WHERE p.action_proposal_id=automation_execution_attempts.action_proposal_id AND p.actor_user_id=current_setting('app.user_id',true)));
 
 ALTER TABLE analytics_snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY analytics_snapshot_read ON analytics_snapshots FOR SELECT
