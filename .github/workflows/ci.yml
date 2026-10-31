@@ -108,6 +108,11 @@ jobs:
           NODE_ENV: test
         run: npm run backend:wave5-integration
 
+      - name: Wave 6 commerce integrations AI automation analytics integration
+        env:
+          NODE_ENV: test
+        run: npm run backend:wave6-integration
+
       - name: Backend production bundle
         run: npm run server:build
 
@@ -116,7 +121,7 @@ jobs:
 
       - name: Production container smoke test
         run: |
-          docker run -d --rm --network host --name pet-os-api-ci             -e NODE_ENV=production             -e API_PORT=3001             -e DATABASE_URL="${DATABASE_URL}?sslmode=disable"             -e DATABASE_RUNTIME_ROLE="$DATABASE_RUNTIME_ROLE"             -e REDIS_URL="$REDIS_URL"             -e CORS_ORIGINS="$CORS_ORIGINS"             -e AUTH_ISSUER="$AUTH_ISSUER"             -e AUTH_AUDIENCE="$AUTH_AUDIENCE"             -e AUTH_JWT_SECRET="$AUTH_JWT_SECRET"             -e RATE_LIMIT_PER_MINUTE="$RATE_LIMIT_PER_MINUTE"             -e BILLING_ADAPTER_SECRET="$BILLING_ADAPTER_SECRET"             -e LOCATION_ADAPTER_SECRET="$LOCATION_ADAPTER_SECRET"             pet-os-api:ci
+          docker run -d --rm --network host --name pet-os-api-ci             -e NODE_ENV=production             -e API_PORT=3001             -e DATABASE_URL="${DATABASE_URL}?sslmode=disable"             -e DATABASE_RUNTIME_ROLE="$DATABASE_RUNTIME_ROLE"             -e REDIS_URL="$REDIS_URL"             -e CORS_ORIGINS="$CORS_ORIGINS"             -e AUTH_ISSUER="$AUTH_ISSUER"             -e AUTH_AUDIENCE="$AUTH_AUDIENCE"             -e AUTH_JWT_SECRET="$AUTH_JWT_SECRET"             -e RATE_LIMIT_PER_MINUTE="$RATE_LIMIT_PER_MINUTE"             -e BILLING_ADAPTER_SECRET="$BILLING_ADAPTER_SECRET"             -e LOCATION_ADAPTER_SECRET="$LOCATION_ADAPTER_SECRET"             -e AI_ADAPTER_SECRET="$AI_ADAPTER_SECRET"             -e INTEGRATION_ADAPTER_SECRET="$INTEGRATION_ADAPTER_SECRET"             pet-os-api:ci
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:3001/health/ready >/tmp/petos-ready.json; then
               cat /tmp/petos-ready.json
