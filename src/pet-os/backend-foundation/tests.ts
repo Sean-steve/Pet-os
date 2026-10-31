@@ -53,7 +53,7 @@ export class BackendFoundationTestSuite {
       },
       {
         id: 'BFD-T06',
-        name: 'Waves 1-4 are complete; later migration waves remain pending',
+        name: 'Waves 1-5 are complete; Wave 6 remains pending',
         fn: () => {
           const waves = BackendFoundationService.run().migrationWaves;
           if (
@@ -61,7 +61,8 @@ export class BackendFoundationTestSuite {
             || waves[1]?.status !== 'DURABLE_BACKEND_COMPLETE'
             || waves[2]?.status !== 'DURABLE_BACKEND_COMPLETE'
             || waves[3]?.status !== 'DURABLE_BACKEND_COMPLETE'
-            || waves.slice(4).some((wave) => wave.status !== 'PENDING')
+            || waves[4]?.status !== 'DURABLE_BACKEND_COMPLETE'
+            || waves[5]?.status !== 'PENDING'
           ) {
             throw new Error('migration wave status is inaccurate');
           }
@@ -69,10 +70,11 @@ export class BackendFoundationTestSuite {
       },
       {
         id: 'BFD-T07',
-        name: 'Wave 4 is durable while live external payment-provider evidence remains outside repository certification',
+        name: 'Waves 4 and 5 are durable while live external provider evidence remains outside repository certification',
         fn: () => {
           const report = BackendFoundationService.run();
           if (!report.implemented.some((item) => item.id === 'BFD-10')) throw new Error('Wave 4 implementation evidence missing');
+          if (!report.implemented.some((item) => item.id === 'BFD-11')) throw new Error('Wave 5 implementation evidence missing');
           if (!report.remaining.some((item) => item.status === 'EXTERNAL_EVIDENCE_REQUIRED')) throw new Error('external production evidence boundary missing');
         },
       },

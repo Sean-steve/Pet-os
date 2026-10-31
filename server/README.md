@@ -37,3 +37,7 @@ Provider profiles/businesses/service offerings, Booking, Professional Care and v
 ## Sprint 41 — Migration Wave 4
 
 Finance, consumer Subscriptions and Provider SaaS now use durable PostgreSQL authority. Payment and payout amounts are server-derived, posted double-entry journals are immutable, provider earnings and refunds are reconciled through trusted adapter routes, and plan prices/entitlements are server-owned. Provider SaaS restriction creates bounded continuity grants for active Professional Care so billing failure cannot interrupt custody/service. Internal settlement routes require `BILLING_ADAPTER_SECRET`; real provider credentials/signature verification remain a production integration requirement.
+
+## Sprint 42 — Migration Wave 5
+
+Tracking, Transport, Recovery and Community now use durable PostgreSQL authority. Exact location is ingested only through the trusted `LOCATION_ADAPTER_SECRET` boundary and stored in Tracking/Recovery private tables. Transport stores coarse stop projections plus encrypted exact-address references and append-only custody records. Lost Pet recovery derives last-known location from Tracking and publishes coarse-only public profiles; Community rejects structured exact location and requires recovery-relay opt-in for volunteers. Real device-provider credentials/signature verification and asynchronous ingestion workers remain production integration requirements.

@@ -34,7 +34,7 @@ export const Sprint38BackendFoundationConsole: React.FC = () => {
           ['Implemented capabilities', report.implemented.length, CheckCircle2],
           ['Remaining boundaries', report.remaining.length, ShieldCheck],
           ['Migration waves', report.migrationWaves.length, Workflow],
-          ['Completed waves', '4 / 6', Database],
+          ['Completed waves', '5 / 6', Database],
         ].map(([label, value, Icon]) => {
           const MetricIcon = Icon as React.ElementType;
           return (

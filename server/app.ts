@@ -36,6 +36,36 @@ import {
   settleConsumerSubscription,
   settleProviderSaaSSubscription,
 } from './repositories/subscription-repository';
+import {
+  assignTrackingDevice,
+  claimTrackingDevice,
+  completeTrackingSession,
+  createCommunityPost,
+  createCommunityProfile,
+  createSafeZone,
+  createTransportDriver,
+  createTransportTrip,
+  createTransportVehicle,
+  getLiveLocation,
+  getPublicRecoveryProfile,
+  getRecoveryIncident,
+  getTrackingRoute,
+  getTransportTrip,
+  ingestTelemetry,
+  registerTrackingDevice,
+  reportLostPet,
+  reportTransportIncident,
+  resolveLostPet,
+  startTrackingSession,
+  submitRecoverySighting,
+  transferTransportCustody,
+  transitionTransportTrip,
+  verifyRecoverySighting,
+  verifyTransportDriver,
+  verifyTransportVehicle,
+  volunteerForRecovery,
+  listCommunityFeed,
+} from './repositories/wave5-repository';
 
 function stringField(value: unknown, name: string, max = 120): string {
   if (typeof value !== 'string' || !value.trim()) throw Object.assign(new Error(`${name}_REQUIRED`), { statusCode: 400 });
@@ -84,6 +114,14 @@ function choiceField<T extends string>(value: unknown, name: string, allowed: re
   return raw as T;
 }
 
+function finiteNumberField(value: unknown, name: string, min?: number, max?: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) throw Object.assign(new Error(`${name}_NUMBER_REQUIRED`), { statusCode: 400 });
+  if (min !== undefined && parsed < min) throw Object.assign(new Error(`${name}_TOO_SMALL`), { statusCode: 400 });
+  if (max !== undefined && parsed > max) throw Object.assign(new Error(`${name}_TOO_LARGE`), { statusCode: 400 });
+  return parsed;
+}
+
 function nonNegativeIntField(value: unknown, name: string): number {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) {
@@ -113,6 +151,16 @@ function requireBillingAdapter(req: Request, config: ServerConfig): void {
   const expectedBuffer = Buffer.from(expected);
   if (suppliedBuffer.length !== expectedBuffer.length || !timingSafeEqual(suppliedBuffer, expectedBuffer)) {
     throw Object.assign(new Error('BILLING_ADAPTER_AUTHENTICATION_FAILED'), { statusCode: 401 });
+  }
+}
+
+function requireLocationAdapter(req: Request, config: ServerConfig): void {
+  const supplied = req.header('x-location-adapter-secret') || '';
+  const expected = config.locationAdapterSecret;
+  const suppliedBuffer = Buffer.from(supplied);
+  const expectedBuffer = Buffer.from(expected);
+  if (suppliedBuffer.length !== expectedBuffer.length || !timingSafeEqual(suppliedBuffer, expectedBuffer)) {
+    throw Object.assign(new Error('LOCATION_ADAPTER_AUTHENTICATION_FAILED'), { statusCode: 401 });
   }
 }
 
@@ -356,6 +404,64 @@ export function createApp(config: ServerConfig) {
         }),
       );
       res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/location/devices', async (req, res, next) => {
+    try {
+      requireLocationAdapter(req, config);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) =>
+        registerTrackingDevice(client, {
+          provider: stringField(body.provider, 'PROVIDER', 80),
+          externalDeviceReference: stringField(body.externalDeviceReference, 'EXTERNAL_DEVICE_REFERENCE', 220),
+          deviceType: choiceField(body.deviceType, 'DEVICE_TYPE', [
+            'GPS_CELLULAR_TRACKER','GPS_BLUETOOTH_TRACKER','PHONE_LOCATION_SOURCE','THIRD_PARTY_TRACKER','FUTURE_PET_OS_TRACKER','OTHER_APPROVED_LOCATION_DEVICE',
+          ] as const),
+          serialNumberMasked: stringField(body.serialNumberMasked, 'SERIAL_NUMBER_MASKED', 120),
+          displayName: stringField(body.displayName, 'DISPLAY_NAME', 120),
+          model: stringField(body.model, 'MODEL', 120),
+          supportsBleRecovery: body.supportsBleRecovery === true,
+          supportsRotatingIdentifier: body.supportsRotatingIdentifier === true,
+          supportsLostModeBroadcast: body.supportsLostModeBroadcast === true,
+          supportsRemoteModeChange: body.supportsRemoteModeChange === true,
+        }),
+      );
+      res.status(result.replayed ? 200 : 201).json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/location/telemetry', async (req, res, next) => {
+    try {
+      requireLocationAdapter(req, config);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) =>
+        ingestTelemetry(client, {
+          provider: stringField(body.provider, 'PROVIDER', 80),
+          providerEventId: stringField(body.providerEventId, 'PROVIDER_EVENT_ID', 180),
+          sourceDeviceReference: stringField(body.sourceDeviceReference, 'SOURCE_DEVICE_REFERENCE', 220),
+          sequenceNumber: body.sequenceNumber === undefined ? undefined : nonNegativeIntField(body.sequenceNumber, 'SEQUENCE_NUMBER'),
+          observedAt: isoDateField(body.observedAt, 'OBSERVED_AT'),
+          latitude: finiteNumberField(body.latitude, 'LATITUDE', -90, 90),
+          longitude: finiteNumberField(body.longitude, 'LONGITUDE', -180, 180),
+          accuracyM: finiteNumberField(body.accuracyM, 'ACCURACY_M', 0, 10000),
+          altitudeM: body.altitudeM === undefined ? undefined : finiteNumberField(body.altitudeM, 'ALTITUDE_M', -1000, 15000),
+          speedMps: body.speedMps === undefined ? undefined : finiteNumberField(body.speedMps, 'SPEED_MPS', 0, 200),
+          headingDegrees: body.headingDegrees === undefined ? undefined : finiteNumberField(body.headingDegrees, 'HEADING_DEGREES', 0, 359.999),
+          batteryPercent: body.batteryPercent === undefined ? undefined : nonNegativeIntField(body.batteryPercent, 'BATTERY_PERCENT'),
+          signatureVerified: body.signatureVerified === true,
+          sourcePayloadVersion: stringField(body.sourcePayloadVersion, 'SOURCE_PAYLOAD_VERSION', 40),
+        }),
+      );
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.get('/public/recovery/:publicToken', async (req, res, next) => {
+    try {
+      const publicToken = stringField(req.params.publicToken, 'PUBLIC_TOKEN', 220);
+      const profile = await withSystemTransaction(config, (client) => getPublicRecoveryProfile(client, publicToken));
+      res.json({ profile });
     } catch (error) { next(error); }
   });
 
@@ -1029,6 +1135,408 @@ export function createApp(config: ServerConfig) {
       );
       res.json(result);
     } catch (error) { next(error); }
+  });
+
+  app.post('/v1/tracking/devices/:deviceId/claim', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const deviceId = stringField(req.params.deviceId, 'DEVICE_ID', 180);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) =>
+        claimTrackingDevice(client, {
+          actorUserId:userId,idempotencyKey,deviceId,
+          householdId:stringField(body.householdId,'HOUSEHOLD_ID',180),
+        }),
+      );
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/tracking/devices/:deviceId/assign', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const deviceId = stringField(req.params.deviceId, 'DEVICE_ID', 180);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) =>
+        assignTrackingDevice(client, {
+          actorUserId:userId,idempotencyKey,deviceId,
+          petId:stringField(body.petId,'PET_ID',180),
+          reason:optionalStringField(body.reason,'REASON',500),
+        }),
+      );
+      res.status(result.replayed ? 200 : 201).json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/tracking/pets/:petId/sessions', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const petId = stringField(req.params.petId, 'PET_ID', 180);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const result = await withTenantTransaction(config, userId, undefined, (client) =>
+        startTrackingSession(client, {
+          actorUserId:userId,idempotencyKey,petId,
+          sourceContextType:choiceField(body.sourceContextType,'SOURCE_CONTEXT_TYPE',['DOG_WALK','GENERAL_PET_TRACKING','FUTURE_LOST_PET','MANUAL_TEST'] as const),
+          sourceContextId:optionalStringField(body.sourceContextId,'SOURCE_CONTEXT_ID',180),
+          trackingMode:choiceField(body.trackingMode,'TRACKING_MODE',['NORMAL','ACTIVE_SESSION','FUTURE_LOST_MODE'] as const),
+        }),
+      );
+      res.status(result.replayed ? 200 : 201).json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/tracking/sessions/:trackingSessionId/complete', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const trackingSessionId = stringField(req.params.trackingSessionId,'TRACKING_SESSION_ID',180);
+      const idempotencyKey = stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const result = await withTenantTransaction(config,userId,undefined,(client)=>
+        completeTrackingSession(client,{actorUserId:userId,idempotencyKey,trackingSessionId}),
+      );
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.get('/v1/tracking/pets/:petId/live', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const petId=stringField(req.params.petId,'PET_ID',180);
+      const location=await withTenantTransaction(config,userId,undefined,(client)=>getLiveLocation(client,petId,userId));
+      res.json({ location });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/v1/tracking/sessions/:trackingSessionId/route', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const trackingSessionId=stringField(req.params.trackingSessionId,'TRACKING_SESSION_ID',180);
+      const route=await withTenantTransaction(config,userId,undefined,(client)=>getTrackingRoute(client,trackingSessionId,userId));
+      res.json(route);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/businesses/:businessId/transport/drivers', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId }=requireAuthenticated(req);
+      const businessId=stringField(req.params.businessId,'BUSINESS_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>createTransportDriver(client,{
+        actorUserId:userId,idempotencyKey,businessId,
+        providerId:stringField(body.providerId,'PROVIDER_ID',180),
+        userId:stringField(body.userId,'DRIVER_USER_ID',180),
+        fullName:stringField(body.fullName,'FULL_NAME',120),
+        phoneNumberMasked:stringField(body.phoneNumberMasked,'PHONE_NUMBER_MASKED',80),
+        drivingLicenseRefMasked:stringField(body.drivingLicenseRefMasked,'DRIVING_LICENSE_REF_MASKED',100),
+        approvedServiceTypes:stringArrayField(body.approvedServiceTypes,'APPROVED_SERVICE_TYPES',20),
+        emergencyContactMasked:stringField(body.emergencyContactMasked,'EMERGENCY_CONTACT_MASKED',100),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    } catch(error){next(error);}
+  });
+
+  app.post('/v1/transport/drivers/:driverProfileId/verify', async (req: AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const driverProfileId=stringField(req.params.driverProfileId,'DRIVER_PROFILE_ID',180);
+      const driver=await withTenantTransaction(config,userId,undefined,(client)=>verifyTransportDriver(client,{actorUserId:userId,driverProfileId}));
+      res.json({driver});
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/businesses/:businessId/transport/vehicles', async (req: AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const businessId=stringField(req.params.businessId,'BUSINESS_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>createTransportVehicle(client,{
+        actorUserId:userId,idempotencyKey,businessId,
+        providerId:stringField(body.providerId,'PROVIDER_ID',180),
+        displayName:stringField(body.displayName,'DISPLAY_NAME',120),
+        registrationNumberMasked:stringField(body.registrationNumberMasked,'REGISTRATION_NUMBER_MASKED',80),
+        makeModel:stringField(body.makeModel,'MAKE_MODEL',120),
+        vehicleType:choiceField(body.vehicleType,'VEHICLE_TYPE',['CAR','VAN','SPECIALIZED_PET_VAN','OTHER_APPROVED'] as const),
+        capacity:objectField(body.capacity,'CAPACITY'),
+        sensorCapabilities:body.sensorCapabilities===undefined?[]:stringArrayField(body.sensorCapabilities,'SENSOR_CAPABILITIES',20),
+        lastInspectionDate:isoDateField(body.lastInspectionDate,'LAST_INSPECTION_DATE').slice(0,10),
+        insuranceValidUntil:isoDateField(body.insuranceValidUntil,'INSURANCE_VALID_UNTIL').slice(0,10),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/transport/vehicles/:vehicleId/verify', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const vehicleId=stringField(req.params.vehicleId,'VEHICLE_ID',180);
+      const vehicle=await withTenantTransaction(config,userId,undefined,(client)=>verifyTransportVehicle(client,{actorUserId:userId,vehicleId}));
+      res.json({vehicle});
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/transport/trips', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const rawStops=arrayField(body.stops,'STOPS',20);
+      const stops=rawStops.map((item,index)=>{
+        const stop=objectField(item,`STOP_${index}`);
+        return {
+          stopType:choiceField(stop.stopType,'STOP_TYPE',['PICKUP','DROP_OFF','VETERINARY_STOP','BOARDING_STOP','GROOMING_STOP','RESCUE_STOP','REST_STOP','TRANSFER_STOP','RETURN_ORIGIN_STOP'] as const),
+          title:stringField(stop.title,'TITLE',120),
+          addressPublicSnippet:stringField(stop.addressPublicSnippet,'ADDRESS_PUBLIC_SNIPPET',180),
+          exactAddressCiphertext:optionalStringField(stop.exactAddressCiphertext,'EXACT_ADDRESS_CIPHERTEXT',1000),
+          scheduledArrival:isoDateField(stop.scheduledArrival,'SCHEDULED_ARRIVAL'),
+          recipientContactName:stringField(stop.recipientContactName,'RECIPIENT_CONTACT_NAME',120),
+          recipientContactPhoneMasked:stringField(stop.recipientContactPhoneMasked,'RECIPIENT_CONTACT_PHONE_MASKED',80),
+          petIdsBoarding:stop.petIdsBoarding===undefined?[]:stringArrayField(stop.petIdsBoarding,'PET_IDS_BOARDING',30),
+          petIdsExiting:stop.petIdsExiting===undefined?[]:stringArrayField(stop.petIdsExiting,'PET_IDS_EXITING',30),
+        };
+      });
+      const result=await withSystemTransaction(config,(client)=>createTransportTrip(client,{
+        actorUserId:userId,idempotencyKey,
+        bookingId:stringField(body.bookingId,'BOOKING_ID',180),
+        assignedDriverId:stringField(body.assignedDriverId,'ASSIGNED_DRIVER_ID',180),
+        assignedVehicleId:stringField(body.assignedVehicleId,'ASSIGNED_VEHICLE_ID',180),
+        tripType:stringField(body.tripType,'TRIP_TYPE',80),
+        stops,
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.get('/v1/transport/trips/:tripId', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const tripId=stringField(req.params.tripId,'TRIP_ID',180);
+      const trip=await withTenantTransaction(config,userId,undefined,(client)=>getTransportTrip(client,tripId,userId));
+      res.json(trip);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/transport/trips/:tripId/transitions', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const tripId=stringField(req.params.tripId,'TRIP_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>transitionTransportTrip(client,{
+        actorUserId:userId,idempotencyKey,tripId,
+        expectedVersion:positiveIntField(body.expectedVersion,'EXPECTED_VERSION'),
+        nextStatus:choiceField(body.nextStatus,'NEXT_STATUS',[
+          'SCHEDULED','READY','DRIVER_EN_ROUTE_TO_PICKUP','ARRIVED_AT_PICKUP','PICKUP_VERIFICATION','PET_IN_CUSTODY',
+          'IN_TRANSIT','STOP_IN_PROGRESS','ARRIVED_AT_DESTINATION','HANDOVER_PENDING','COMPLETED','ABORTED','CANCELLED','INCIDENT_ACTIVE',
+        ] as const),
+        reason:stringField(body.reason,'REASON',500),
+      }));
+      res.json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/transport/trips/:tripId/custody', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const tripId=stringField(req.params.tripId,'TRIP_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>transferTransportCustody(client,{
+        actorUserId:userId,idempotencyKey,tripId,
+        petId:stringField(body.petId,'PET_ID',180),
+        stopId:stringField(body.stopId,'STOP_ID',180),
+        toActorUserId:stringField(body.toActorUserId,'TO_ACTOR_USER_ID',180),
+        toActorRole:stringField(body.toActorRole,'TO_ACTOR_ROLE',80),
+        verificationMethod:choiceField(body.verificationMethod,'VERIFICATION_METHOD',['OWNER_PIN','ID_DOCUMENT','RESCUE_STAFF_BADGE','CLINIC_STAFF_BADGE','AUTHORIZED_CONTACT_CODE','ALTERNATE_RECIPIENT_AUTHORIZATION'] as const),
+        verificationProof:stringField(body.verificationProof,'VERIFICATION_PROOF',500),
+        notes:optionalStringField(body.notes,'NOTES',500),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/transport/trips/:tripId/incidents', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const tripId=stringField(req.params.tripId,'TRIP_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>reportTransportIncident(client,{
+        actorUserId:userId,idempotencyKey,tripId,
+        category:choiceField(body.category,'INCIDENT_CATEGORY',['VEHICLE_BREAKDOWN','ROAD_ACCIDENT','PET_ESCAPE','PET_INJURY_OBSERVED','PET_ILLNESS_OBSERVED','PET_DISTRESS_OBSERVED','CONTAINMENT_FAILURE','DRIVER_UNAVAILABLE','ROUTE_BLOCKED','ENVIRONMENTAL_ALERT','HANDOVER_FAILURE','WRONG_PET_ATTEMPT','SECURITY_INCIDENT','OTHER'] as const),
+        severity:choiceField(body.severity,'INCIDENT_SEVERITY',['LOW','MODERATE','HIGH','CRITICAL'] as const),
+        petIds:stringArrayField(body.petIds,'PET_IDS',30),
+        description:stringField(body.description,'DESCRIPTION',2000),
+        actionTaken:stringField(body.actionTaken,'ACTION_TAKEN',2000),
+        lastKnownTrackingRef:optionalStringField(body.lastKnownTrackingRef,'LAST_KNOWN_TRACKING_REF',220),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/recovery/pets/:petId/safe-zones', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const petId=stringField(req.params.petId,'PET_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>createSafeZone(client,{
+        actorUserId:userId,idempotencyKey,petId,
+        name:stringField(body.name,'NAME',120),
+        zoneType:choiceField(body.zoneType,'ZONE_TYPE',['HOME','PARK','DAYCARE','VET_CLINIC','CUSTOM'] as const),
+        centerLatitude:finiteNumberField(body.centerLatitude,'CENTER_LATITUDE',-90,90),
+        centerLongitude:finiteNumberField(body.centerLongitude,'CENTER_LONGITUDE',-180,180),
+        radiusMeters:finiteNumberField(body.radiusMeters,'RADIUS_METERS',20,5000),
+        hysteresisBufferMeters:body.hysteresisBufferMeters===undefined?25:finiteNumberField(body.hysteresisBufferMeters,'HYSTERESIS_BUFFER_METERS',0,1000),
+        alertOnExit:body.alertOnExit!==false,
+        alertOnEntry:body.alertOnEntry===true,
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/recovery/pets/:petId/incidents', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const petId=stringField(req.params.petId,'PET_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withSystemTransaction(config,(client)=>reportLostPet(client,{
+        actorUserId:userId,idempotencyKey,petId,
+        missingSince:isoDateField(body.missingSince,'MISSING_SINCE'),
+        coarseDescription:stringField(body.coarseDescription,'COARSE_DESCRIPTION',220),
+        neighborhood:stringField(body.neighborhood,'NEIGHBORHOOD',120),
+        district:stringField(body.district,'DISTRICT',120),
+        city:stringField(body.city,'CITY',120),
+        county:stringField(body.county,'COUNTY',120),
+        coarseCenterLatitude:finiteNumberField(body.coarseCenterLatitude,'COARSE_CENTER_LATITUDE',-90,90),
+        coarseCenterLongitude:finiteNumberField(body.coarseCenterLongitude,'COARSE_CENTER_LONGITUDE',-180,180),
+        coarseRadiusKm:finiteNumberField(body.coarseRadiusKm,'COARSE_RADIUS_KM',0.1,100),
+        ownerInstructions:stringField(body.ownerInstructions,'OWNER_INSTRUCTIONS',1000),
+        communityAlertRequested:body.communityAlertRequested===true,
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.get('/v1/recovery/incidents/:incidentId', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const incidentId=stringField(req.params.incidentId,'INCIDENT_ID',180);
+      const incident=await withTenantTransaction(config,userId,undefined,(client)=>getRecoveryIncident(client,incidentId,userId));
+      res.json(incident);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/recovery/incidents/:incidentId/sightings', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const incidentId=stringField(req.params.incidentId,'INCIDENT_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>submitRecoverySighting(client,{
+        actorUserId:userId,idempotencyKey,incidentId,
+        sightingAt:isoDateField(body.sightingAt,'SIGHTING_AT'),
+        latitude:finiteNumberField(body.latitude,'LATITUDE',-90,90),
+        longitude:finiteNumberField(body.longitude,'LONGITUDE',-180,180),
+        coarseDescription:stringField(body.coarseDescription,'COARSE_DESCRIPTION',220),
+        notes:stringField(body.notes,'NOTES',1000),
+        confidence:choiceField(body.confidence,'CONFIDENCE',['LOW','MEDIUM','HIGH'] as const),
+        reportedVia:choiceField(body.reportedVia,'REPORTED_VIA',['COMMUNITY_ALERT','PUBLIC_RECOVERY_PAGE','QR_TAG_SCAN','DIRECT'] as const),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/recovery/incidents/:incidentId/sightings/:sightingId/review', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const incidentId=stringField(req.params.incidentId,'INCIDENT_ID',180);
+      const sightingId=stringField(req.params.sightingId,'SIGHTING_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>verifyRecoverySighting(client,{
+        actorUserId:userId,idempotencyKey,incidentId,sightingId,
+        status:choiceField(body.status,'STATUS',['VERIFIED','REJECTED','FLAGGED_ABUSIVE'] as const),
+      }));
+      res.json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/recovery/incidents/:incidentId/resolve', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const incidentId=stringField(req.params.incidentId,'INCIDENT_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withSystemTransaction(config,(client)=>resolveLostPet(client,{
+        actorUserId:userId,idempotencyKey,incidentId,resolutionNotes:stringField(body.resolutionNotes,'RESOLUTION_NOTES',1000),
+      }));
+      res.json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/community/profile', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>createCommunityProfile(client,{
+        actorUserId:userId,idempotencyKey,
+        handle:stringField(body.handle,'HANDLE',60),
+        displayName:stringField(body.displayName,'DISPLAY_NAME',120),
+        bio:typeof body.bio==='string'?body.bio.slice(0,1000):'',
+        neighborhood:stringField(body.neighborhood,'NEIGHBORHOOD',120),
+        city:stringField(body.city,'CITY',120),
+        county:stringField(body.county,'COUNTY',120),
+        visibility:choiceField(body.visibility,'VISIBILITY',['PRIVATE','COMMUNITY_VISIBLE','PUBLIC'] as const),
+        allowsRecoveryRelay:body.allowsRecoveryRelay===true,
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/community/posts', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      if(containsRestrictedExactLocation(body)) throw Object.assign(new Error('COMMUNITY_EXACT_LOCATION_FORBIDDEN'),{statusCode:400});
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>createCommunityPost(client,{
+        actorUserId:userId,idempotencyKey,
+        postType:choiceField(body.postType,'POST_TYPE',['GENERAL','QUESTION','PET_UPDATE','TIP','EVENT_UPDATE','RECOVERY_UPDATE','RESOURCE'] as const),
+        content:stringField(body.content,'CONTENT',5000),
+        coarseLocationArea:optionalStringField(body.coarseLocationArea,'COARSE_LOCATION_AREA',220),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.get('/v1/community/feed', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const limit=req.query.limit===undefined?50:positiveIntField(req.query.limit,'LIMIT');
+      const posts=await withTenantTransaction(config,userId,undefined,(client)=>listCommunityFeed(client,userId,limit));
+      res.json({posts});
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/community/recovery-alerts/:communityAlertId/volunteer', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const communityAlertId=stringField(req.params.communityAlertId,'COMMUNITY_ALERT_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>volunteerForRecovery(client,{
+        actorUserId:userId,idempotencyKey,communityAlertId,
+        volunteerRole:choiceField(body.volunteerRole,'VOLUNTEER_ROLE',['SEARCH_PARTICIPANT','FLYER_DISTRIBUTION','SHELTER_CHECKER','TRANSPORT_BACKUP'] as const),
+        notes:optionalStringField(body.notes,'NOTES',500),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
   });
 
   app.use((req: Request, res: Response) => res.status(404).json({ error: 'NOT_FOUND' }));

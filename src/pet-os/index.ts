@@ -43,3 +43,4 @@ export * from './backend-foundation';
 export * from './migration-wave2';
 export * from './migration-wave3';
 export * from './migration-wave4';
+export * from './migration-wave5';

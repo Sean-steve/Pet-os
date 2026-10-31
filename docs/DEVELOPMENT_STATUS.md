@@ -1,10 +1,10 @@
 # Pet OS Development Status
 
-Last audited against Sprint 41 Migration Wave 4 implementation, based on the certified Sprint 40 `main` baseline.
+Last audited against Sprint 42 Migration Wave 5 implementation, based on the certified Sprint 41 `main` baseline.
 
 ## Current implementation
 
-Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 41, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, marketplace commerce, a governed Pet Intelligence & AI bounded context, cross-domain Automation & Action Orchestration, a unified read-model Command Center, an External Integrations & Developer Platform, a governed Analytics, Outcomes & Operations Intelligence layer, a privacy-safe Engagement & Platform Intelligence layer, and a Security, Privacy & Compliance hardening layer, a Resilience, Performance & Disaster Recovery hardening layer, a Full-System End-to-End Certification layer, and a Production Readiness Closure layer, the durable backend foundation, Migration Wave 2 longitudinal care persistence, Migration Wave 3 professional-service lifecycle persistence, and Migration Wave 4 durable money, billing, entitlement and reconciliation authority.
+Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 42, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, marketplace commerce, a governed Pet Intelligence & AI bounded context, cross-domain Automation & Action Orchestration, a unified read-model Command Center, an External Integrations & Developer Platform, a governed Analytics, Outcomes & Operations Intelligence layer, a privacy-safe Engagement & Platform Intelligence layer, and a Security, Privacy & Compliance hardening layer, a Resilience, Performance & Disaster Recovery hardening layer, a Full-System End-to-End Certification layer, and a Production Readiness Closure layer, the durable backend foundation, Migration Wave 2 longitudinal care persistence, Migration Wave 3 professional-service lifecycle persistence, and Migration Wave 4 durable money, billing, entitlement and reconciliation authority.
 
 ## Architecture assessment
 
@@ -30,6 +30,7 @@ The primary limitation is that persistence is currently in-memory/client-side do
 - Sprint 39 completes Migration Wave 2 with separate durable Health/Care/Nutrition/Training/Activity stores, Pet-scoped APIs, RLS, append-only Health corrections, optimistic concurrency and immutable revision evidence.
 - Sprint 40 completes Migration Wave 3 with durable Provider/service-offering authority, server-derived Booking snapshots and concurrency, booking-derived Professional Care, completed-booking Review eligibility, verified-service Reviews, cross-party RLS and lifecycle outbox continuity.
 - Sprint 41 completes Migration Wave 4 with durable Finance, immutable double-entry journals, booking-derived payments/earnings, Provider payouts/refunds, consumer billing/entitlements, Provider SaaS billing/entitlements, active-service continuity grants and reconciliation evidence.
+- Sprint 42 completes Migration Wave 5 with trusted Tracking ingestion, exact-location privacy, monotonic live location, geofence transitions, Booking-derived Transport, immutable custody, Lost Pet recovery continuity, coarse public recovery projections and coarse-only Community location.
 - The static demo deliberately uses a local deterministic model-provider adapter so GitHub Pages never exposes production model API keys.
 - Unified seed reset now resets newer domain stores as well as the earlier platform.
 - GitHub Pages deployment workflow builds and publishes the interactive prototype.
@@ -68,7 +69,9 @@ Sprint 40: Migration Wave 3 — Provider, Booking, Professional Care and Reviews
 
 Sprint 41: Migration Wave 4 — Finance, Subscriptions and Provider SaaS durable backend implemented.
 
-Next: Migration Wave 5 — Tracking, Transport, Recovery and Community.
+Sprint 42: Migration Wave 5 — Tracking, Transport, Recovery and Community durable backend implemented.
+
+Next: Migration Wave 6 — Commerce, Integrations, AI, Automation and Analytics.
 
 ## Engineering rule for future sprints
 
