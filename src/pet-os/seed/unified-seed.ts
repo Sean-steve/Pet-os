@@ -89,7 +89,9 @@ import { IntegrationStore } from '../integrations/store';
 import { EngagementStore } from '../engagement/store';
 import { SecurityStore } from '../security/store';
 import { ResilienceStore } from '../resilience/store';
+import { FinanceStore } from '../finance/store';
 import { seedResilienceData } from '../resilience/seed';
+import { seedUnifiedFinanceData } from '../finance/unified-seed';
 import { IntegrationService } from '../integrations/service';
 
 // Canonical Identifiers
@@ -170,6 +172,7 @@ export function resetAllStores(): void {
   EngagementStore.getInstance().reset();
   SecurityStore.getInstance().reset();
   ResilienceStore.getInstance().reset();
+  FinanceStore.getInstance().reset();
   IntegrationService.resetRuntime();
 }
 
@@ -776,7 +779,12 @@ export async function seedUnifiedPetOS(options: { forceReset?: boolean } = {}): 
   seedEngagementData(CANONICAL_IDS.OWNER_ELENA, CANONICAL_IDS.WALKER_SARAH_USER, CANONICAL_IDS.WALKER_SARAH, CANONICAL_IDS.ADMIN_CHARLES, CANONICAL_IDS.MAIN_HOUSEHOLD);
 
   // ==========================================================================
-  // 23. SEED RESILIENCE, PERFORMANCE & RECOVERY CONTROL PLANE (Sprint 35)
+  // 23. SEED CANONICAL BOOKING → FINANCE CONTINUITY (Sprint 36 reconciliation)
+  // ==========================================================================
+  seedUnifiedFinanceData(CANONICAL_IDS.OWNER_ELENA, CANONICAL_IDS.MAIN_HOUSEHOLD);
+
+  // ==========================================================================
+  // 24. SEED RESILIENCE, PERFORMANCE & RECOVERY CONTROL PLANE (Sprint 35)
   // ==========================================================================
   seedResilienceData(CANONICAL_IDS.ADMIN_CHARLES);
 }
