@@ -88,7 +88,7 @@ export async function generateProviderAnalytics(client:PoolClient,input:{
     ),
     client.query(
       `SELECT COUNT(*)::int AS count,COALESCE(AVG(overall_rating),0)::float AS rating
-       FROM reviews WHERE provider_id=$1 AND created_at BETWEEN $2 AND $3 AND moderation_status='PUBLISHED'`,
+       FROM reviews WHERE provider_id=$1 AND created_at BETWEEN $2 AND $3 AND status='PUBLISHED' AND moderation_status='APPROVED'`,
       [input.providerId,input.windowStart,input.windowEnd],
     ),
     client.query(
