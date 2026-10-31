@@ -639,8 +639,22 @@ CREATE POLICY subscription_invoice_access ON subscription_invoices FOR SELECT
  USING (EXISTS(SELECT 1 FROM consumer_subscriptions s WHERE s.subscription_id=subscription_invoices.subscription_id
    AND petos_consumer_subscription_access(s.owner_type,s.owner_id,current_setting('app.user_id',true))));
 DROP POLICY IF EXISTS subscription_entitlement_access ON subscription_entitlement_grants;
-CREATE POLICY subscription_entitlement_access ON subscription_entitlement_grants FOR SELECT
+DROP POLICY IF EXISTS subscription_entitlement_read ON subscription_entitlement_grants;
+DROP POLICY IF EXISTS subscription_entitlement_insert ON subscription_entitlement_grants;
+DROP POLICY IF EXISTS subscription_entitlement_update ON subscription_entitlement_grants;
+CREATE POLICY subscription_entitlement_read ON subscription_entitlement_grants FOR SELECT
  USING (EXISTS(SELECT 1 FROM consumer_subscriptions s WHERE s.subscription_id=subscription_entitlement_grants.subscription_id
+   AND petos_consumer_subscription_access(s.owner_type,s.owner_id,current_setting('app.user_id',true))));
+CREATE POLICY subscription_entitlement_insert ON subscription_entitlement_grants FOR INSERT
+ WITH CHECK (EXISTS(SELECT 1 FROM consumer_subscriptions s WHERE s.subscription_id=subscription_entitlement_grants.subscription_id
+   AND s.billing_owner_user_id=current_setting('app.user_id',true)
+   AND petos_consumer_subscription_access(s.owner_type,s.owner_id,current_setting('app.user_id',true))));
+CREATE POLICY subscription_entitlement_update ON subscription_entitlement_grants FOR UPDATE
+ USING (EXISTS(SELECT 1 FROM consumer_subscriptions s WHERE s.subscription_id=subscription_entitlement_grants.subscription_id
+   AND s.billing_owner_user_id=current_setting('app.user_id',true)
+   AND petos_consumer_subscription_access(s.owner_type,s.owner_id,current_setting('app.user_id',true))))
+ WITH CHECK (EXISTS(SELECT 1 FROM consumer_subscriptions s WHERE s.subscription_id=subscription_entitlement_grants.subscription_id
+   AND s.billing_owner_user_id=current_setting('app.user_id',true)
    AND petos_consumer_subscription_access(s.owner_type,s.owner_id,current_setting('app.user_id',true))));
 
 DROP POLICY IF EXISTS provider_saas_subscription_access ON provider_saas_subscriptions;
@@ -649,8 +663,22 @@ CREATE POLICY provider_saas_subscription_access ON provider_saas_subscriptions F
  WITH CHECK (billing_owner_user_id=current_setting('app.user_id',true)
    AND petos_provider_saas_access(subscriber_type,business_id,provider_id,current_setting('app.user_id',true)));
 DROP POLICY IF EXISTS provider_saas_entitlement_access ON provider_saas_entitlement_grants;
-CREATE POLICY provider_saas_entitlement_access ON provider_saas_entitlement_grants FOR SELECT
+DROP POLICY IF EXISTS provider_saas_entitlement_read ON provider_saas_entitlement_grants;
+DROP POLICY IF EXISTS provider_saas_entitlement_insert ON provider_saas_entitlement_grants;
+DROP POLICY IF EXISTS provider_saas_entitlement_update ON provider_saas_entitlement_grants;
+CREATE POLICY provider_saas_entitlement_read ON provider_saas_entitlement_grants FOR SELECT
  USING (EXISTS(SELECT 1 FROM provider_saas_subscriptions s WHERE s.subscription_id=provider_saas_entitlement_grants.subscription_id
+  AND petos_provider_saas_access(s.subscriber_type,s.business_id,s.provider_id,current_setting('app.user_id',true))));
+CREATE POLICY provider_saas_entitlement_insert ON provider_saas_entitlement_grants FOR INSERT
+ WITH CHECK (EXISTS(SELECT 1 FROM provider_saas_subscriptions s WHERE s.subscription_id=provider_saas_entitlement_grants.subscription_id
+  AND s.billing_owner_user_id=current_setting('app.user_id',true)
+  AND petos_provider_saas_access(s.subscriber_type,s.business_id,s.provider_id,current_setting('app.user_id',true))));
+CREATE POLICY provider_saas_entitlement_update ON provider_saas_entitlement_grants FOR UPDATE
+ USING (EXISTS(SELECT 1 FROM provider_saas_subscriptions s WHERE s.subscription_id=provider_saas_entitlement_grants.subscription_id
+  AND s.billing_owner_user_id=current_setting('app.user_id',true)
+  AND petos_provider_saas_access(s.subscriber_type,s.business_id,s.provider_id,current_setting('app.user_id',true))))
+ WITH CHECK (EXISTS(SELECT 1 FROM provider_saas_subscriptions s WHERE s.subscription_id=provider_saas_entitlement_grants.subscription_id
+  AND s.billing_owner_user_id=current_setting('app.user_id',true)
   AND petos_provider_saas_access(s.subscriber_type,s.business_id,s.provider_id,current_setting('app.user_id',true))));
 DROP POLICY IF EXISTS provider_saas_invoice_access ON provider_saas_invoices;
 CREATE POLICY provider_saas_invoice_access ON provider_saas_invoices FOR SELECT
