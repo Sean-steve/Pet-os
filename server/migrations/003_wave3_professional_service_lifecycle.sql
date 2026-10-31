@@ -490,6 +490,17 @@ CREATE POLICY review_eligibility_insert ON review_eligibilities FOR INSERT WITH 
   )
 );
 
+DROP POLICY IF EXISTS review_eligibility_update ON review_eligibilities;
+CREATE POLICY review_eligibility_update ON review_eligibilities FOR UPDATE
+  USING (
+    reviewer_user_id = current_setting('app.user_id', true)
+    OR petos_can_manage_provider(provider_id, current_setting('app.user_id', true))
+  )
+  WITH CHECK (
+    reviewer_user_id = current_setting('app.user_id', true)
+    OR petos_can_manage_provider(provider_id, current_setting('app.user_id', true))
+  );
+
 DROP POLICY IF EXISTS review_read ON reviews;
 CREATE POLICY review_read ON reviews FOR SELECT USING (
   status IN ('PUBLISHED','LIMITED')
