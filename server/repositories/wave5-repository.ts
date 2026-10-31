@@ -303,6 +303,31 @@ export async function ingestTelemetry(client:PoolClient,input:{
     [d.device_id,input.batteryPercent??null,receivedAt.toISOString(),observedAt.toISOString()],
   );
 
+  if(previous.rowCount && liveAdvanced){
+    const zones=await client.query(`SELECT * FROM recovery_safe_zones WHERE pet_id=$1 AND is_active`,[a.pet_id]);
+    for(const zone of zones.rows){
+      const previousDistance=haversineMeters(Number(zone.center_latitude),Number(zone.center_longitude),Number(previous.rows[0].latitude),Number(previous.rows[0].longitude));
+      const currentDistance=haversineMeters(Number(zone.center_latitude),Number(zone.center_longitude),input.latitude,input.longitude);
+      const radius=Number(zone.radius_meters),buffer=Number(zone.hysteresis_buffer_meters);
+      let transitionType:string|undefined;
+      if(previousDistance<=Math.max(0,radius-buffer) && currentDistance>radius+buffer) transitionType='EXIT';
+      if(previousDistance>radius+buffer && currentDistance<=Math.max(0,radius-buffer)) transitionType='ENTRY';
+      if(transitionType){
+        const transitionId=`geofence-transition-${generateUUIDv7()}`;
+        await client.query(
+          `INSERT INTO recovery_geofence_transitions(transition_id,safe_zone_id,pet_id,household_id,observation_id,transition_type,transition_at,suppressed_by_hysteresis)
+           VALUES($1,$2,$3,$4,$5,$6,$7,false)`,
+          [transitionId,zone.safe_zone_id,a.pet_id,a.household_id,observationId,transitionType,observedAt.toISOString()],
+        );
+        await client.query(
+          `INSERT INTO outbox_events(event_id,aggregate_type,aggregate_id,event_type,payload)
+           VALUES($1,'SafeZone',$2,'GeofenceTransitionDetected',$3::jsonb)`,
+          [`evt-${generateUUIDv7()}`,zone.safe_zone_id,JSON.stringify({transitionId,safeZoneId:zone.safe_zone_id,petId:a.pet_id,transitionType,observationId})],
+        );
+      }
+    }
+  }
+
   if(session.rowCount){
     const sessionId=session.rows[0].tracking_session_id;
     const priorPoint=await client.query(
@@ -373,6 +398,97 @@ export async function getTrackingRoute(client:PoolClient,trackingSessionId:strin
 // ============================================================================
 // TRANSPORT
 // ============================================================================
+
+export async function createTransportDriver(client:PoolClient,input:{
+  actorUserId:string;idempotencyKey:string;businessId:string;providerId:string;userId:string;fullName:string;
+  phoneNumberMasked:string;drivingLicenseRefMasked:string;approvedServiceTypes:string[];emergencyContactMasked:string;
+}){
+  const allowed=await client.query(`SELECT petos_can_manage_business($1,$2) AS allowed`,[input.businessId,input.actorUserId]);
+  if(allowed.rows[0]?.allowed!==true) throw httpError('TRANSPORT_DRIVER_MANAGEMENT_DENIED',403);
+  const provider=await client.query(`SELECT 1 FROM provider_profiles WHERE provider_id=$1 AND (primary_business_id=$2 OR primary_business_id IS NULL) LIMIT 1`,[input.providerId,input.businessId]);
+  if(!provider.rowCount) throw httpError('TRANSPORT_PROVIDER_BUSINESS_MISMATCH',409);
+  const membership=await client.query(`SELECT 1 FROM business_memberships WHERE business_id=$1 AND user_id=$2 AND is_active LIMIT 1`,[input.businessId,input.userId]);
+  if(!membership.rowCount) throw httpError('TRANSPORT_DRIVER_BUSINESS_MEMBERSHIP_REQUIRED',409);
+  const scope=`transport:driver:create:${input.businessId}:${input.userId}`;
+  const requestFingerprint=fingerprint(input);
+  const prior=await client.query(`SELECT request_fingerprint,response_body FROM idempotency_records WHERE actor_user_id=$1 AND scope=$2 AND idempotency_key=$3`,[input.actorUserId,scope,input.idempotencyKey]);
+  if(prior.rowCount){
+    if(prior.rows[0].request_fingerprint!==requestFingerprint) throw httpError('IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_REQUEST',409);
+    return {driver:prior.rows[0].response_body,replayed:true};
+  }
+  const driverProfileId=`transport-driver-${generateUUIDv7()}`;
+  const result=await client.query(
+    `INSERT INTO transport_driver_profiles(
+      driver_profile_id,user_id,provider_id,business_id,full_name,phone_number_masked,operational_status,verification_status,
+      driving_license_ref_masked,approved_service_types,emergency_contact_masked
+     ) VALUES($1,$2,$3,$4,$5,$6,'ACTIVE','PENDING',$7,$8::jsonb,$9) RETURNING *`,
+    [driverProfileId,input.userId,input.providerId,input.businessId,input.fullName,input.phoneNumberMasked,input.drivingLicenseRefMasked,JSON.stringify(input.approvedServiceTypes),input.emergencyContactMasked],
+  );
+  const driver=result.rows[0];
+  await client.query(
+    `INSERT INTO idempotency_records(actor_user_id,scope,idempotency_key,request_fingerprint,resource_id,response_status,response_body)
+     VALUES($1,$2,$3,$4,$5,201,$6::jsonb)`,
+    [input.actorUserId,scope,input.idempotencyKey,requestFingerprint,driverProfileId,JSON.stringify(driver)],
+  );
+  return {driver,replayed:false};
+}
+
+export async function verifyTransportDriver(client:PoolClient,input:{actorUserId:string;driverProfileId:string}){
+  const current=await client.query(`SELECT * FROM transport_driver_profiles WHERE driver_profile_id=$1 LIMIT 1`,[input.driverProfileId]);
+  if(!current.rowCount) throw httpError('TRANSPORT_DRIVER_NOT_FOUND',404);
+  const allowed=await client.query(`SELECT petos_can_manage_business($1,$2) AS allowed`,[current.rows[0].business_id,input.actorUserId]);
+  if(allowed.rows[0]?.allowed!==true) throw httpError('TRANSPORT_DRIVER_VERIFICATION_DENIED',403);
+  const result=await client.query(
+    `UPDATE transport_driver_profiles SET verification_status='VERIFIED',verified_at=now(),verified_by_user_id=$2,updated_at=now()
+     WHERE driver_profile_id=$1 RETURNING *`,
+    [input.driverProfileId,input.actorUserId],
+  );
+  return result.rows[0];
+}
+
+export async function createTransportVehicle(client:PoolClient,input:{
+  actorUserId:string;idempotencyKey:string;businessId:string;providerId:string;displayName:string;registrationNumberMasked:string;
+  makeModel:string;vehicleType:string;capacity:Record<string,unknown>;sensorCapabilities:string[];lastInspectionDate:string;insuranceValidUntil:string;
+}){
+  const allowed=await client.query(`SELECT petos_can_manage_business($1,$2) AS allowed`,[input.businessId,input.actorUserId]);
+  if(allowed.rows[0]?.allowed!==true) throw httpError('TRANSPORT_VEHICLE_MANAGEMENT_DENIED',403);
+  const scope=`transport:vehicle:create:${input.businessId}:${input.registrationNumberMasked}`;
+  const requestFingerprint=fingerprint(input);
+  const prior=await client.query(`SELECT request_fingerprint,response_body FROM idempotency_records WHERE actor_user_id=$1 AND scope=$2 AND idempotency_key=$3`,[input.actorUserId,scope,input.idempotencyKey]);
+  if(prior.rowCount){
+    if(prior.rows[0].request_fingerprint!==requestFingerprint) throw httpError('IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_REQUEST',409);
+    return {vehicle:prior.rows[0].response_body,replayed:true};
+  }
+  const maxPets=Number((input.capacity as any).maxPets);
+  if(!Number.isInteger(maxPets)||maxPets<=0) throw httpError('TRANSPORT_VEHICLE_CAPACITY_INVALID',400);
+  const vehicleId=`transport-vehicle-${generateUUIDv7()}`;
+  const result=await client.query(
+    `INSERT INTO transport_vehicles(
+      vehicle_id,business_id,provider_id,display_name,registration_number_masked,make_model,vehicle_type,operational_status,
+      verification_status,capacity,sensor_capabilities,last_inspection_date,insurance_valid_until
+     ) VALUES($1,$2,$3,$4,$5,$6,$7,'AVAILABLE','UNVERIFIED',$8::jsonb,$9::jsonb,$10,$11) RETURNING *`,
+    [vehicleId,input.businessId,input.providerId,input.displayName,input.registrationNumberMasked,input.makeModel,input.vehicleType,JSON.stringify(input.capacity),JSON.stringify(input.sensorCapabilities),input.lastInspectionDate,input.insuranceValidUntil],
+  );
+  const vehicle=result.rows[0];
+  await client.query(
+    `INSERT INTO idempotency_records(actor_user_id,scope,idempotency_key,request_fingerprint,resource_id,response_status,response_body)
+     VALUES($1,$2,$3,$4,$5,201,$6::jsonb)`,
+    [input.actorUserId,scope,input.idempotencyKey,requestFingerprint,vehicleId,JSON.stringify(vehicle)],
+  );
+  return {vehicle,replayed:false};
+}
+
+export async function verifyTransportVehicle(client:PoolClient,input:{actorUserId:string;vehicleId:string}){
+  const current=await client.query(`SELECT * FROM transport_vehicles WHERE vehicle_id=$1 LIMIT 1`,[input.vehicleId]);
+  if(!current.rowCount) throw httpError('TRANSPORT_VEHICLE_NOT_FOUND',404);
+  const allowed=await client.query(`SELECT petos_can_manage_business($1,$2) AS allowed`,[current.rows[0].business_id,input.actorUserId]);
+  if(allowed.rows[0]?.allowed!==true) throw httpError('TRANSPORT_VEHICLE_VERIFICATION_DENIED',403);
+  const result=await client.query(
+    `UPDATE transport_vehicles SET verification_status='VERIFIED',updated_at=now() WHERE vehicle_id=$1 RETURNING *`,
+    [input.vehicleId],
+  );
+  return result.rows[0];
+}
 
 async function assertTransportManagerForBooking(client:PoolClient,bookingId:string,actorUserId:string){
   const result=await client.query(
