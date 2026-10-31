@@ -160,6 +160,12 @@ export async function transitionBooking(client:PoolClient,input:{
   const current=mapBooking(row);
   if(current.concurrencyVersion!==input.expectedVersion) throw Object.assign(new Error('BOOKING_VERSION_CONFLICT'),{statusCode:409});
   if(!allowedTransition(current.status,input.nextStatus,owner,provider)) throw Object.assign(new Error('BOOKING_STATUS_TRANSITION_INVALID'),{statusCode:409});
+  if(input.nextStatus==='COMPLETED'){
+    const engagement=await client.query(`SELECT status FROM professional_care_engagements WHERE booking_id=$1 LIMIT 1`,[input.bookingId]);
+    if(engagement.rowCount && engagement.rows[0].status!=='COMPLETED'){
+      throw Object.assign(new Error('BOOKING_COMPLETION_REQUIRES_CARE_COMPLETION'),{statusCode:409});
+    }
+  }
   const nextVersion=current.concurrencyVersion+1;
   const result=await client.query(
     `UPDATE bookings SET status=$1,concurrency_version=$2,updated_at=now(),
