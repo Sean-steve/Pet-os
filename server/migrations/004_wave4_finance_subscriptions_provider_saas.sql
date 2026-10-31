@@ -599,8 +599,11 @@ ALTER TABLE provider_saas_invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE provider_saas_continuity_grants ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS finance_intent_access ON finance_payment_intents;
-CREATE POLICY finance_intent_access ON finance_payment_intents FOR ALL
- USING (payer_user_id=current_setting('app.user_id',true) OR petos_finance_booking_access(booking_id,current_setting('app.user_id',true)))
+DROP POLICY IF EXISTS finance_intent_read ON finance_payment_intents;
+DROP POLICY IF EXISTS finance_intent_insert ON finance_payment_intents;
+CREATE POLICY finance_intent_read ON finance_payment_intents FOR SELECT
+ USING (payer_user_id=current_setting('app.user_id',true) OR petos_finance_booking_access(booking_id,current_setting('app.user_id',true)));
+CREATE POLICY finance_intent_insert ON finance_payment_intents FOR INSERT
  WITH CHECK (payer_user_id=current_setting('app.user_id',true) AND petos_finance_booking_access(booking_id,current_setting('app.user_id',true)));
 DROP POLICY IF EXISTS finance_transaction_access ON finance_payment_transactions;
 CREATE POLICY finance_transaction_access ON finance_payment_transactions FOR SELECT
