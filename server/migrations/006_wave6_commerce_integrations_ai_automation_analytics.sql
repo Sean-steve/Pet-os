@@ -789,7 +789,8 @@ GRANT SELECT,INSERT,UPDATE ON commerce_listings,commerce_inventory_items TO peto
 GRANT SELECT ON commerce_checkouts,commerce_checkout_items,commerce_inventory_reservations,commerce_orders,commerce_seller_orders,commerce_order_items,commerce_payment_transactions,commerce_shipments,commerce_return_requests TO petos_app;
 GRANT UPDATE ON commerce_seller_orders,commerce_shipments,commerce_return_requests TO petos_app;
 
-GRANT SELECT,INSERT,UPDATE ON integration_developer_apps, integration_installations, integration_webhook_subscriptions TO petos_app;
+GRANT SELECT,INSERT ON integration_developer_apps TO petos_app;
+GRANT SELECT,INSERT,UPDATE ON integration_installations, integration_webhook_subscriptions TO petos_app;
 GRANT SELECT ON integration_webhook_deliveries TO petos_app;
 GRANT SELECT,INSERT ON integration_audit_events TO petos_app;
 REVOKE ALL ON integration_api_credentials FROM petos_app;
