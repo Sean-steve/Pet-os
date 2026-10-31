@@ -5,6 +5,7 @@ export interface ServerConfig {
   port: number;
   databaseUrl: string;
   redisUrl: string;
+  databaseRuntimeRole: string;
   corsOrigins: string[];
   authIssuer: string;
   authAudience: string;
@@ -36,6 +37,9 @@ export function loadServerConfig(): ServerConfig {
   if (!authJwtSecret && !authJwksUrl) throw new Error('Configure AUTH_JWT_SECRET or AUTH_JWKS_URL');
   if (authJwtSecret && Buffer.byteLength(authJwtSecret) < 32) throw new Error('AUTH_JWT_SECRET must be at least 32 bytes');
 
+  const databaseRuntimeRole = process.env.DATABASE_RUNTIME_ROLE?.trim() || 'petos_app';
+  if (!/^[a-z_][a-z0-9_]*$/.test(databaseRuntimeRole)) throw new Error('DATABASE_RUNTIME_ROLE contains invalid characters');
+
   const corsOrigins = requireValue('CORS_ORIGINS')
     .split(',')
     .map((origin) => origin.trim())
@@ -46,6 +50,7 @@ export function loadServerConfig(): ServerConfig {
     port: parsePositiveInt('API_PORT', 3001),
     databaseUrl: requireValue('DATABASE_URL'),
     redisUrl: requireValue('REDIS_URL'),
+    databaseRuntimeRole,
     corsOrigins,
     authIssuer: requireValue('AUTH_ISSUER'),
     authAudience: requireValue('AUTH_AUDIENCE'),
