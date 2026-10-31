@@ -260,8 +260,11 @@ CREATE TABLE IF NOT EXISTS review_responses (
 
 CREATE OR REPLACE FUNCTION petos_can_manage_business(target_business_id text, actor_user_id text)
 RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $petos_business$
   SELECT EXISTS (
     SELECT 1 FROM service_businesses b
     WHERE b.business_id = target_business_id AND b.owner_user_id = actor_user_id
@@ -273,12 +276,15 @@ AS $
       AND bm.is_active
       AND bm.role IN ('OWNER','ADMIN','MANAGER')
   )
-$;
+$petos_business$;
 
 CREATE OR REPLACE FUNCTION petos_can_manage_provider(target_provider_id text, actor_user_id text)
 RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $petos_provider$
   SELECT EXISTS (
     SELECT 1 FROM provider_profiles p
     WHERE p.provider_id = target_provider_id AND p.user_id = actor_user_id
@@ -290,12 +296,15 @@ AS $
       AND p.primary_business_id IS NOT NULL
       AND petos_can_manage_business(p.primary_business_id, actor_user_id)
   )
-$;
+$petos_provider$;
 
 CREATE OR REPLACE FUNCTION petos_can_access_booking(target_booking_id text, actor_user_id text)
 RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $petos_booking$
   SELECT EXISTS (
     SELECT 1
     FROM bookings b
@@ -309,12 +318,15 @@ AS $$
         OR bm.user_id IS NOT NULL
       )
   )
-$$;
+$petos_booking$;
 
 CREATE OR REPLACE FUNCTION petos_can_access_engagement(target_engagement_id text, actor_user_id text)
 RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $petos_engagement_read$
   SELECT EXISTS (
     SELECT 1
     FROM professional_care_engagements e
@@ -330,12 +342,15 @@ AS $
         OR bm.user_id IS NOT NULL
       )
   )
-$;
+$petos_engagement_read$;
 
 CREATE OR REPLACE FUNCTION petos_can_manage_engagement(target_engagement_id text, actor_user_id text)
 RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $petos_engagement_write$
   SELECT EXISTS (
     SELECT 1
     FROM professional_care_engagements e
@@ -349,7 +364,7 @@ AS $
         OR (bm.user_id IS NOT NULL AND bm.role IN ('OWNER','ADMIN','MANAGER','PROVIDER','STAFF'))
       )
   )
-$;
+$petos_engagement_write$;
 
 GRANT EXECUTE ON FUNCTION petos_can_manage_business(text, text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_can_manage_provider(text, text) TO petos_app;
