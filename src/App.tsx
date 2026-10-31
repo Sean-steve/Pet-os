@@ -44,6 +44,7 @@ const Sprint32AnalyticsConsole = lazyNamed(() => import('./components/Sprint32An
 const Sprint33EngagementConsole = lazyNamed(() => import('./components/Sprint33EngagementConsole'), 'Sprint33EngagementConsole');
 const Sprint34SecurityConsole = lazyNamed(() => import('./components/Sprint34SecurityConsole'), 'Sprint34SecurityConsole');
 const Sprint35ResilienceConsole = lazyNamed(() => import('./components/Sprint35ResilienceConsole'), 'Sprint35ResilienceConsole');
+const Sprint36CertificationConsole = lazyNamed(() => import('./components/Sprint36CertificationConsole'), 'Sprint36CertificationConsole');
 
 const ModuleLoading = () => (
   <div className="grid min-h-[360px] place-items-center rounded-[28px] border border-[#E4E9E5] bg-white">
@@ -78,6 +79,7 @@ export default function App() {
   const renderModule = (tab: TabType): React.ReactNode => {
     let content: React.ReactNode;
     switch (tab) {
+      case 'sprint36': content = <Sprint36CertificationConsole />; break;
       case 'sprint35': content = <Sprint35ResilienceConsole />; break;
       case 'sprint34': content = <Sprint34SecurityConsole />; break;
       case 'sprint33': content = <Sprint33EngagementConsole onOpenModule={setActiveModule} />; break;
