@@ -120,11 +120,15 @@ CREATE OR REPLACE FUNCTION petos_prevent_posted_ledger_mutation()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $ledger_immutable$
-DECLARE journal_status text;
+DECLARE
+  journal_status text;
+  target_journal_id text;
 BEGIN
-  SELECT status INTO journal_status FROM finance_ledger_journals WHERE journal_id=COALESCE(OLD.journal_id,NEW.journal_id);
+  target_journal_id := CASE WHEN TG_OP='DELETE' THEN OLD.journal_id ELSE NEW.journal_id END;
+  SELECT status INTO journal_status FROM finance_ledger_journals WHERE journal_id=target_journal_id;
   IF journal_status='POSTED' THEN RAISE EXCEPTION 'POSTED_LEDGER_IS_IMMUTABLE'; END IF;
-  RETURN COALESCE(NEW,OLD);
+  IF TG_OP='DELETE' THEN RETURN OLD; END IF;
+  RETURN NEW;
 END
 $ledger_immutable$;
 
@@ -139,7 +143,8 @@ LANGUAGE plpgsql
 AS $journal_immutable$
 BEGIN
   IF OLD.status='POSTED' THEN RAISE EXCEPTION 'POSTED_JOURNAL_IS_IMMUTABLE'; END IF;
-  RETURN COALESCE(NEW,OLD);
+  IF TG_OP='DELETE' THEN RETURN OLD; END IF;
+  RETURN NEW;
 END
 $journal_immutable$;
 
