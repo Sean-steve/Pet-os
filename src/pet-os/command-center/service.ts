@@ -327,7 +327,7 @@ export class CommandCenterService {
       const petCare = care.filter((o) => o.petId === p.petId);
       const assignment = tracking.getActiveAssignmentForPet(p.petId);
       const device = assignment ? tracking.getDevice(assignment.deviceId) : undefined;
-      const trackerStatus = device ? device.connectivityStatus : 'NOT_ASSIGNED';
+      const trackerStatus: CommandCenterSnapshot['pets'][number]['trackerStatus'] = device ? device.connectivityStatus : 'NOT_ASSIGNED';
       return {
         petId: p.petId,
         name: p.name,

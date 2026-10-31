@@ -777,7 +777,7 @@ export const Sprint11BookingConsole: React.FC = () => {
                         >
                           <div>
                             <p className="text-xs font-bold text-white">{pet.name}</p>
-                            <p className="text-[10px] text-[#64748B]">{pet.species} · {pet.breed || 'Mixed'}</p>
+                            <p className="text-[10px] text-[#64748B]">{pet.speciesCode} · {pet.customBreedName || pet.breedCode || 'Mixed'}</p>
                           </div>
                           {isSelected && <Check className="w-4 h-4 text-indigo-400" />}
                         </div>

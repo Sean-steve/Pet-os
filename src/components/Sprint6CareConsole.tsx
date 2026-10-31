@@ -175,7 +175,7 @@ export const Sprint6CareConsole: React.FC = () => {
   // Clock Manipulation Handlers
   const handleAdvanceClockDays = async (days: number) => {
     if (!simulatedClock) return;
-    simulatedClock.advanceTime(days * 86400 * 1000);
+    simulatedClock.advanceDays(days);
     setCurrentTimeDisplay(new Date(simulatedClock.getTime()).toLocaleString('en-US', { timeZone: 'Africa/Nairobi' }));
     
     // Automatically trigger scheduler tick on clock change
@@ -211,7 +211,7 @@ export const Sprint6CareConsole: React.FC = () => {
   const handleSimulateDowntime = async (hours: number) => {
     const now = simulatedClock ? new Date(simulatedClock.getTime()) : new Date();
     if (simulatedClock) {
-      simulatedClock.advanceTime(hours * 3600 * 1000);
+      simulatedClock.advanceHours(hours);
     }
     const { catchupReport } = await CareBackgroundScheduler.simulateDowntimeRecovery(hours, now);
     setLastReport(catchupReport);

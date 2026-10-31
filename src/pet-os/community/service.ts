@@ -610,6 +610,46 @@ export class CommunityService {
     return membership;
   }
 
+  public leaveGroup(groupId: CommunityGroupId, profileId: CommunityProfileId): GroupMembership {
+    const membership = this.store.getMembership(groupId, profileId);
+    if (!membership) {
+      throw new Error('Group membership not found.');
+    }
+    if (membership.role === 'OWNER') {
+      throw new Error('Group owner must transfer ownership before leaving the group.');
+    }
+    if (membership.status === 'BANNED') {
+      throw new Error('Banned memberships cannot be modified by the member.');
+    }
+    if (membership.status === 'LEFT') {
+      return membership;
+    }
+
+    membership.status = 'LEFT';
+    membership.updatedAt = new Date().toISOString();
+
+    const group = this.store.groups.get(groupId);
+    if (group) {
+      group.memberCount = Math.max(0, group.memberCount - 1);
+      group.updatedAt = membership.updatedAt;
+    }
+
+    const profile = this.store.profiles.get(profileId);
+    this.emitEvent(
+      createEventEnvelope(
+        'CommunityGroupMemberLeft',
+        'CommunityGroup',
+        groupId,
+        { groupId, profileId },
+        1,
+        undefined,
+        profile?.userId
+      )
+    );
+
+    return membership;
+  }
+
   // ============================================================================
   // POSTS, REVISIONS, MEDIA, COMMENTS, REACTIONS
   // ============================================================================
@@ -1368,6 +1408,11 @@ export class CommunityService {
 
   public getActiveRecoveryAlerts(): CommunityRecoveryAlert[] {
     return this.store.getActiveRecoveryAlerts();
+  }
+
+  public getSightingCountForRecoveryAlert(alertId: CommunityRecoveryAlertId): number {
+    const alert = this.store.recoveryAlerts.get(alertId);
+    return alert ? this.recoveryService.getSightingsForIncident(alert.lostPetIncidentId).length : 0;
   }
 
   public getRecoveryAlertByIncidentId(incidentId: LostPetIncidentId): CommunityRecoveryAlert | undefined {

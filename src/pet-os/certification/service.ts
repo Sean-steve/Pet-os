@@ -216,7 +216,7 @@ export class FullSystemCertificationService{
       productionBoundaries:[
         'CERTIFIED_PROTOTYPE means the in-repository multi-role domain graph and regression contracts passed; it is not production certification.',
         'Production E2E certification still requires authenticated server APIs, durable databases, real payment/provider integrations, browser/device tests, accessibility testing, load/soak testing, security testing and observed disaster-recovery drills.',
-        'Legacy advisory TypeScript errors remain a separate production-readiness blocker until the repository typecheck is made mandatory and clean.',
+        'Sprint 37 makes clean TypeScript validation mandatory; production readiness still requires durable server, infrastructure and external-integration evidence.',
       ],
     } satisfies FullSystemCertificationReport;
   }

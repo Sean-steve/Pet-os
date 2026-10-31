@@ -594,7 +594,7 @@ export const Sprint13DogWalkingConsole: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-red-400 flex items-center gap-1.5">
                             <AlertCircle className="w-4 h-4" />
-                            {inc.incidentType} (Severity: {inc.severity})
+                            {inc.type} (Severity: {inc.severity})
                           </span>
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">
                             {inc.status}

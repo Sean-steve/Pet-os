@@ -599,7 +599,7 @@ export const Sprint4Console: React.FC = () => {
               >
                 {pets.map((p) => (
                   <option key={p.petId} value={p.petId}>
-                    {p.name} ({p.breedName || p.breedCode})
+                    {p.name} ({p.breedName || p.speciesName})
                   </option>
                 ))}
               </select>

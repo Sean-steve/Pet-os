@@ -55,6 +55,20 @@ import {
 
 type WorkspaceRole = 'DRIVER' | 'DISPATCHER' | 'OWNER' | 'TEST_RUNNER';
 
+const getTransportEventTimestamp = (event: TransportEvent): string => {
+  if ('timestamp' in event) return event.timestamp;
+  if ('completedAt' in event) return event.completedAt;
+  if ('abortedAt' in event) return event.abortedAt;
+  return new Date(0).toISOString();
+};
+
+const getTransportEventReference = (event: TransportEvent): string => {
+  const eventId = event.eventId;
+  if ('tripId' in event) return String(event.tripId);
+  if ('bookingId' in event) return String(event.bookingId);
+  return eventId;
+};
+
 export const Sprint22TransportConsole: React.FC = () => {
   const [role, setRole] = useState<WorkspaceRole>('DRIVER');
   const [trips, setTrips] = useState<TransportTrip[]>([]);
@@ -1077,9 +1091,9 @@ export const Sprint22TransportConsole: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="text-cyan-400 font-bold">{e.eventType}</span>
                     <span className="text-[#64748B]">·</span>
-                    <span className="text-[#94A3B8]">{(e as any).tripId || (e as any).bookingId}</span>
+                    <span className="text-[#94A3B8]">{getTransportEventReference(e)}</span>
                   </div>
-                  <span className="text-[10px] text-[#475569]">{new Date(e.timestamp || Date.now()).toLocaleTimeString()}</span>
+                  <span className="text-[10px] text-[#475569]">{new Date(getTransportEventTimestamp(e)).toLocaleTimeString()}</span>
                 </div>
               ))}
             </div>
