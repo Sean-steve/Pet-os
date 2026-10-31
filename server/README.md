@@ -24,7 +24,7 @@ All `/v1` routes require a valid Bearer token. The token subject is the canonica
 
 ## Important boundary
 
-This is the first production backend migration slice, not completion of the full migration. Health, booking, finance, tracking, professional care, commerce, subscriptions and the remaining bounded contexts still use prototype stores until migrated in later backend phases.
+This backend is being migrated in bounded waves. Identity/Household/Pet Core, longitudinal care domains, the professional-service lifecycle, and money/billing authority are now durable. Tracking/Transport/Recovery/Community, Commerce and later platform domains still require durable migration, and the static frontend still requires API-adapter cutover.
 
 ## Sprint 39 — Migration Wave 2
 
@@ -33,3 +33,7 @@ The backend now persists Pet-specific Health, Care, Nutrition, Training and Acti
 ## Sprint 40 — Migration Wave 3
 
 Provider profiles/businesses/service offerings, Booking, Professional Care and verified-service Reviews now have relational PostgreSQL authority. Booking price/service snapshots are server-derived, active provider time conflicts are serialized by PostgreSQL advisory locks, Professional Care can only originate from confirmed/in-progress Bookings, and Review eligibility is generated only from completed Bookings. Provider execution writes are separated from owner read access, and providers cannot mutate customer Reviews.
+
+## Sprint 41 — Migration Wave 4
+
+Finance, consumer Subscriptions and Provider SaaS now use durable PostgreSQL authority. Payment and payout amounts are server-derived, posted double-entry journals are immutable, provider earnings and refunds are reconciled through trusted adapter routes, and plan prices/entitlements are server-owned. Provider SaaS restriction creates bounded continuity grants for active Professional Care so billing failure cannot interrupt custody/service. Internal settlement routes require `BILLING_ADAPTER_SECRET`; real provider credentials/signature verification remain a production integration requirement.
