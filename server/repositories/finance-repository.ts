@@ -130,13 +130,21 @@ export async function settlePaymentIntent(client:PoolClient,input:{
     await client.query(`UPDATE finance_webhook_events SET status='PROCESSED',processed_at=now() WHERE provider_event_id=$1`,[input.providerEventId]);
     return {duplicate:false,paymentTransactionId:txId,status:'FAILED'};
   }
+  const providerFeeMinor=input.providerFeeMinor||0;
+  if(providerFeeMinor<0 || providerFeeMinor>input.settledAmountMinor) throw Object.assign(new Error('PAYMENT_PROVIDER_FEE_INVALID'),{statusCode:409});
+  const netClearingMinor=input.settledAmountMinor-providerFeeMinor;
+  const paymentEntries:Array<{code:string;type:string;name:string;direction:'DEBIT'|'CREDIT';amountMinor:number;bookingId:string}>=[];
+  if(netClearingMinor>0){
+    paymentEntries.push({code:paymentAccountCode(intent.provider),type:'ASSET',name:'Payment clearing cash',direction:'DEBIT',amountMinor:netClearingMinor,bookingId:intent.booking_id});
+  }
+  if(providerFeeMinor>0){
+    paymentEntries.push({code:'EXPENSE_PAYMENT_PROCESSOR_FEES',type:'EXPENSE',name:'Payment processor fees',direction:'DEBIT',amountMinor:providerFeeMinor,bookingId:intent.booking_id});
+  }
+  paymentEntries.push({code:'LIABILITY_CUSTOMER_PREPAYMENTS',type:'LIABILITY',name:'Customer prepayments',direction:'CREDIT',amountMinor:input.settledAmountMinor,bookingId:intent.booking_id});
   await postJournal(client,{
     journalType:'CUSTOMER_PAYMENT',sourceType:'BOOKING_PAYMENT',sourceId:txId,currency:input.currency,totalAmountMinor:input.settledAmountMinor,
     description:`Customer payment for booking ${intent.booking_id}`,
-    entries:[
-      {code:paymentAccountCode(intent.provider),type:'ASSET',name:'Payment clearing cash',direction:'DEBIT',amountMinor:input.settledAmountMinor,bookingId:intent.booking_id},
-      {code:'LIABILITY_CUSTOMER_PREPAYMENTS',type:'LIABILITY',name:'Customer prepayments',direction:'CREDIT',amountMinor:input.settledAmountMinor,bookingId:intent.booking_id},
-    ],
+    entries:paymentEntries,
   });
   await client.query(`UPDATE finance_payment_intents SET status='SUCCEEDED',succeeded_at=now(),updated_at=now(),version=version+1 WHERE payment_intent_id=$1`,[input.paymentIntentId]);
   const booking=await client.query(`SELECT b.*,p.display_name,o.title FROM bookings b JOIN provider_profiles p ON p.provider_id=b.provider_id JOIN provider_service_offerings o ON o.offering_id=b.offering_id WHERE b.booking_id=$1`,[intent.booking_id]);
