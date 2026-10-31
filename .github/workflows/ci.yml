@@ -25,6 +25,7 @@ jobs:
       AUTH_AUDIENCE: pet-os-api
       AUTH_JWT_SECRET: ci-test-only-pet-os-secret-32-bytes-minimum
       RATE_LIMIT_PER_MINUTE: 200
+      BILLING_ADAPTER_SECRET: ci-billing-adapter-secret-32-bytes-minimum
     services:
       postgres:
         image: postgres:17-alpine
@@ -94,6 +95,11 @@ jobs:
           NODE_ENV: test
         run: npm run backend:wave3-integration
 
+      - name: Wave 4 money billing entitlement integration
+        env:
+          NODE_ENV: test
+        run: npm run backend:wave4-integration
+
       - name: Backend production bundle
         run: npm run server:build
 
@@ -102,7 +108,7 @@ jobs:
 
       - name: Production container smoke test
         run: |
-          docker run -d --rm --network host --name pet-os-api-ci             -e NODE_ENV=production             -e API_PORT=3001             -e DATABASE_URL="${DATABASE_URL}?sslmode=disable"             -e DATABASE_RUNTIME_ROLE="$DATABASE_RUNTIME_ROLE"             -e REDIS_URL="$REDIS_URL"             -e CORS_ORIGINS="$CORS_ORIGINS"             -e AUTH_ISSUER="$AUTH_ISSUER"             -e AUTH_AUDIENCE="$AUTH_AUDIENCE"             -e AUTH_JWT_SECRET="$AUTH_JWT_SECRET"             -e RATE_LIMIT_PER_MINUTE="$RATE_LIMIT_PER_MINUTE"             pet-os-api:ci
+          docker run -d --rm --network host --name pet-os-api-ci             -e NODE_ENV=production             -e API_PORT=3001             -e DATABASE_URL="${DATABASE_URL}?sslmode=disable"             -e DATABASE_RUNTIME_ROLE="$DATABASE_RUNTIME_ROLE"             -e REDIS_URL="$REDIS_URL"             -e CORS_ORIGINS="$CORS_ORIGINS"             -e AUTH_ISSUER="$AUTH_ISSUER"             -e AUTH_AUDIENCE="$AUTH_AUDIENCE"             -e AUTH_JWT_SECRET="$AUTH_JWT_SECRET"             -e RATE_LIMIT_PER_MINUTE="$RATE_LIMIT_PER_MINUTE"             -e BILLING_ADAPTER_SECRET="$BILLING_ADAPTER_SECRET"             pet-os-api:ci
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:3001/health/ready >/tmp/petos-ready.json; then
               cat /tmp/petos-ready.json

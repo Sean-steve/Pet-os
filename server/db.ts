@@ -42,6 +42,24 @@ export async function withTenantTransaction<T>(
   }
 }
 
+export async function withSystemTransaction<T>(
+  config: ServerConfig,
+  fn: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  const client = await getDatabase(config).connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function closeDatabase(): Promise<void> {
   if (pool) {
     await pool.end();

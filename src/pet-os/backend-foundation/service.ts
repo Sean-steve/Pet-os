@@ -55,12 +55,17 @@ const implemented: BackendFoundationCapability[] = [
     status: 'IMPLEMENTED',
     evidence: ['Provider, Booking, Professional Care and Reviews have relational PostgreSQL authority, cross-party authorization, idempotency, lifecycle revisions and outbox continuity'],
   },
+  {
+    id: 'BFD-10',
+    title: 'Wave 4 durable money, billing and entitlement authority',
+    status: 'IMPLEMENTED',
+    evidence: ['Finance, consumer subscriptions and Provider SaaS now use durable PostgreSQL authority with immutable ledger controls, RLS, reconciliation, entitlement grants and trusted settlement boundaries'],
+  },
 ];
 
 const remaining: BackendFoundationCapability[] = [
-  { id: 'BFD-NEXT-03', title: 'Finance ledger and production payment reconciliation', status: 'NEXT_MIGRATION', evidence: ['prototype finance remains non-production money movement'] },
   { id: 'BFD-NEXT-04', title: 'Tracking, Transport and Recovery durable event ingestion', status: 'NEXT_MIGRATION', evidence: ['device/location runtime is not yet production-backed'] },
-  { id: 'BFD-NEXT-05', title: 'Commerce, subscriptions and Provider SaaS persistence', status: 'NEXT_MIGRATION', evidence: ['commercial bounded contexts remain prototype stores'] },
+  { id: 'BFD-NEXT-05', title: 'Commerce durable persistence', status: 'NEXT_MIGRATION', evidence: ['marketplace commerce remains a later migration wave'] },
   { id: 'BFD-NEXT-06', title: 'Durable worker/outbox publisher and dead-letter processing', status: 'NEXT_MIGRATION', evidence: ['outbox table exists; asynchronous publisher infrastructure is the next runtime step'] },
   { id: 'BFD-NEXT-07', title: 'Frontend API adapter migration', status: 'NEXT_MIGRATION', evidence: ['the current static prototype still reads browser stores until runtime adapters are switched to the server API'] },
   { id: 'BFD-NEXT-08', title: 'Production observability, backups, independent security and DR evidence', status: 'EXTERNAL_EVIDENCE_REQUIRED', evidence: ['must be proven in deployed environments'] },
@@ -70,7 +75,7 @@ const migrationWaves: DomainMigrationWave[] = [
   { wave: 1, domains: ['Identity', 'Household', 'Pet Core'], objective: 'Establish durable tenant, API and aggregate foundations.', status: 'FOUNDATION_COMPLETE' },
   { wave: 2, domains: ['Health', 'Care', 'Nutrition', 'Training', 'Activity'], objective: 'Migrate longitudinal Pet care data and provenance.', status: 'DURABLE_BACKEND_COMPLETE' },
   { wave: 3, domains: ['Provider', 'Booking', 'Professional Care', 'Reviews'], objective: 'Move professional service lifecycle to durable server authority.', status: 'DURABLE_BACKEND_COMPLETE' },
-  { wave: 4, domains: ['Finance', 'Subscriptions', 'Provider SaaS'], objective: 'Establish production-grade ledger, billing and reconciliation.', status: 'PENDING' },
+  { wave: 4, domains: ['Finance', 'Subscriptions', 'Provider SaaS'], objective: 'Establish durable ledger, billing, entitlements and reconciliation authority.', status: 'DURABLE_BACKEND_COMPLETE' },
   { wave: 5, domains: ['Tracking', 'Transport', 'Recovery', 'Community'], objective: 'Migrate high-volume event/location and recovery workflows.', status: 'PENDING' },
   { wave: 6, domains: ['Commerce', 'Integrations', 'AI', 'Automation', 'Analytics'], objective: 'Complete commercial, integration and intelligence backend migration.', status: 'PENDING' },
 ];

@@ -1,8 +1,8 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import type { ServerConfig } from './config';
 import { createAuthMiddleware, requireAuthenticated, type AuthenticatedRequest } from './auth';
-import { getDatabase, withTenantTransaction } from './db';
+import { getDatabase, withSystemTransaction, withTenantTransaction } from './db';
 import { getRedis } from './redis';
 import { createRateLimitMiddleware } from './rate-limit';
 import { createPet, listHouseholdsForUser, listPetsForHousehold } from './repositories/core-repository';
@@ -11,6 +11,31 @@ import { createOffering, createProviderProfile, createServiceBusiness, getProvid
 import { createBooking, getBooking, listBookingsForActor, transitionBooking } from './repositories/booking-repository';
 import { addCareRecord, createEngagementFromBooking, getEngagement, transitionEngagement } from './repositories/professional-care-repository';
 import { listPublicReviews, listReviewEligibilities, respondToReview, submitReview } from './repositories/review-repository';
+import {
+  createBookingPaymentIntent,
+  createPayoutDestination,
+  finalizeCompletedBookingEarning,
+  getBookingFinance,
+  getProviderFinanceSummary,
+  requestBookingRefund,
+  requestProviderPayout,
+  runPaymentReconciliation,
+  settlePaymentIntent,
+  settleProviderPayout,
+  settleRefund,
+  verifyPayoutDestination,
+} from './repositories/finance-repository';
+import {
+  cancelConsumerSubscription,
+  cancelProviderSaaSSubscription,
+  createConsumerSubscription,
+  createProviderSaaSSubscription,
+  getConsumerSubscription,
+  getProviderSaaSSubscription,
+  runBillingReconciliation,
+  settleConsumerSubscription,
+  settleProviderSaaSSubscription,
+} from './repositories/subscription-repository';
 
 function stringField(value: unknown, name: string, max = 120): string {
   if (typeof value !== 'string' || !value.trim()) throw Object.assign(new Error(`${name}_REQUIRED`), { statusCode: 400 });
@@ -51,6 +76,14 @@ function positiveIntField(value: unknown, name: string): number {
   return parsed;
 }
 
+function choiceField<T extends string>(value: unknown, name: string, allowed: readonly T[]): T {
+  const raw = stringField(value, name, 80);
+  if (!(allowed as readonly string[]).includes(raw)) {
+    throw Object.assign(new Error(`${name}_INVALID`), { statusCode: 400 });
+  }
+  return raw as T;
+}
+
 function nonNegativeIntField(value: unknown, name: string): number {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) {
@@ -71,6 +104,16 @@ function arrayField(value: unknown, name: string, maxItems = 50): unknown[] {
     throw Object.assign(new Error(`${name}_ARRAY_REQUIRED`), { statusCode: 400 });
   }
   return value;
+}
+
+function requireBillingAdapter(req: Request, config: ServerConfig): void {
+  const supplied = req.header('x-billing-adapter-secret') || '';
+  const expected = config.billingAdapterSecret;
+  const suppliedBuffer = Buffer.from(supplied);
+  const expectedBuffer = Buffer.from(expected);
+  if (suppliedBuffer.length !== expectedBuffer.length || !timingSafeEqual(suppliedBuffer, expectedBuffer)) {
+    throw Object.assign(new Error('BILLING_ADAPTER_AUTHENTICATION_FAILED'), { statusCode: 401 });
+  }
 }
 
 function containsAccessSecret(value: unknown): boolean {
@@ -154,6 +197,166 @@ export function createApp(config: ServerConfig) {
     } catch {
       res.status(503).json({ status: 'not_ready' });
     }
+  });
+
+  app.post('/internal/billing/finance/payment-settlements', async (req, res, next) => {
+    try {
+      requireBillingAdapter(req, config);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) =>
+        settlePaymentIntent(client, {
+          providerEventId: stringField(body.providerEventId, 'PROVIDER_EVENT_ID', 180),
+          paymentIntentId: stringField(body.paymentIntentId, 'PAYMENT_INTENT_ID', 180),
+          providerTransactionId: stringField(body.providerTransactionId, 'PROVIDER_TRANSACTION_ID', 180),
+          settledAmountMinor: positiveIntField(body.settledAmountMinor, 'SETTLED_AMOUNT_MINOR'),
+          currency: stringField(body.currency, 'CURRENCY', 12),
+          status: choiceField(body.status, 'STATUS', ['SUCCESS','FAILED'] as const),
+          providerFeeMinor: body.providerFeeMinor === undefined ? 0 : nonNegativeIntField(body.providerFeeMinor, 'PROVIDER_FEE_MINOR'),
+        }),
+      );
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/billing/finance/bookings/:bookingId/finalize-earning', async (req, res, next) => {
+    try {
+      requireBillingAdapter(req, config);
+      const bookingId = stringField(req.params.bookingId, 'BOOKING_ID', 180);
+      const result = await withSystemTransaction(config, (client) => finalizeCompletedBookingEarning(client, bookingId));
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/billing/finance/payout-destinations/:destinationId/verify', async (req, res, next) => {
+    try {
+      requireBillingAdapter(req, config);
+      const destinationId = stringField(req.params.destinationId, 'DESTINATION_ID', 180);
+      const destination = await withSystemTransaction(config, (client) => verifyPayoutDestination(client, destinationId));
+      res.json({ destination });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/billing/finance/payouts/:payoutId/settle', async (req, res, next) => {
+    try {
+      requireBillingAdapter(req, config);
+      const payoutId = stringField(req.params.payoutId, 'PAYOUT_ID', 180);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) =>
+        settleProviderPayout(client, {
+          payoutId,
+          providerReference: stringField(body.providerReference, 'PROVIDER_REFERENCE', 180),
+          status: choiceField(body.status, 'STATUS', ['PAID','FAILED'] as const),
+          failureReason: optionalStringField(body.failureReason, 'FAILURE_REASON', 500),
+        }),
+      );
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/billing/finance/refunds/:refundId/settle', async (req, res, next) => {
+    try {
+      requireBillingAdapter(req, config);
+      const refundId = stringField(req.params.refundId, 'REFUND_ID', 180);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) =>
+        settleRefund(client, {
+          refundId,
+          providerRefundReference: stringField(body.providerRefundReference, 'PROVIDER_REFUND_REFERENCE', 180),
+          status: choiceField(body.status, 'STATUS', ['SUCCEEDED','FAILED'] as const),
+        }),
+      );
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/billing/subscriptions/consumer/:subscriptionId/settle', async (req, res, next) => {
+    try {
+      requireBillingAdapter(req, config);
+      const subscriptionId = stringField(req.params.subscriptionId, 'SUBSCRIPTION_ID', 180);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) =>
+        settleConsumerSubscription(client, {
+          subscriptionId,
+          providerEventId: stringField(body.providerEventId, 'PROVIDER_EVENT_ID', 180),
+          providerInvoiceReference: stringField(body.providerInvoiceReference, 'PROVIDER_INVOICE_REFERENCE', 180),
+          status: choiceField(body.status, 'STATUS', ['PAYMENT_SUCCEEDED','PAYMENT_FAILED'] as const),
+          amountMinor: nonNegativeIntField(body.amountMinor, 'AMOUNT_MINOR'),
+          currency: stringField(body.currency, 'CURRENCY', 12),
+          externalSubscriptionReference: optionalStringField(body.externalSubscriptionReference, 'EXTERNAL_SUBSCRIPTION_REFERENCE', 180),
+        }),
+      );
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/billing/provider-saas/:subscriptionId/settle', async (req, res, next) => {
+    try {
+      requireBillingAdapter(req, config);
+      const subscriptionId = stringField(req.params.subscriptionId, 'SUBSCRIPTION_ID', 180);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) =>
+        settleProviderSaaSSubscription(client, {
+          subscriptionId,
+          providerEventId: stringField(body.providerEventId, 'PROVIDER_EVENT_ID', 180),
+          providerInvoiceReference: stringField(body.providerInvoiceReference, 'PROVIDER_INVOICE_REFERENCE', 180),
+          status: choiceField(body.status, 'STATUS', ['PAYMENT_SUCCEEDED','PAYMENT_FAILED'] as const),
+          amountMinor: nonNegativeIntField(body.amountMinor, 'AMOUNT_MINOR'),
+          currency: stringField(body.currency, 'CURRENCY', 12),
+          externalBillingRef: optionalStringField(body.externalBillingRef, 'EXTERNAL_BILLING_REF', 180),
+        }),
+      );
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/billing/finance/reconcile', async (req, res, next) => {
+    try {
+      requireBillingAdapter(req, config);
+      const body = req.body || {};
+      const rawRecords = arrayField(body.records, 'RECORDS', 1000);
+      const records = rawRecords.map((item, index) => {
+        const row = objectField(item, `RECORD_${index}`);
+        return {
+          providerTransactionId: stringField(row.providerTransactionId, 'PROVIDER_TRANSACTION_ID', 180),
+          amountMinor: nonNegativeIntField(row.amountMinor, 'AMOUNT_MINOR'),
+          currency: stringField(row.currency, 'CURRENCY', 12),
+          status: stringField(row.status, 'STATUS', 30),
+          bookingId: optionalStringField(row.bookingId, 'BOOKING_ID', 180),
+        };
+      });
+      const result = await withSystemTransaction(config, (client) =>
+        runPaymentReconciliation(client, {
+          provider: stringField(body.provider, 'PROVIDER', 80),
+          periodStart: isoDateField(body.periodStart, 'PERIOD_START'),
+          periodEnd: isoDateField(body.periodEnd, 'PERIOD_END'),
+          currency: stringField(body.currency, 'CURRENCY', 12),
+          records,
+        }),
+      );
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/billing/subscriptions/reconcile', async (req, res, next) => {
+    try {
+      requireBillingAdapter(req, config);
+      const body = req.body || {};
+      const rawRecords = arrayField(body.records, 'RECORDS', 1000);
+      const records = rawRecords.map((item, index) => {
+        const row = objectField(item, `RECORD_${index}`);
+        return {
+          subscriptionId: stringField(row.subscriptionId, 'SUBSCRIPTION_ID', 180),
+          providerStatus: stringField(row.providerStatus, 'PROVIDER_STATUS', 80),
+        };
+      });
+      const result = await withSystemTransaction(config, (client) =>
+        runBillingReconciliation(client, {
+          billingDomain: choiceField(body.billingDomain, 'BILLING_DOMAIN', ['CONSUMER_SUBSCRIPTION','PROVIDER_SAAS'] as const),
+          records,
+        }),
+      );
+      res.json(result);
+    } catch (error) { next(error); }
   });
 
   const authenticate = createAuthMiddleware(config);
@@ -641,6 +844,190 @@ export function createApp(config: ServerConfig) {
         }),
       );
       res.status(result.replayed ? 200 : 201).json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/finance/payment-intents', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const body = req.body || {};
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const result = await withTenantTransaction(config, userId, undefined, (client) =>
+        createBookingPaymentIntent(client, {
+          actorUserId: userId,
+          idempotencyKey,
+          bookingId: stringField(body.bookingId, 'BOOKING_ID', 180),
+          paymentMethodType: choiceField(body.paymentMethodType, 'PAYMENT_METHOD_TYPE', ['MPESA','CARD','BANK_TRANSFER'] as const),
+          provider: choiceField(body.provider, 'PAYMENT_PROVIDER', ['MPESA_SAFARICOM','CARD_GATEWAY','MOCK_PROVIDER'] as const),
+        }),
+      );
+      res.status(result.replayed ? 200 : 201).json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.get('/v1/finance/bookings/:bookingId', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const bookingId = stringField(req.params.bookingId, 'BOOKING_ID', 180);
+      const finance = await withTenantTransaction(config, userId, undefined, (client) => getBookingFinance(client, bookingId, userId));
+      res.json(finance);
+    } catch (error) { next(error); }
+  });
+
+  app.get('/v1/providers/:providerId/finance', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const providerId = stringField(req.params.providerId, 'PROVIDER_ID', 180);
+      const currency = req.query.currency ? stringField(req.query.currency, 'CURRENCY', 12) : 'KES';
+      const finance = await withTenantTransaction(config, userId, undefined, (client) => getProviderFinanceSummary(client, providerId, userId, currency));
+      res.json(finance);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/providers/:providerId/payout-destinations', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const providerId = stringField(req.params.providerId, 'PROVIDER_ID', 180);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const result = await withTenantTransaction(config, userId, undefined, (client) =>
+        createPayoutDestination(client, {
+          actorUserId: userId,
+          idempotencyKey,
+          providerId,
+          destinationType: choiceField(body.destinationType, 'DESTINATION_TYPE', ['MPESA_B2C','BANK_ACCOUNT'] as const),
+          displayTitle: stringField(body.displayTitle, 'DISPLAY_TITLE', 120),
+          maskedIdentifier: stringField(body.maskedIdentifier, 'MASKED_IDENTIFIER', 120),
+          destinationToken: stringField(body.destinationToken, 'DESTINATION_TOKEN', 220),
+          isDefault: body.isDefault === true,
+        }),
+      );
+      res.status(result.replayed ? 200 : 201).json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/providers/:providerId/payouts', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const providerId = stringField(req.params.providerId, 'PROVIDER_ID', 180);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) =>
+        requestProviderPayout(client, {
+          actorUserId: userId,
+          idempotencyKey,
+          providerId,
+          destinationId: stringField(body.destinationId, 'DESTINATION_ID', 180),
+          currency: stringField(body.currency, 'CURRENCY', 12),
+        }),
+      );
+      res.status(result.replayed ? 200 : 201).json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/finance/bookings/:bookingId/refunds', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const bookingId = stringField(req.params.bookingId, 'BOOKING_ID', 180);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) =>
+        requestBookingRefund(client, {
+          actorUserId: userId,
+          idempotencyKey,
+          bookingId,
+          reason: choiceField(body.reason, 'REFUND_REASON', ['OWNER_CANCELLATION','PROVIDER_CANCELLATION','SERVICE_UNSATISFACTORY','DUPLICATE_CHARGE','GOODWILL','SYSTEM_RECOVERY'] as const),
+          reasonDetails: optionalStringField(body.reasonDetails, 'REASON_DETAILS', 500),
+        }),
+      );
+      res.status(result.replayed ? 200 : 201).json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/subscriptions/consumer', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const result = await withTenantTransaction(config, userId, undefined, (client) =>
+        createConsumerSubscription(client, {
+          actorUserId: userId,
+          idempotencyKey,
+          ownerType: choiceField(body.ownerType, 'OWNER_TYPE', ['HOUSEHOLD','USER'] as const),
+          ownerId: stringField(body.ownerId, 'OWNER_ID', 180),
+          planCode: choiceField(body.planCode, 'PLAN_CODE', ['FREE','PREMIUM'] as const),
+          billingInterval: choiceField(body.billingInterval, 'BILLING_INTERVAL', ['MONTHLY','ANNUAL'] as const),
+          currency: stringField(body.currency, 'CURRENCY', 12),
+          marketCountry: stringField(body.marketCountry, 'MARKET_COUNTRY', 8),
+          billingProvider: choiceField(body.billingProvider, 'BILLING_PROVIDER', ['MPESA_RECURRING','CARD_GATEWAY','MOCK_BILLING_PROVIDER'] as const),
+        }),
+      );
+      res.status(result.replayed ? 200 : 201).json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.get('/v1/subscriptions/consumer/:subscriptionId', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const subscriptionId = stringField(req.params.subscriptionId, 'SUBSCRIPTION_ID', 180);
+      const result = await withTenantTransaction(config, userId, undefined, (client) => getConsumerSubscription(client, subscriptionId, userId));
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/subscriptions/consumer/:subscriptionId/cancel', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const subscriptionId = stringField(req.params.subscriptionId, 'SUBSCRIPTION_ID', 180);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const result = await withTenantTransaction(config, userId, undefined, (client) =>
+        cancelConsumerSubscription(client, { actorUserId:userId,idempotencyKey,subscriptionId,reason:stringField(body.reason,'REASON',500) }),
+      );
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/provider-saas/subscriptions', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const result = await withTenantTransaction(config, userId, undefined, (client) =>
+        createProviderSaaSSubscription(client, {
+          actorUserId:userId,idempotencyKey,
+          subscriberType:choiceField(body.subscriberType,'SUBSCRIBER_TYPE',['SERVICE_BUSINESS','INDIVIDUAL_PROVIDER'] as const),
+          businessId:optionalStringField(body.businessId,'BUSINESS_ID',180),
+          providerId:optionalStringField(body.providerId,'PROVIDER_ID',180),
+          planCode:stringField(body.planCode,'PLAN_CODE',80),
+          billingInterval:choiceField(body.billingInterval,'BILLING_INTERVAL',['MONTHLY','ANNUAL'] as const),
+          currency:stringField(body.currency,'CURRENCY',12),
+          market:stringField(body.market,'MARKET',20),
+        }),
+      );
+      res.status(result.replayed ? 200 : 201).json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.get('/v1/provider-saas/subscriptions/:subscriptionId', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const subscriptionId = stringField(req.params.subscriptionId, 'SUBSCRIPTION_ID', 180);
+      const result = await withTenantTransaction(config, userId, undefined, (client) => getProviderSaaSSubscription(client, subscriptionId, userId));
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/provider-saas/subscriptions/:subscriptionId/cancel', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const subscriptionId = stringField(req.params.subscriptionId, 'SUBSCRIPTION_ID', 180);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const result = await withTenantTransaction(config, userId, undefined, (client) =>
+        cancelProviderSaaSSubscription(client, { actorUserId:userId,idempotencyKey,subscriptionId,reason:stringField(body.reason,'REASON',500) }),
+      );
+      res.json(result);
     } catch (error) { next(error); }
   });
 

@@ -53,14 +53,15 @@ export class BackendFoundationTestSuite {
       },
       {
         id: 'BFD-T06',
-        name: 'Waves 1-3 are complete; later migration waves remain pending',
+        name: 'Waves 1-4 are complete; later migration waves remain pending',
         fn: () => {
           const waves = BackendFoundationService.run().migrationWaves;
           if (
             waves[0]?.status !== 'FOUNDATION_COMPLETE'
             || waves[1]?.status !== 'DURABLE_BACKEND_COMPLETE'
             || waves[2]?.status !== 'DURABLE_BACKEND_COMPLETE'
-            || waves.slice(3).some((wave) => wave.status !== 'PENDING')
+            || waves[3]?.status !== 'DURABLE_BACKEND_COMPLETE'
+            || waves.slice(4).some((wave) => wave.status !== 'PENDING')
           ) {
             throw new Error('migration wave status is inaccurate');
           }
@@ -68,10 +69,11 @@ export class BackendFoundationTestSuite {
       },
       {
         id: 'BFD-T07',
-        name: 'Finance is explicitly not yet production migrated',
+        name: 'Wave 4 is durable while live external payment-provider evidence remains outside repository certification',
         fn: () => {
           const report = BackendFoundationService.run();
-          if (!report.remaining.some((item) => /Finance ledger/.test(item.title))) throw new Error('finance migration boundary missing');
+          if (!report.implemented.some((item) => item.id === 'BFD-10')) throw new Error('Wave 4 implementation evidence missing');
+          if (!report.remaining.some((item) => item.status === 'EXTERNAL_EVIDENCE_REQUIRED')) throw new Error('external production evidence boundary missing');
         },
       },
       {
