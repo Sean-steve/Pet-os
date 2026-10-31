@@ -44,6 +44,7 @@ services:
       NODE_ENV: production
       API_PORT: 3001
       DATABASE_URL: postgresql://petos:${POSTGRES_PASSWORD}@postgres:5432/petos
+      DATABASE_RUNTIME_ROLE: petos_app
       REDIS_URL: redis://redis:6379
       CORS_ORIGINS: ${CORS_ORIGINS}
       AUTH_ISSUER: ${AUTH_ISSUER}
