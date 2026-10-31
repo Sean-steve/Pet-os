@@ -285,6 +285,13 @@ async function main() {
         return MigrationWave4TestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 42 (Migration Wave 5 — Event & Location Authority)',
+      runner: async () => {
+        const { MigrationWave5TestSuite } = await import('../src/pet-os/migration-wave5/tests');
+        return MigrationWave5TestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -318,7 +325,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 39 REGRESSION SUITES (SPRINTS 2-41; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 40 REGRESSION SUITES (SPRINTS 2-42; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 
