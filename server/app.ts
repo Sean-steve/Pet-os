@@ -76,6 +76,14 @@ function positiveIntField(value: unknown, name: string): number {
   return parsed;
 }
 
+function choiceField<T extends string>(value: unknown, name: string, allowed: readonly T[]): T {
+  const raw = stringField(value, name, 80);
+  if (!(allowed as readonly string[]).includes(raw)) {
+    throw Object.assign(new Error(`${name}_INVALID`), { statusCode: 400 });
+  }
+  return raw as T;
+}
+
 function nonNegativeIntField(value: unknown, name: string): number {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) {
@@ -202,7 +210,7 @@ export function createApp(config: ServerConfig) {
           providerTransactionId: stringField(body.providerTransactionId, 'PROVIDER_TRANSACTION_ID', 180),
           settledAmountMinor: positiveIntField(body.settledAmountMinor, 'SETTLED_AMOUNT_MINOR'),
           currency: stringField(body.currency, 'CURRENCY', 12),
-          status: stringField(body.status, 'STATUS', 20) as 'SUCCESS'|'FAILED',
+          status: choiceField(body.status, 'STATUS', ['SUCCESS','FAILED'] as const),
           providerFeeMinor: body.providerFeeMinor === undefined ? 0 : nonNegativeIntField(body.providerFeeMinor, 'PROVIDER_FEE_MINOR'),
         }),
       );
@@ -237,7 +245,7 @@ export function createApp(config: ServerConfig) {
         settleProviderPayout(client, {
           payoutId,
           providerReference: stringField(body.providerReference, 'PROVIDER_REFERENCE', 180),
-          status: stringField(body.status, 'STATUS', 20) as 'PAID'|'FAILED',
+          status: choiceField(body.status, 'STATUS', ['PAID','FAILED'] as const),
           failureReason: optionalStringField(body.failureReason, 'FAILURE_REASON', 500),
         }),
       );
@@ -254,7 +262,7 @@ export function createApp(config: ServerConfig) {
         settleRefund(client, {
           refundId,
           providerRefundReference: stringField(body.providerRefundReference, 'PROVIDER_REFUND_REFERENCE', 180),
-          status: stringField(body.status, 'STATUS', 20) as 'SUCCEEDED'|'FAILED',
+          status: choiceField(body.status, 'STATUS', ['SUCCEEDED','FAILED'] as const),
         }),
       );
       res.json(result);
@@ -271,7 +279,7 @@ export function createApp(config: ServerConfig) {
           subscriptionId,
           providerEventId: stringField(body.providerEventId, 'PROVIDER_EVENT_ID', 180),
           providerInvoiceReference: stringField(body.providerInvoiceReference, 'PROVIDER_INVOICE_REFERENCE', 180),
-          status: stringField(body.status, 'STATUS', 40) as 'PAYMENT_SUCCEEDED'|'PAYMENT_FAILED',
+          status: choiceField(body.status, 'STATUS', ['PAYMENT_SUCCEEDED','PAYMENT_FAILED'] as const),
           amountMinor: nonNegativeIntField(body.amountMinor, 'AMOUNT_MINOR'),
           currency: stringField(body.currency, 'CURRENCY', 12),
           externalSubscriptionReference: optionalStringField(body.externalSubscriptionReference, 'EXTERNAL_SUBSCRIPTION_REFERENCE', 180),
@@ -291,7 +299,7 @@ export function createApp(config: ServerConfig) {
           subscriptionId,
           providerEventId: stringField(body.providerEventId, 'PROVIDER_EVENT_ID', 180),
           providerInvoiceReference: stringField(body.providerInvoiceReference, 'PROVIDER_INVOICE_REFERENCE', 180),
-          status: stringField(body.status, 'STATUS', 40) as 'PAYMENT_SUCCEEDED'|'PAYMENT_FAILED',
+          status: choiceField(body.status, 'STATUS', ['PAYMENT_SUCCEEDED','PAYMENT_FAILED'] as const),
           amountMinor: nonNegativeIntField(body.amountMinor, 'AMOUNT_MINOR'),
           currency: stringField(body.currency, 'CURRENCY', 12),
           externalBillingRef: optionalStringField(body.externalBillingRef, 'EXTERNAL_BILLING_REF', 180),
@@ -343,7 +351,7 @@ export function createApp(config: ServerConfig) {
       });
       const result = await withSystemTransaction(config, (client) =>
         runBillingReconciliation(client, {
-          billingDomain: stringField(body.billingDomain, 'BILLING_DOMAIN', 80) as 'CONSUMER_SUBSCRIPTION'|'PROVIDER_SAAS',
+          billingDomain: choiceField(body.billingDomain, 'BILLING_DOMAIN', ['CONSUMER_SUBSCRIPTION','PROVIDER_SAAS'] as const),
           records,
         }),
       );
@@ -849,8 +857,8 @@ export function createApp(config: ServerConfig) {
           actorUserId: userId,
           idempotencyKey,
           bookingId: stringField(body.bookingId, 'BOOKING_ID', 180),
-          paymentMethodType: stringField(body.paymentMethodType, 'PAYMENT_METHOD_TYPE', 30) as 'MPESA'|'CARD'|'BANK_TRANSFER',
-          provider: stringField(body.provider, 'PAYMENT_PROVIDER', 40) as 'MPESA_SAFARICOM'|'CARD_GATEWAY'|'MOCK_PROVIDER',
+          paymentMethodType: choiceField(body.paymentMethodType, 'PAYMENT_METHOD_TYPE', ['MPESA','CARD','BANK_TRANSFER'] as const),
+          provider: choiceField(body.provider, 'PAYMENT_PROVIDER', ['MPESA_SAFARICOM','CARD_GATEWAY','MOCK_PROVIDER'] as const),
         }),
       );
       res.status(result.replayed ? 200 : 201).json(result);
@@ -887,7 +895,7 @@ export function createApp(config: ServerConfig) {
           actorUserId: userId,
           idempotencyKey,
           providerId,
-          destinationType: stringField(body.destinationType, 'DESTINATION_TYPE', 40) as 'MPESA_B2C'|'BANK_ACCOUNT',
+          destinationType: choiceField(body.destinationType, 'DESTINATION_TYPE', ['MPESA_B2C','BANK_ACCOUNT'] as const),
           displayTitle: stringField(body.displayTitle, 'DISPLAY_TITLE', 120),
           maskedIdentifier: stringField(body.maskedIdentifier, 'MASKED_IDENTIFIER', 120),
           destinationToken: stringField(body.destinationToken, 'DESTINATION_TOKEN', 220),
@@ -928,7 +936,7 @@ export function createApp(config: ServerConfig) {
           actorUserId: userId,
           idempotencyKey,
           bookingId,
-          reason: stringField(body.reason, 'REFUND_REASON', 80),
+          reason: choiceField(body.reason, 'REFUND_REASON', ['OWNER_CANCELLATION','PROVIDER_CANCELLATION','SERVICE_UNSATISFACTORY','DUPLICATE_CHARGE','GOODWILL','SYSTEM_RECOVERY'] as const),
           reasonDetails: optionalStringField(body.reasonDetails, 'REASON_DETAILS', 500),
         }),
       );
@@ -945,13 +953,13 @@ export function createApp(config: ServerConfig) {
         createConsumerSubscription(client, {
           actorUserId: userId,
           idempotencyKey,
-          ownerType: stringField(body.ownerType, 'OWNER_TYPE', 20) as 'HOUSEHOLD'|'USER',
+          ownerType: choiceField(body.ownerType, 'OWNER_TYPE', ['HOUSEHOLD','USER'] as const),
           ownerId: stringField(body.ownerId, 'OWNER_ID', 180),
-          planCode: stringField(body.planCode, 'PLAN_CODE', 30) as 'FREE'|'PREMIUM',
-          billingInterval: stringField(body.billingInterval, 'BILLING_INTERVAL', 20) as 'MONTHLY'|'ANNUAL',
+          planCode: choiceField(body.planCode, 'PLAN_CODE', ['FREE','PREMIUM'] as const),
+          billingInterval: choiceField(body.billingInterval, 'BILLING_INTERVAL', ['MONTHLY','ANNUAL'] as const),
           currency: stringField(body.currency, 'CURRENCY', 12),
           marketCountry: stringField(body.marketCountry, 'MARKET_COUNTRY', 8),
-          billingProvider: stringField(body.billingProvider, 'BILLING_PROVIDER', 40) as 'MPESA_RECURRING'|'CARD_GATEWAY'|'MOCK_BILLING_PROVIDER',
+          billingProvider: choiceField(body.billingProvider, 'BILLING_PROVIDER', ['MPESA_RECURRING','CARD_GATEWAY','MOCK_BILLING_PROVIDER'] as const),
         }),
       );
       res.status(result.replayed ? 200 : 201).json(result);
@@ -988,11 +996,11 @@ export function createApp(config: ServerConfig) {
       const result = await withTenantTransaction(config, userId, undefined, (client) =>
         createProviderSaaSSubscription(client, {
           actorUserId:userId,idempotencyKey,
-          subscriberType:stringField(body.subscriberType,'SUBSCRIBER_TYPE',40) as 'SERVICE_BUSINESS'|'INDIVIDUAL_PROVIDER',
+          subscriberType:choiceField(body.subscriberType,'SUBSCRIBER_TYPE',['SERVICE_BUSINESS','INDIVIDUAL_PROVIDER'] as const),
           businessId:optionalStringField(body.businessId,'BUSINESS_ID',180),
           providerId:optionalStringField(body.providerId,'PROVIDER_ID',180),
           planCode:stringField(body.planCode,'PLAN_CODE',80),
-          billingInterval:stringField(body.billingInterval,'BILLING_INTERVAL',20) as 'MONTHLY'|'ANNUAL',
+          billingInterval:choiceField(body.billingInterval,'BILLING_INTERVAL',['MONTHLY','ANNUAL'] as const),
           currency:stringField(body.currency,'CURRENCY',12),
           market:stringField(body.market,'MARKET',20),
         }),
