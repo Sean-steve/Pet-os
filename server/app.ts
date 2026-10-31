@@ -656,6 +656,9 @@ export function createApp(config: ServerConfig) {
       requireAIAdapter(req, config);
       const requestId = stringField(req.params.requestId, 'REQUEST_ID', 180);
       const body = req.body || {};
+      if (containsRestrictedExactLocation(body.provenanceRefs) || containsAccessSecret(body.provenanceRefs)) {
+        throw Object.assign(new Error('AI_PROVENANCE_CONTAINS_RESTRICTED_DATA'), { statusCode: 400 });
+      }
       const result = await withSystemTransaction(config, (client) => settleAIResponse(client, {
         requestId,
         content: stringField(body.content, 'CONTENT', 12000),
@@ -673,6 +676,9 @@ export function createApp(config: ServerConfig) {
     try {
       requireAIAdapter(req, config);
       const body = req.body || {};
+      if (containsRestrictedExactLocation(body.evidenceRefs) || containsAccessSecret(body.evidenceRefs)) {
+        throw Object.assign(new Error('AI_RECOMMENDATION_EVIDENCE_CONTAINS_RESTRICTED_DATA'), { statusCode: 400 });
+      }
       const recommendation = await withSystemTransaction(config, (client) => createAIRecommendation(client, {
         householdId: stringField(body.householdId, 'HOUSEHOLD_ID', 180),
         petId: stringField(body.petId, 'PET_ID', 180),
