@@ -570,7 +570,7 @@ GRANT SELECT,UPDATE ON tracking_devices TO petos_app;
 GRANT SELECT,INSERT,UPDATE ON tracking_device_assignments,tracking_sessions TO petos_app;
 GRANT SELECT ON tracking_location_observations,tracking_live_locations,tracking_routes TO petos_app;
 
-GRANT SELECT ON transport_driver_profiles,transport_vehicles TO petos_app;
+GRANT SELECT,INSERT,UPDATE ON transport_driver_profiles,transport_vehicles TO petos_app;
 GRANT SELECT,INSERT,UPDATE ON transport_trips,transport_trip_pets,transport_stops,transport_incidents TO petos_app;
 GRANT SELECT,INSERT ON transport_custody_records TO petos_app;
 
@@ -658,12 +658,29 @@ CREATE POLICY tracking_route_access ON tracking_routes FOR SELECT
  USING (petos_can_access_tracking_pet(pet_id,current_setting('app.user_id',true)));
 
 DROP POLICY IF EXISTS transport_driver_access ON transport_driver_profiles;
-CREATE POLICY transport_driver_access ON transport_driver_profiles FOR SELECT
+DROP POLICY IF EXISTS transport_driver_read ON transport_driver_profiles;
+DROP POLICY IF EXISTS transport_driver_insert ON transport_driver_profiles;
+DROP POLICY IF EXISTS transport_driver_update ON transport_driver_profiles;
+CREATE POLICY transport_driver_read ON transport_driver_profiles FOR SELECT
  USING (user_id=current_setting('app.user_id',true) OR petos_can_manage_business(business_id,current_setting('app.user_id',true)));
+CREATE POLICY transport_driver_insert ON transport_driver_profiles FOR INSERT
+ WITH CHECK (petos_can_manage_business(business_id,current_setting('app.user_id',true)));
+CREATE POLICY transport_driver_update ON transport_driver_profiles FOR UPDATE
+ USING (petos_can_manage_business(business_id,current_setting('app.user_id',true)))
+ WITH CHECK (petos_can_manage_business(business_id,current_setting('app.user_id',true)));
+
 DROP POLICY IF EXISTS transport_vehicle_access ON transport_vehicles;
-CREATE POLICY transport_vehicle_access ON transport_vehicles FOR SELECT
+DROP POLICY IF EXISTS transport_vehicle_read ON transport_vehicles;
+DROP POLICY IF EXISTS transport_vehicle_insert ON transport_vehicles;
+DROP POLICY IF EXISTS transport_vehicle_update ON transport_vehicles;
+CREATE POLICY transport_vehicle_read ON transport_vehicles FOR SELECT
  USING (petos_can_manage_business(business_id,current_setting('app.user_id',true))
    OR EXISTS(SELECT 1 FROM transport_driver_profiles d WHERE d.user_id=current_setting('app.user_id',true) AND d.business_id=transport_vehicles.business_id));
+CREATE POLICY transport_vehicle_insert ON transport_vehicles FOR INSERT
+ WITH CHECK (petos_can_manage_business(business_id,current_setting('app.user_id',true)));
+CREATE POLICY transport_vehicle_update ON transport_vehicles FOR UPDATE
+ USING (petos_can_manage_business(business_id,current_setting('app.user_id',true)))
+ WITH CHECK (petos_can_manage_business(business_id,current_setting('app.user_id',true)));
 
 DROP POLICY IF EXISTS transport_trip_access ON transport_trips;
 CREATE POLICY transport_trip_access ON transport_trips FOR SELECT
