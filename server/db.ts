@@ -30,6 +30,7 @@ export async function withTenantTransaction<T>(
     await client.query('BEGIN');
     await client.query(`SELECT set_config('app.user_id', $1, true)`, [actorUserId]);
     await client.query(`SELECT set_config('app.household_id', $1, true)`, [householdId || '']);
+    await client.query(`SET LOCAL ROLE "${config.databaseRuntimeRole}"`);
     const result = await fn(client);
     await client.query('COMMIT');
     return result;
