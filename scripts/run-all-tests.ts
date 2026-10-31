@@ -278,6 +278,13 @@ async function main() {
         return MigrationWave3TestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 41 (Migration Wave 4 — Money, Billing & Entitlements)',
+      runner: async () => {
+        const { MigrationWave4TestSuite } = await import('../src/pet-os/migration-wave4/tests');
+        return MigrationWave4TestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -311,7 +318,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 38 REGRESSION SUITES (SPRINTS 2-40; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 39 REGRESSION SUITES (SPRINTS 2-41; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 
