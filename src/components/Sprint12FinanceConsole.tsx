@@ -263,7 +263,7 @@ export const Sprint12FinanceConsole: React.FC = () => {
 
       setCheckoutStatusMsg({
         type: 'success',
-        text: `M-PESA Payment Succeeded! Receipt ${simulatedWebhookPayload.TransID}. Double-entry journal posted: Dr Cash Clearing KES ${intent.amountMinor / 100}, Cr Provider Escrow & Platform Commission.`,
+        text: `M-PESA Payment Succeeded! Receipt ${res.transaction.providerTransactionId}. Double-entry journal posted: Dr Cash Clearing KES ${intent.amountMinor / 100}, Cr Provider Escrow & Platform Commission.`,
       });
       triggerRefresh();
     } catch (err: any) {
