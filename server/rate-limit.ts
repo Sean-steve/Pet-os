@@ -12,7 +12,8 @@ export function createRateLimitMiddleware(config: ServerConfig) {
       const redis = await getRedis(config);
       const minute = Math.floor(Date.now() / 60_000);
       const key = `rate:api:${userId}:${minute}`;
-      const count = await redis.incr(key);
+      const count = Number(await redis.incr(key));
+      if (!Number.isFinite(count)) throw new Error('RATE_LIMIT_COUNTER_INVALID');
       if (count === 1) await redis.expire(key, 70);
       res.setHeader('X-RateLimit-Limit', String(config.rateLimitPerMinute));
       res.setHeader('X-RateLimit-Remaining', String(Math.max(0, config.rateLimitPerMinute - count)));
