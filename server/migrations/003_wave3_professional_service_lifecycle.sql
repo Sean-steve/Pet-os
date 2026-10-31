@@ -409,6 +409,7 @@ CREATE POLICY provider_update ON provider_profiles FOR UPDATE
 DROP POLICY IF EXISTS business_read ON service_businesses;
 CREATE POLICY business_read ON service_businesses FOR SELECT USING (
   (verification_status = 'VERIFIED' AND is_active)
+  OR owner_user_id = current_setting('app.user_id', true)
   OR petos_can_manage_business(business_id, current_setting('app.user_id', true))
 );
 DROP POLICY IF EXISTS business_insert ON service_businesses;
@@ -417,8 +418,14 @@ CREATE POLICY business_insert ON service_businesses FOR INSERT WITH CHECK (
 );
 DROP POLICY IF EXISTS business_update ON service_businesses;
 CREATE POLICY business_update ON service_businesses FOR UPDATE
-  USING (petos_can_manage_business(business_id, current_setting('app.user_id', true)))
-  WITH CHECK (petos_can_manage_business(business_id, current_setting('app.user_id', true)));
+  USING (
+    owner_user_id = current_setting('app.user_id', true)
+    OR petos_can_manage_business(business_id, current_setting('app.user_id', true))
+  )
+  WITH CHECK (
+    owner_user_id = current_setting('app.user_id', true)
+    OR petos_can_manage_business(business_id, current_setting('app.user_id', true))
+  );
 
 DROP POLICY IF EXISTS business_membership_read ON business_memberships;
 CREATE POLICY business_membership_read ON business_memberships FOR SELECT USING (
