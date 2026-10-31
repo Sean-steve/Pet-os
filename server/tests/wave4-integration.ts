@@ -125,7 +125,7 @@ async function main(){
 
     const settlementBody=JSON.stringify({
       providerEventId:'evt-w4-payment-1',paymentIntentId:paidIntentId,providerTransactionId:'MPESA-W4-PAID',
-      settledAmountMinor:150000,currency:'KES',status:'SUCCESS',providerFeeMinor:0,
+      settledAmountMinor:150000,currency:'KES',status:'SUCCESS',providerFeeMinor:3000,
     });
     response=await internal(base,'/internal/billing/finance/payment-settlements',{method:'POST',body:settlementBody},'wrong-secret');
     assert.equal(response.status,401,'billing adapter secret must be enforced');
@@ -324,6 +324,14 @@ async function main(){
     try{await db.query(`UPDATE finance_ledger_entries SET amount_minor=amount_minor+1 WHERE entry_id=$1`,[postedEntry.rows[0].entry_id]);}
     catch{immutableBlocked=true;}
     assert.equal(immutableBlocked,true,'posted ledger entries must be immutable');
+
+    const processorFees=await db.query(`
+      SELECT COALESCE(SUM(e.amount_minor),0)::bigint AS amount
+      FROM finance_ledger_entries e
+      JOIN finance_ledger_accounts a ON a.account_id=e.account_id
+      WHERE a.code='EXPENSE_PAYMENT_PROCESSOR_FEES' AND e.direction='DEBIT'
+    `);
+    assert.equal(Number(processorFees.rows[0].amount),3000);
 
     const successfulIntent=await db.query(`SELECT status FROM finance_payment_intents WHERE payment_intent_id=$1`,[paidIntentId]);
     assert.equal(successfulIntent.rows[0].status,'SUCCEEDED');
