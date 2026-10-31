@@ -345,12 +345,12 @@ export async function seedUnifiedPetOS(options: { forceReset?: boolean } = {}): 
         updatedAt: nowIso,
       });
 
-      // Add owner membership
+      // Add canonical owner membership. The household owner must not be downgraded to admin.
       IdentityStore.saveMembership({
         membershipId: asMembershipId(generateUUIDv7()),
         householdId: hh.id,
         userId: hh.ownerUserId,
-        role: 'HOUSEHOLD_ADMIN',
+        role: 'HOUSEHOLD_OWNER',
         status: 'ACTIVE',
         joinedAt: nowIso,
         updatedAt: nowIso,
