@@ -55,7 +55,20 @@ export function createApp(config: ServerConfig) {
 
   const authenticate = createAuthMiddleware(config);
   const rateLimit = createRateLimitMiddleware(config);
-  app.use('/v1', authenticate, rateLimit);
+  const requireActiveAccount = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const accountStatus = await withTenantTransaction(config, userId, undefined, async (client) => {
+        const result = await client.query('SELECT account_status FROM users WHERE user_id = $1 LIMIT 1', [userId]);
+        return result.rows[0]?.account_status as string | undefined;
+      });
+      if (accountStatus !== 'ACTIVE') return res.status(403).json({ error: 'ACCOUNT_NOT_ACTIVE' });
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+  app.use('/v1', authenticate, rateLimit, requireActiveAccount);
 
   app.get('/v1/me/households', async (req: AuthenticatedRequest, res, next) => {
     try {
