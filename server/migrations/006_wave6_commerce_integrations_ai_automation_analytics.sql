@@ -904,8 +904,10 @@ CREATE POLICY integration_app_insert ON integration_developer_apps FOR INSERT
  WITH CHECK(owner_user_id=current_setting('app.user_id',true));
 CREATE POLICY integration_install_access ON integration_installations FOR ALL
  USING(petos_can_access_installation(installation_id,current_setting('app.user_id',true)))
- WITH CHECK(petos_can_access_ai_household(household_id,current_setting('app.user_id',true))
-   AND EXISTS(SELECT 1 FROM integration_developer_apps a WHERE a.developer_app_id=integration_installations.developer_app_id AND a.status='ACTIVE'));
+ WITH CHECK(
+   installed_by_user_id=current_setting('app.user_id',true)
+   AND petos_can_access_ai_household(household_id,current_setting('app.user_id',true))
+ );
 CREATE POLICY integration_webhook_access ON integration_webhook_subscriptions FOR ALL
  USING(petos_can_access_installation(installation_id,current_setting('app.user_id',true)))
  WITH CHECK(petos_can_access_installation(installation_id,current_setting('app.user_id',true)));
