@@ -250,6 +250,13 @@ async function main() {
         return FullSystemCertificationTestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 37 (Production Readiness Closure)',
+      runner: async () => {
+        const { ProductionReadinessTestSuite } = await import('../src/pet-os/readiness/tests');
+        return ProductionReadinessTestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -283,7 +290,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 34 REGRESSION SUITES (SPRINTS 2-36; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 35 REGRESSION SUITES (SPRINTS 2-37; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 
