@@ -1,8 +1,5 @@
-import pg from 'pg';
-import type { Pool, PoolClient } from 'pg';
+import { Pool as PgPool, type Pool, type PoolClient } from 'pg';
 import type { ServerConfig } from './config';
-
-const { Pool: PgPool } = pg;
 
 let pool: Pool | undefined;
 
