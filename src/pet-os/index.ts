@@ -37,3 +37,4 @@ export * from './engagement';
 export * from './security';
 
 export * from './resilience';
+export * from './certification';
