@@ -17,7 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      NODE_ENV: test
       DATABASE_URL: postgresql://petos:petos_ci@127.0.0.1:5432/petos
       DATABASE_RUNTIME_ROLE: petos_app
       REDIS_URL: redis://127.0.0.1:6379
@@ -76,9 +75,13 @@ jobs:
         run: npm run production-readiness:check
 
       - name: Backend migrations
+        env:
+          NODE_ENV: test
         run: npm run db:migrate
 
       - name: Backend integration
+        env:
+          NODE_ENV: test
         run: npm run backend:integration
 
       - name: Backend production bundle
