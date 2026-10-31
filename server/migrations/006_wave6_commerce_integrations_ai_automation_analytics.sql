@@ -897,8 +897,10 @@ ALTER TABLE integration_webhook_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE integration_webhook_deliveries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE integration_audit_events ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY integration_app_access ON integration_developer_apps FOR ALL
- USING(owner_user_id=current_setting('app.user_id',true))
+DROP POLICY IF EXISTS integration_app_access ON integration_developer_apps;
+CREATE POLICY integration_app_read ON integration_developer_apps FOR SELECT
+ USING(owner_user_id=current_setting('app.user_id',true) OR status='ACTIVE');
+CREATE POLICY integration_app_insert ON integration_developer_apps FOR INSERT
  WITH CHECK(owner_user_id=current_setting('app.user_id',true));
 CREATE POLICY integration_install_access ON integration_installations FOR ALL
  USING(petos_can_access_installation(installation_id,current_setting('app.user_id',true)))
