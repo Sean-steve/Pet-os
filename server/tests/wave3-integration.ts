@@ -121,6 +121,22 @@ async function main() {
     assert.equal(payload.provider.visibilityStatus, 'PRIVATE');
     const applicantProviderId = payload.provider.providerId;
 
+    response = await request(base, '/v1/businesses', applicantToken, {
+      method: 'POST',
+      headers: { 'idempotency-key': 'w3-applicant-business' },
+      body: JSON.stringify({
+        legalName: 'Applicant Pet Care Limited',
+        tradingName: 'Applicant Pet Care',
+        businessType: 'PET_SITTING_SERVICE',
+        contactEmail: 'business@wave3.test',
+        contactPhone: '+254711111111',
+      }),
+    });
+    assert.equal(response.status, 201);
+    payload = await json(response);
+    assert.equal(payload.business.verificationStatus, 'UNVERIFIED');
+    const applicantBusinessId = payload.business.businessId;
+
     response = await request(base, `/v1/providers/${applicantProviderId}/offerings`, applicantToken, {
       method: 'POST',
       headers: { 'idempotency-key': 'w3-applicant-offering' },
@@ -142,6 +158,12 @@ async function main() {
     assert.equal(response.status, 201);
     payload = await json(response);
     assert.equal(payload.offering.status, 'DRAFT');
+    const applicantOfferingId = payload.offering.offeringId;
+
+    const outsiderBusinessVisibility = await withTenantTransaction(config, 'usr-w3-outsider', undefined, (client) =>
+      client.query(`SELECT business_id FROM service_businesses WHERE business_id = $1`, [applicantBusinessId]),
+    );
+    assert.equal(outsiderBusinessVisibility.rowCount, 0, 'Unverified provider business must remain private');
 
     // Verified provider creates an active offering.
     response = await request(base, '/v1/providers/provider-w3/offerings', providerToken, {
@@ -171,6 +193,7 @@ async function main() {
     assert.equal(response.status, 200);
     payload = await json(response);
     assert.equal(payload.offerings.some((offering: any) => offering.offeringId === offeringId), true);
+    assert.equal(payload.offerings.some((offering: any) => offering.offeringId === applicantOfferingId), false);
     assert.equal(payload.offerings.some((offering: any) => offering.offeringId === undefined), false);
 
     // Owner creates booking; snapshots are server-derived.
@@ -493,7 +516,7 @@ async function main() {
     assert.ok(eventTypes.includes('ReviewPublished'));
 
     console.log('WAVE3-INTEGRATION: PASS');
-    console.log('Provider verification boundary + offering activation: PASS');
+    console.log('Provider + business verification boundary and offering activation: PASS');
     console.log('Server-derived Booking snapshots + idempotency: PASS');
     console.log('Booking conflict lock + optimistic concurrency + revision history: PASS');
     console.log('Booking-derived Professional Care authority: PASS');
