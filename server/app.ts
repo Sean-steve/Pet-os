@@ -1472,7 +1472,7 @@ export function createApp(config: ServerConfig) {
       const incidentId=stringField(req.params.incidentId,'INCIDENT_ID',180);
       const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
       const body=req.body||{};
-      const result=await withTenantTransaction(config,userId,undefined,(client)=>resolveLostPet(client,{
+      const result=await withSystemTransaction(config,(client)=>resolveLostPet(client,{
         actorUserId:userId,idempotencyKey,incidentId,resolutionNotes:stringField(body.resolutionNotes,'RESOLUTION_NOTES',1000),
       }));
       res.json(result);
