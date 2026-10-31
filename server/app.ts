@@ -66,6 +66,55 @@ import {
   volunteerForRecovery,
   listCommunityFeed,
 } from './repositories/wave5-repository';
+import {
+  createCheckout,
+  createProductListing,
+  createSeller,
+  getCommerceOrder,
+  listStore,
+  reviewProduct,
+  reviewSeller,
+  settleCommercePayment,
+  transitionSellerOrder,
+} from './repositories/commerce-repository';
+import {
+  authenticateIntegration,
+  createDeveloperApp,
+  createIntegrationCredential,
+  createWebhookSubscription,
+  installDeveloperApp,
+  integrationBookings,
+  integrationCare,
+  integrationCommandCenter,
+  integrationPetProfiles,
+  integrationTrackerHealth,
+  queuePublicIntegrationEvent,
+  reviewDeveloperApp,
+  settleWebhookDelivery,
+  type IntegrationIdentity,
+} from './repositories/integration-repository';
+import {
+  createAIRecommendation,
+  createAIRequest,
+  getAIRequest,
+  grantAIConsent,
+  settleAIResponse,
+  updateRecommendationStatus,
+} from './repositories/ai-repository';
+import {
+  confirmAutomationAction,
+  createAutomationRule,
+  executeAutomationAction,
+  getAutomationProposal,
+  proposeAutomationAction,
+  settleAutomationExecution,
+} from './repositories/automation-repository';
+import {
+  generateHouseholdAnalytics,
+  generatePlatformAnalytics,
+  generateProviderAnalytics,
+  listAnalyticsSnapshots,
+} from './repositories/analytics-repository';
 
 function stringField(value: unknown, name: string, max = 120): string {
   if (typeof value !== 'string' || !value.trim()) throw Object.assign(new Error(`${name}_REQUIRED`), { statusCode: 400 });
@@ -164,6 +213,26 @@ function requireLocationAdapter(req: Request, config: ServerConfig): void {
   }
 }
 
+function requireAIAdapter(req: Request, config: ServerConfig): void {
+  const supplied = req.header('x-ai-adapter-secret') || '';
+  const expected = config.aiAdapterSecret;
+  const suppliedBuffer = Buffer.from(supplied);
+  const expectedBuffer = Buffer.from(expected);
+  if (suppliedBuffer.length !== expectedBuffer.length || !timingSafeEqual(suppliedBuffer, expectedBuffer)) {
+    throw Object.assign(new Error('AI_ADAPTER_AUTHENTICATION_FAILED'), { statusCode: 401 });
+  }
+}
+
+function requireIntegrationAdapter(req: Request, config: ServerConfig): void {
+  const supplied = req.header('x-integration-adapter-secret') || '';
+  const expected = config.integrationAdapterSecret;
+  const suppliedBuffer = Buffer.from(supplied);
+  const expectedBuffer = Buffer.from(expected);
+  if (suppliedBuffer.length !== expectedBuffer.length || !timingSafeEqual(suppliedBuffer, expectedBuffer)) {
+    throw Object.assign(new Error('INTEGRATION_ADAPTER_AUTHENTICATION_FAILED'), { statusCode: 401 });
+  }
+}
+
 function containsAccessSecret(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false;
   if (Array.isArray(value)) return value.some((item) => containsAccessSecret(item));
@@ -215,6 +284,20 @@ function validateWave2Payload(
 
 export function createApp(config: ServerConfig) {
   const app = express();
+
+  const integrationIdentity = async (req: Request, requiredScope: string): Promise<IntegrationIdentity> => {
+    const rawToken = req.header('x-integration-key') || '';
+    const identity = await withSystemTransaction(config, (client) => authenticateIntegration(client, rawToken, requiredScope));
+    const redis = await getRedis(config);
+    const bucket = Math.floor(Date.now() / 60000);
+    const key = `rate:integration:${identity.credentialId}:${bucket}`;
+    const count = Number(await redis.incr(key));
+    if (count === 1) await redis.expire(key, 70);
+    if (count > identity.rateLimitPerMinute) {
+      throw Object.assign(new Error('INTEGRATION_RATE_LIMIT_EXCEEDED'), { statusCode: 429 });
+    }
+    return identity;
+  };
   app.disable('x-powered-by');
   app.use(express.json({ limit: '256kb' }));
   app.use((req, res, next) => {
