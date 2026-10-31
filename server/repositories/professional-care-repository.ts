@@ -153,6 +153,19 @@ export async function transitionEngagement(client:PoolClient,input:{
     INCIDENT_ACTIVE:['IN_CARE','RETURN_PENDING','ABORTED'],RETURN_PENDING:['COMPLETION_PENDING'],COMPLETION_PENDING:['COMPLETED','ABORTED'],
   };
   if(!(transitions[current.status]||[]).includes(input.nextStatus)) throw Object.assign(new Error('CARE_ENGAGEMENT_STATUS_TRANSITION_INVALID'),{statusCode:409});
+  const allowedCustody:Record<string,string[]>={
+    READY_FOR_HANDOVER:['OWNER_CUSTODY'],
+    IN_CARE:['PROVIDER_CUSTODY','FACILITY_CUSTODY','STAFF_CUSTODY'],
+    INCIDENT_ACTIVE:['PROVIDER_CUSTODY','FACILITY_CUSTODY','STAFF_CUSTODY'],
+    RETURN_PENDING:['RETURN_PENDING'],
+    COMPLETION_PENDING:['RETURNED'],
+    COMPLETED:['RETURNED'],
+    CANCELLED:['OWNER_CUSTODY'],
+    ABORTED:['RETURN_PENDING','RETURNED','OWNER_CUSTODY'],
+  };
+  if(!(allowedCustody[input.nextStatus]||[]).includes(input.custodyStatus)){
+    throw Object.assign(new Error('CARE_CUSTODY_TRANSITION_INVALID'),{statusCode:409});
+  }
   const nextVersion=current.concurrencyVersion+1;
   const result=await client.query(
     `UPDATE professional_care_engagements SET status=$1,custody_status=$2,concurrency_version=$3,updated_at=now(),
