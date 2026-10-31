@@ -1,10 +1,10 @@
 # Pet OS Development Status
 
-Last audited against repository `main`: Sprint 34 implementation baseline.
+Last audited against repository `main`: Sprint 35 implementation baseline.
 
 ## Current implementation
 
-Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 34, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, marketplace commerce, a governed Pet Intelligence & AI bounded context, cross-domain Automation & Action Orchestration, a unified read-model Command Center, an External Integrations & Developer Platform, a governed Analytics, Outcomes & Operations Intelligence layer, a privacy-safe Engagement & Platform Intelligence layer, and a Security, Privacy & Compliance hardening layer.
+Pet OS is a single React/Vite prototype with domain modules under `src/pet-os`. The repository currently contains implementations and interactive consoles through Sprint 35, including identity, Pet Core, health, preventive care, nutrition, training, activity, providers, booking, finance, dog walking, tracking, recovery, community, crowd recovery, rescue, professional workspaces, reviews, subscriptions, tracker connectivity, provider SaaS, marketplace commerce, a governed Pet Intelligence & AI bounded context, cross-domain Automation & Action Orchestration, a unified read-model Command Center, an External Integrations & Developer Platform, a governed Analytics, Outcomes & Operations Intelligence layer, a privacy-safe Engagement & Platform Intelligence layer, and a Security, Privacy & Compliance hardening layer, and a Resilience, Performance & Disaster Recovery hardening layer.
 
 ## Architecture assessment
 
@@ -22,6 +22,8 @@ The primary limitation is that persistence is currently in-memory/client-side do
 - Sprint 31 adds approved developer apps, independent platform-reviewer approval authority, household installations and consent, one-time API credentials stored as hashes, least-privilege read projections, per-client rate limits, HTTPS/SSRF-safe signed webhooks, retries/dead-letter handling, revocation cascades and integration audit logging.
 - Sprint 32 adds authorization-scoped household, provider and platform analytics; formula/source provenance; prior-period comparison; descriptive non-clinical outcome indicators; operational thresholds; trend series; canonical Finance read-model usage; and explicit exclusion of exact location, raw clinical content and payment instruments.
 - Sprint 33 adds consent-aware product telemetry, canonical activation milestones, meaningful-value adoption breadth, privacy-safe activation funnels, workflow continuity, provider adoption intelligence and aggregate platform product-health signals. Time spent, click volume, streaks and navigation volume are explicitly excluded from success calculations.
+- Sprint 34 adds cross-platform sensitive-action step-up policy, privacy rights workflows, retention governance, security incident handling and compliance evidence boundaries.
+- Sprint 35 adds bounded retry and circuit-breaker policy, safe degradation contracts, recovery objectives and restore drills, lazy-loaded operational modules, deferred heavy seed initialization and CI-enforced production bundle budgets.
 - The static demo deliberately uses a local deterministic model-provider adapter so GitHub Pages never exposes production model API keys.
 - Unified seed reset now resets newer domain stores as well as the earlier platform.
 - GitHub Pages deployment workflow builds and publishes the interactive prototype.
