@@ -276,7 +276,7 @@ export const Sprint7NutritionConsole: React.FC = () => {
 
   const advanceClockMinutes = (minutes: number) => {
     if (simulatedClock) {
-      simulatedClock.advance(minutes * 60 * 1000);
+      simulatedClock.advanceHours(minutes / 60);
       updateClockDisplay();
       refreshData();
       setActionNotice({
