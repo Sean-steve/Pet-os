@@ -152,6 +152,8 @@ export async function getAIRequest(client:PoolClient,requestId:string,actorUserI
 export async function createAIRecommendation(client:PoolClient,input:{
   householdId:string;petId:string;category:string;title:string;explanation:string;priority:'LOW'|'NORMAL'|'HIGH'|'URGENT';evidenceRefs:Array<Record<string,unknown>>;modelDeploymentId?:string;policyVersion:string;
 }){
+  const pet=await client.query(`SELECT 1 FROM pets WHERE pet_id=$1 AND household_id=$2 LIMIT 1`,[input.petId,input.householdId]);
+  if(!pet.rowCount)throw httpError('AI_RECOMMENDATION_PET_HOUSEHOLD_MISMATCH',409);
   const recommendationId=`ai-recommendation-${generateUUIDv7()}`;
   const result=await client.query(
     `INSERT INTO ai_recommendations(
