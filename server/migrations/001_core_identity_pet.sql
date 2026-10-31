@@ -37,14 +37,14 @@ CREATE TABLE IF NOT EXISTS pets (
   breed_code text NOT NULL,
   mixed_breed boolean NOT NULL DEFAULT false,
   unknown_breed boolean NOT NULL DEFAULT false,
-  sex text NOT NULL,
-  reproductive_status text NOT NULL,
-  birthdate_precision text NOT NULL,
+  sex text NOT NULL CHECK (sex IN ('MALE','FEMALE','UNKNOWN')),
+  reproductive_status text NOT NULL CHECK (reproductive_status IN ('INTACT','STERILIZED','UNKNOWN')),
+  birthdate_precision text NOT NULL CHECK (birthdate_precision IN ('EXACT','ESTIMATED_MONTH_YEAR','ESTIMATED_YEAR','UNKNOWN')),
   estimated_birthdate boolean NOT NULL DEFAULT true,
   primary_color text NOT NULL,
-  size_classification text NOT NULL,
-  lifecycle_stage text NOT NULL DEFAULT 'ADULT',
-  status text NOT NULL DEFAULT 'ACTIVE',
+  size_classification text NOT NULL CHECK (size_classification IN ('TOY','SMALL','MEDIUM','LARGE','GIANT','NOT_APPLICABLE','UNKNOWN')),
+  lifecycle_stage text NOT NULL DEFAULT 'ADULT' CHECK (lifecycle_stage IN ('PUPPY','KITTEN','JUVENILE','ADOLESCENT','ADULT','SENIOR','UNKNOWN')),
+  status text NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','MISSING','ARCHIVED','DECEASED')),
   created_by text NOT NULL REFERENCES users(user_id),
   metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
   version integer NOT NULL DEFAULT 1 CHECK (version > 0),
@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS idempotency_records (
   actor_user_id text NOT NULL REFERENCES users(user_id),
   scope text NOT NULL,
   idempotency_key text NOT NULL,
+  request_fingerprint text NOT NULL,
   resource_id text NOT NULL,
   response_status integer NOT NULL,
   response_body jsonb NOT NULL,
@@ -77,13 +78,13 @@ CREATE TABLE IF NOT EXISTS idempotency_records (
   PRIMARY KEY (actor_user_id, scope, idempotency_key)
 );
 
-DO $
+DO $petos_role$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'petos_app') THEN
     CREATE ROLE petos_app NOLOGIN;
   END IF;
 END
-$;
+$petos_role$;
 
 GRANT petos_app TO CURRENT_USER;
 GRANT SELECT ON users, households, household_members TO petos_app;
