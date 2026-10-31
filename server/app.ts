@@ -2004,7 +2004,7 @@ export function createApp(config: ServerConfig) {
     try{
       const {userId}=requireAuthenticated(req);
       const body=req.body||{};
-      const result=await withTenantTransaction(config,userId,undefined,(client)=>createAIRequest(client,{
+      const result=await withSystemTransaction(config,(client)=>createAIRequest(client,{
         actorUserId:userId,
         householdId:stringField(body.householdId,'HOUSEHOLD_ID',180),
         petId:stringField(body.petId,'PET_ID',180),
@@ -2085,7 +2085,7 @@ export function createApp(config: ServerConfig) {
       const {userId}=requireAuthenticated(req);
       const proposalId=stringField(req.params.proposalId,'PROPOSAL_ID',180);
       const body=req.body||{};
-      const result=await withTenantTransaction(config,userId,undefined,(client)=>confirmAutomationAction(client,{
+      const result=await withSystemTransaction(config,(client)=>confirmAutomationAction(client,{
         actorUserId:userId,proposalId,
         previewHash:stringField(body.previewHash,'PREVIEW_HASH',128),
         confirmationBinding:stringField(body.confirmationBinding,'CONFIRMATION_BINDING',500),
@@ -2098,7 +2098,7 @@ export function createApp(config: ServerConfig) {
     try{
       const {userId}=requireAuthenticated(req);
       const proposalId=stringField(req.params.proposalId,'PROPOSAL_ID',180);
-      const result=await withTenantTransaction(config,userId,undefined,(client)=>executeAutomationAction(client,{actorUserId:userId,proposalId}));
+      const result=await withSystemTransaction(config,(client)=>executeAutomationAction(client,{actorUserId:userId,proposalId}));
       res.json(result);
     }catch(error){next(error);}
   });
