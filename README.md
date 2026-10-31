@@ -1,8 +1,8 @@
 # Pet OS
 
-Pet OS is a unified pet-lifecycle operating platform prototype. The repository currently implements the architecture and interactive domain consoles through **Sprint 34 — Security, Privacy & Compliance Hardening**.
+Pet OS is a unified pet-lifecycle operating platform prototype. The repository currently implements the architecture and interactive domain consoles through **Sprint 35 — Resilience, Performance & Disaster Recovery Hardening**.
 
-The platform includes Pet identity and lifecycle, health, preventive care, nutrition, training, activity, professional services and bookings, finance, tracking and Lost Pet recovery, community, rescue/adoption, professional workspaces, reviews/reputation, subscriptions, tracker connectivity, Provider SaaS, marketplace commerce, governed Pet Intelligence & AI, human-confirmed cross-domain automation/action orchestration, a unified Command Center with authorized cross-domain search, Today, household pulse and action inbox, a scoped Developer Platform for connected apps, minimized read APIs and signed webhooks, governed analytics, descriptive outcome indicators and operations intelligence, privacy-safe engagement, activation and adoption intelligence that explicitly excludes attention-capture metrics, plus a shared Security, Privacy & Compliance control plane for sensitive-action step-up, privacy rights, retention, incident response and compliance evidence.
+The platform includes Pet identity and lifecycle, health, preventive care, nutrition, training, activity, professional services and bookings, finance, tracking and Lost Pet recovery, community, rescue/adoption, professional workspaces, reviews/reputation, subscriptions, tracker connectivity, Provider SaaS, marketplace commerce, governed Pet Intelligence & AI, human-confirmed cross-domain automation/action orchestration, a unified Command Center with authorized cross-domain search, Today, household pulse and action inbox, a scoped Developer Platform for connected apps, minimized read APIs and signed webhooks, governed analytics, descriptive outcome indicators and operations intelligence, privacy-safe engagement, activation and adoption intelligence that explicitly excludes attention-capture metrics, a shared Security, Privacy & Compliance control plane for sensitive-action step-up, privacy rights, retention, incident response and compliance evidence, plus resilience policies, circuit breakers, recovery objectives, restore drills and CI-enforced performance budgets.
 
 ## Run locally
 
@@ -37,7 +37,7 @@ The repository contains a GitHub Actions workflow that validates and deploys the
 
 ## Current engineering status
 
-See `docs/DEVELOPMENT_STATUS.md` for the current architectural assessment and the path from Sprint 34 into the remaining sprints.
+See `docs/DEVELOPMENT_STATUS.md` for the current architectural assessment and the path from Sprint 35 into the remaining sprints.
 
 ## Architecture rules
 

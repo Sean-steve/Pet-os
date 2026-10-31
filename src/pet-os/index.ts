@@ -35,3 +35,5 @@ export * from './analytics';
 export * from './engagement';
 
 export * from './security';
+
+export * from './resilience';

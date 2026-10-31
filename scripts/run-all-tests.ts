@@ -236,6 +236,13 @@ async function main() {
         return SecurityTestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 35 (Resilience, Performance & Disaster Recovery Hardening)',
+      runner: async () => {
+        const { ResilienceTestSuite } = await import('../src/pet-os/resilience/tests');
+        return ResilienceTestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -269,7 +276,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 32 REGRESSION SUITES (SPRINTS 2-34; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 33 REGRESSION SUITES (SPRINTS 2-35; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 

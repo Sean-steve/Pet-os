@@ -44,6 +44,9 @@ jobs:
           VITE_BASE_PATH: /Pet-os/
         run: npm run build
 
+      - name: Performance budgets
+        run: npm run performance:check
+
       - name: Verify Pages artifact
         run: |
           test -f dist/index.html

@@ -88,6 +88,8 @@ import { OrchestrationStore } from '../orchestration/store';
 import { IntegrationStore } from '../integrations/store';
 import { EngagementStore } from '../engagement/store';
 import { SecurityStore } from '../security/store';
+import { ResilienceStore } from '../resilience/store';
+import { seedResilienceData } from '../resilience/seed';
 import { IntegrationService } from '../integrations/service';
 
 // Canonical Identifiers
@@ -167,6 +169,7 @@ export function resetAllStores(): void {
   IntegrationStore.getInstance().reset();
   EngagementStore.getInstance().reset();
   SecurityStore.getInstance().reset();
+  ResilienceStore.getInstance().reset();
   IntegrationService.resetRuntime();
 }
 
@@ -771,6 +774,11 @@ export async function seedUnifiedPetOS(options: { forceReset?: boolean } = {}): 
   // 22. SEED ENGAGEMENT & PLATFORM INTELLIGENCE (Sprint 33)
   // ==========================================================================
   seedEngagementData(CANONICAL_IDS.OWNER_ELENA, CANONICAL_IDS.WALKER_SARAH_USER, CANONICAL_IDS.WALKER_SARAH, CANONICAL_IDS.ADMIN_CHARLES, CANONICAL_IDS.MAIN_HOUSEHOLD);
+
+  // ==========================================================================
+  // 23. SEED RESILIENCE, PERFORMANCE & RECOVERY CONTROL PLANE (Sprint 35)
+  // ==========================================================================
+  seedResilienceData(CANONICAL_IDS.ADMIN_CHARLES);
 }
 
 
