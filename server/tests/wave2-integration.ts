@@ -234,9 +234,33 @@ async function main() {
       assert.equal(response.status, 409, `${domain} stale write was not rejected`);
     }
 
+    let response = await request(base, '/v1/pets/pet-wave2/health/records', ownerToken, {
+      method: 'POST',
+      headers: { 'idempotency-key': 'wave2-health-fake-verified' },
+      body: JSON.stringify({
+        recordType: 'CONDITION',
+        provenance: 'VETERINARY_PROFESSIONAL',
+        verificationStatus: 'VERIFIED',
+        payload: { conditionName: 'Unverified diagnosis', isDiagnosis: true },
+      }),
+    });
+    assert.equal(response.status, 403, 'household API must not self-assert professional Health verification');
+
+    response = await request(base, '/v1/pets/pet-wave2/activity/records', ownerToken, {
+      method: 'POST',
+      headers: { 'idempotency-key': 'wave2-activity-raw-gps' },
+      body: JSON.stringify({
+        recordType: 'ACTIVITY_RECORD',
+        status: 'VERIFIED',
+        provenance: 'OWNER_RECORDED',
+        payload: { activityType: 'WALK', durationSeconds: 600, latitude: -1.2921, longitude: 36.8219 },
+      }),
+    });
+    assert.equal(response.status, 400, 'Activity must reject raw exact location data');
+
     const healthId = created.get('health');
     assert.ok(healthId);
-    let response = await request(base, `/v1/pets/pet-wave2/health/records/${healthId}/amendments`, ownerToken, {
+    response = await request(base, `/v1/pets/pet-wave2/health/records/${healthId}/amendments`, ownerToken, {
       method: 'POST',
       headers: { 'idempotency-key': 'wave2-health-amendment-1' },
       body: JSON.stringify({
@@ -264,6 +288,16 @@ async function main() {
       assert.equal(foreignRead.rowCount, 0, `${table} RLS exposed a foreign tenant record`);
     }
 
+    let directHealthUpdateDenied = false;
+    try {
+      await withTenantTransaction(config, 'usr-wave2-owner', undefined, (client) =>
+        client.query(`UPDATE health_records SET status = 'MUTATED' WHERE record_id = $1`, [healthId]),
+      );
+    } catch {
+      directHealthUpdateDenied = true;
+    }
+    assert.equal(directHealthUpdateDenied, true, 'restricted application role must not update Health source records');
+
     const revisions = await db.query('SELECT domain, record_id, prior_version, new_version FROM pet_domain_record_revisions');
     assert.equal(revisions.rowCount, 4);
     assert.ok(revisions.rows.every((row) => row.prior_version === 1 && row.new_version === 2));
@@ -281,11 +315,11 @@ async function main() {
     assert.equal(idempotency.rowCount, 10);
 
     console.log('WAVE2-INTEGRATION: PASS');
-    console.log('Health durable append-only persistence: PASS');
+    console.log('Health durable append-only persistence + provenance guard: PASS');
     console.log('Care durable versioned persistence: PASS');
     console.log('Nutrition durable versioned persistence: PASS');
     console.log('Training durable versioned persistence: PASS');
-    console.log('Activity durable versioned persistence: PASS');
+    console.log('Activity durable versioned persistence + exact-location guard: PASS');
     console.log('Five-domain cross-tenant API denial: PASS');
     console.log('Five-domain PostgreSQL RLS denial: PASS');
     console.log('Optimistic concurrency + revision ledger: PASS');
