@@ -271,6 +271,13 @@ async function main() {
         return MigrationWave2TestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 40 (Migration Wave 3 — Professional Service Lifecycle)',
+      runner: async () => {
+        const { MigrationWave3TestSuite } = await import('../src/pet-os/migration-wave3/tests');
+        return MigrationWave3TestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -304,7 +311,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 37 REGRESSION SUITES (SPRINTS 2-39; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 38 REGRESSION SUITES (SPRINTS 2-40; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 
