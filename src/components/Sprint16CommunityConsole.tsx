@@ -127,7 +127,7 @@ export const Sprint16CommunityConsole: React.FC = () => {
   const userPetProfiles = activeProfile ? service.getPetProfiles(activeProfile.profileId) : [];
 
   // Handlers
-  const handleToggleReaction = (postId: string, type: 'HELPFUL' | 'LIKE' | 'CARE') => {
+  const handleToggleReaction = (postId: string, type: 'HELPFUL' | 'LIKE' | 'SUPPORT') => {
     if (!activeProfile) return;
     service.toggleReaction({
       targetType: 'POST',
@@ -518,7 +518,7 @@ export const Sprint16CommunityConsole: React.FC = () => {
                     <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
                       <div className="flex items-center gap-4">
                         <span>👥 <strong className="text-slate-200">{alert.volunteersCount}</strong> Volunteer{alert.volunteersCount === 1 ? '' : 's'}</span>
-                        <span>👀 <strong className="text-slate-200">{alert.sightingsCount}</strong> Sighting{alert.sightingsCount === 1 ? '' : 's'}</span>
+                        <span>👀 <strong className="text-slate-200">{service.getSightingCountForRecoveryAlert(alert.communityAlertId)}</strong> Sighting{service.getSightingCountForRecoveryAlert(alert.communityAlertId) === 1 ? '' : 's'}</span>
                         <span>🔔 <strong className="text-slate-200">{alert.followersCount}</strong> Following</span>
                       </div>
                     </div>
@@ -825,7 +825,7 @@ export const Sprint16CommunityConsole: React.FC = () => {
                           <span>{post.coarseLocationArea || post.author.coarseLocation.neighborhood}</span>
                           <span>•</span>
                           <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                          {post.revisionCount > 0 && <span className="text-amber-400 font-mono">(edited)</span>}
+                          {post.updatedAt !== post.createdAt && <span className="text-amber-400 font-mono">(edited)</span>}
                         </div>
                       </div>
                     </div>
@@ -851,9 +851,9 @@ export const Sprint16CommunityConsole: React.FC = () => {
                   <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">{post.content}</p>
 
                   {/* Media preview if any */}
-                  {post.mediaUrls && post.mediaUrls.length > 0 && (
+                  {post.media.length > 0 && (
                     <div className="rounded-xl overflow-hidden border border-slate-800 max-h-72">
-                      <img src={post.mediaUrls[0]} alt="Post media" className="w-full h-full object-cover" />
+                      <img src={post.media[0].mediaUrl} alt="Post media" className="w-full h-full object-cover" />
                     </div>
                   )}
 
