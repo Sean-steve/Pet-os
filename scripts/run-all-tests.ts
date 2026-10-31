@@ -257,6 +257,13 @@ async function main() {
         return ProductionReadinessTestSuite.runAllTests();
       },
     },
+    {
+      name: 'Sprint 38 (Backend Migration & Production Infrastructure Foundation)',
+      runner: async () => {
+        const { BackendFoundationTestSuite } = await import('../src/pet-os/backend-foundation/tests');
+        return BackendFoundationTestSuite.runAllTests();
+      },
+    },
   ];
 
   let allPassed = true;
@@ -290,7 +297,7 @@ async function main() {
     console.error('\n>>> SOME SUITES FAILED <<<');
     process.exit(1);
   } else {
-    console.log('\n>>> ALL 35 REGRESSION SUITES (SPRINTS 2-37; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
+    console.log('\n>>> ALL 36 REGRESSION SUITES (SPRINTS 2-38; sprint-specific domains) PASSED WITH ZERO REGRESSIONS! <<<');
   }
 }
 

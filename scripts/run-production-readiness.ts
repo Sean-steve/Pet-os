@@ -19,7 +19,9 @@ requireText(pages.includes('npm run typecheck'), 'Pages does not enforce npm run
 requireText(ci.includes('npm run production-readiness:check'), 'CI does not enforce the Sprint 37 production-readiness gate.');
 requireText(pages.includes('npm run production-readiness:check'), 'Pages does not enforce the Sprint 37 production-readiness gate.');
 requireText(regression.includes('Sprint 37 (Production Readiness Closure)'), 'Sprint 37 is missing from the unified regression runner.');
-requireText(pkg.version === '0.37.0', 'package.json version must be 0.37.0 for Sprint 37.');
+const versionParts = (pkg.version || '').split('.').map(Number);
+const readinessVersionCompatible = versionParts.length >= 2 && versionParts[0] === 0 && versionParts[1] >= 37;
+requireText(readinessVersionCompatible, 'package.json version must be Sprint 37 or later for production-readiness closure.');
 requireText(Boolean(pkg.scripts?.['production-readiness:check']), 'package.json is missing production-readiness:check.');
 
 const report = ProductionReadinessService.run();
