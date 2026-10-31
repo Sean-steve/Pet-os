@@ -46,7 +46,11 @@ Sprint 32: Analytics, Outcomes & Operations Intelligence — implemented in the 
 
 Sprint 33: Engagement & Platform Intelligence — implemented in the prototype.
 
-Sprint 34: Security, Privacy & Compliance Hardening — implemented in the prototype.\n\nSprint 35 onward: resilience/performance/DR, full-system E2E certification, and final production readiness.
+Sprint 34: Security, Privacy & Compliance Hardening — implemented in the prototype.
+
+Sprint 35: Resilience, Performance & Disaster Recovery Hardening — implemented in the prototype.
+
+Sprint 36 onward: full-system E2E certification and final production readiness.
 
 ## Engineering rule for future sprints
 
