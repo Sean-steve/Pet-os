@@ -314,7 +314,7 @@ $$;
 CREATE OR REPLACE FUNCTION petos_can_access_engagement(target_engagement_id text, actor_user_id text)
 RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
+AS $
   SELECT EXISTS (
     SELECT 1
     FROM professional_care_engagements e
@@ -330,12 +330,32 @@ AS $$
         OR bm.user_id IS NOT NULL
       )
   )
-$$;
+$;
+
+CREATE OR REPLACE FUNCTION petos_can_manage_engagement(target_engagement_id text, actor_user_id text)
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $
+  SELECT EXISTS (
+    SELECT 1
+    FROM professional_care_engagements e
+    LEFT JOIN provider_profiles p ON p.provider_id = e.provider_id
+    LEFT JOIN business_memberships bm ON bm.business_id = e.business_id
+      AND bm.user_id = actor_user_id AND bm.is_active
+    WHERE e.engagement_id = target_engagement_id
+      AND (
+        e.assigned_staff_id = actor_user_id
+        OR p.user_id = actor_user_id
+        OR (bm.user_id IS NOT NULL AND bm.role IN ('OWNER','ADMIN','MANAGER','PROVIDER','STAFF'))
+      )
+  )
+$;
 
 GRANT EXECUTE ON FUNCTION petos_can_manage_business(text, text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_can_manage_provider(text, text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_can_access_booking(text, text) TO petos_app;
 GRANT EXECUTE ON FUNCTION petos_can_access_engagement(text, text) TO petos_app;
+GRANT EXECUTE ON FUNCTION petos_can_manage_engagement(text, text) TO petos_app;
 
 GRANT SELECT, INSERT, UPDATE ON provider_profiles, service_businesses, business_memberships, provider_service_offerings TO petos_app;
 GRANT SELECT, INSERT, UPDATE ON bookings, booking_pet_links, booking_revisions TO petos_app;
@@ -456,13 +476,23 @@ CREATE POLICY engagement_insert ON professional_care_engagements FOR INSERT WITH
 );
 DROP POLICY IF EXISTS engagement_update ON professional_care_engagements;
 CREATE POLICY engagement_update ON professional_care_engagements FOR UPDATE
-  USING (petos_can_access_engagement(engagement_id, current_setting('app.user_id', true)))
-  WITH CHECK (petos_can_access_engagement(engagement_id, current_setting('app.user_id', true)));
+  USING (petos_can_manage_engagement(engagement_id, current_setting('app.user_id', true)))
+  WITH CHECK (petos_can_manage_engagement(engagement_id, current_setting('app.user_id', true)));
 
 DROP POLICY IF EXISTS care_record_access ON professional_care_records;
-CREATE POLICY care_record_access ON professional_care_records FOR ALL
-  USING (petos_can_access_engagement(engagement_id, current_setting('app.user_id', true)))
-  WITH CHECK (petos_can_access_engagement(engagement_id, current_setting('app.user_id', true)));
+DROP POLICY IF EXISTS care_record_read ON professional_care_records;
+CREATE POLICY care_record_read ON professional_care_records FOR SELECT
+  USING (petos_can_access_engagement(engagement_id, current_setting('app.user_id', true)));
+DROP POLICY IF EXISTS care_record_insert ON professional_care_records;
+CREATE POLICY care_record_insert ON professional_care_records FOR INSERT
+  WITH CHECK (
+    created_by = current_setting('app.user_id', true)
+    AND petos_can_manage_engagement(engagement_id, current_setting('app.user_id', true))
+  );
+DROP POLICY IF EXISTS care_record_update ON professional_care_records;
+CREATE POLICY care_record_update ON professional_care_records FOR UPDATE
+  USING (petos_can_manage_engagement(engagement_id, current_setting('app.user_id', true)))
+  WITH CHECK (petos_can_manage_engagement(engagement_id, current_setting('app.user_id', true)));
 
 DROP POLICY IF EXISTS review_eligibility_read ON review_eligibilities;
 CREATE POLICY review_eligibility_read ON review_eligibilities FOR SELECT USING (
