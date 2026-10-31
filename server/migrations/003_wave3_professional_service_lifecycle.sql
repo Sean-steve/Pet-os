@@ -483,7 +483,17 @@ CREATE POLICY booking_revision_access ON booking_revisions FOR ALL
 
 DROP POLICY IF EXISTS engagement_read ON professional_care_engagements;
 CREATE POLICY engagement_read ON professional_care_engagements FOR SELECT USING (
-  petos_can_access_engagement(engagement_id, current_setting('app.user_id', true))
+  assigned_staff_id = current_setting('app.user_id', true)
+  OR EXISTS (
+    SELECT 1 FROM provider_profiles p
+    WHERE p.provider_id = professional_care_engagements.provider_id
+      AND p.user_id = current_setting('app.user_id', true)
+  )
+  OR (
+    business_id IS NOT NULL
+    AND petos_can_manage_business(business_id, current_setting('app.user_id', true))
+  )
+  OR petos_can_access_engagement(engagement_id, current_setting('app.user_id', true))
 );
 DROP POLICY IF EXISTS engagement_insert ON professional_care_engagements;
 CREATE POLICY engagement_insert ON professional_care_engagements FOR INSERT WITH CHECK (
