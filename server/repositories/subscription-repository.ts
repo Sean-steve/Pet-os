@@ -238,21 +238,21 @@ export async function settleProviderSaaSSubscription(client:PoolClient,input:{
   subscriptionId:string;providerEventId:string;providerInvoiceReference:string;status:'PAYMENT_SUCCEEDED'|'PAYMENT_FAILED';amountMinor:number;currency:string;externalBillingRef?:string;
 }){
   const result=await client.query(
-    `SELECT s.*,p.entitlements,pr.amount_minor AS price_amount,pr.grace_period_days
+    `SELECT s.*,p.entitlements,pr.amount_minor AS price_amount,pr.grace_period_days,pr.currency AS price_currency,pr.billing_interval AS price_interval
        FROM provider_saas_subscriptions s JOIN provider_saas_plan_catalog p ON p.plan_id=s.plan_id JOIN provider_saas_prices pr ON pr.price_id=s.price_id
       WHERE s.subscription_id=$1 FOR UPDATE`,
     [input.subscriptionId],
   );
   if(!result.rowCount) throw Object.assign(new Error('PROVIDER_SAAS_SUBSCRIPTION_NOT_FOUND'),{statusCode:404});
   const s=result.rows[0];
-  if(input.currency!==s.currency && s.currency!==undefined) throw Object.assign(new Error('PROVIDER_SAAS_CURRENCY_MISMATCH'),{statusCode:409});
+  if(input.currency!==s.price_currency) throw Object.assign(new Error('PROVIDER_SAAS_CURRENCY_MISMATCH'),{statusCode:409});
   if(input.amountMinor!==Number(s.price_amount)) throw Object.assign(new Error('PROVIDER_SAAS_SETTLEMENT_AMOUNT_MISMATCH'),{statusCode:409});
   const existing=await client.query(`SELECT 1 FROM provider_saas_invoices WHERE provider_invoice_reference=$1 LIMIT 1`,[input.providerInvoiceReference]);
   if(existing.rowCount) return {subscriptionId:input.subscriptionId,status:s.status,replayed:true};
   const invoiceId=`provider-saas-invoice-${generateUUIDv7()}`;
   const now=new Date();
   if(input.status==='PAYMENT_SUCCEEDED'){
-    const end=addInterval(now,(await client.query(`SELECT billing_interval FROM provider_saas_prices WHERE price_id=$1`,[s.price_id])).rows[0].billing_interval);
+    const end=addInterval(now,s.price_interval);
     await client.query(`UPDATE provider_saas_subscriptions SET status='ACTIVE',external_billing_ref=COALESCE($2,external_billing_ref),current_period_start=$3,current_period_end=$4,grace_period_end=NULL,consecutive_failed_payments=0,version=version+1,updated_at=now() WHERE subscription_id=$1`,
       [input.subscriptionId,input.externalBillingRef||null,now.toISOString(),end.toISOString()]);
     await client.query(`INSERT INTO provider_saas_invoices(invoice_id,subscription_id,period_start,period_end,amount_minor,currency,status,provider_invoice_reference,issued_at,due_at,paid_at) VALUES($1,$2,$3,$4,$5,$6,'PAID',$7,now(),now(),now())`,
