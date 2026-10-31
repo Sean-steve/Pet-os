@@ -548,6 +548,216 @@ export function createApp(config: ServerConfig) {
     } catch (error) { next(error); }
   });
 
+  app.get('/public/commerce/listings', async (req, res, next) => {
+    try {
+      const limit = req.query.limit === undefined ? 50 : positiveIntField(req.query.limit, 'LIMIT');
+      const listings = await withSystemTransaction(config, (client) => listStore(client, limit));
+      res.json({ listings });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/commerce/sellers/:sellerId/review', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const sellerId = stringField(req.params.sellerId, 'SELLER_ID', 180);
+      const body = req.body || {};
+      const seller = await withSystemTransaction(config, (client) => reviewSeller(client, {
+        sellerId,
+        approved: body.approved === true,
+        reviewerUserId: stringField(body.reviewerUserId, 'REVIEWER_USER_ID', 180),
+      }));
+      res.json({ seller });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/commerce/products/:productId/review', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const productId = stringField(req.params.productId, 'PRODUCT_ID', 180);
+      const body = req.body || {};
+      const product = await withSystemTransaction(config, (client) => reviewProduct(client, {
+        productId,
+        approved: body.approved === true,
+        reviewerUserId: stringField(body.reviewerUserId, 'REVIEWER_USER_ID', 180),
+        reason: optionalStringField(body.reason, 'REASON', 500),
+      }));
+      res.json({ product });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/commerce/payment-settlements', async (req, res, next) => {
+    try {
+      requireBillingAdapter(req, config);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) => settleCommercePayment(client, {
+        providerEventId: stringField(body.providerEventId, 'PROVIDER_EVENT_ID', 180),
+        orderId: stringField(body.orderId, 'ORDER_ID', 180),
+        provider: stringField(body.provider, 'PROVIDER', 80),
+        providerTransactionId: stringField(body.providerTransactionId, 'PROVIDER_TRANSACTION_ID', 180),
+        settledAmountMinor: positiveIntField(body.settledAmountMinor, 'SETTLED_AMOUNT_MINOR'),
+        currency: stringField(body.currency, 'CURRENCY', 12),
+        status: choiceField(body.status, 'STATUS', ['SUCCESS','FAILED'] as const),
+        providerFeeMinor: body.providerFeeMinor === undefined ? 0 : nonNegativeIntField(body.providerFeeMinor, 'PROVIDER_FEE_MINOR'),
+      }));
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/integrations/apps/:developerAppId/review', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const developerAppId = stringField(req.params.developerAppId, 'DEVELOPER_APP_ID', 180);
+      const body = req.body || {};
+      const appReview = await withSystemTransaction(config, (client) => reviewDeveloperApp(client, {
+        developerAppId,
+        reviewerUserId: stringField(body.reviewerUserId, 'REVIEWER_USER_ID', 180),
+        approved: body.approved === true,
+        approvedScopes: stringArrayField(body.approvedScopes, 'APPROVED_SCOPES', 20),
+      }));
+      res.json({ app: appReview });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/integrations/events', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const body = req.body || {};
+      const data = objectField(body.data, 'DATA');
+      if (containsRestrictedExactLocation(data) || containsAccessSecret(data)) {
+        throw Object.assign(new Error('PUBLIC_INTEGRATION_EVENT_CONTAINS_RESTRICTED_DATA'), { statusCode: 400 });
+      }
+      const result = await withSystemTransaction(config, (client) => queuePublicIntegrationEvent(client, {
+        householdId: stringField(body.householdId, 'HOUSEHOLD_ID', 180),
+        eventId: stringField(body.eventId, 'EVENT_ID', 180),
+        eventType: stringField(body.eventType, 'EVENT_TYPE', 100),
+        aggregateId: stringField(body.aggregateId, 'AGGREGATE_ID', 180),
+        data,
+      }));
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/integrations/webhook-deliveries/:webhookDeliveryId/settle', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const webhookDeliveryId = stringField(req.params.webhookDeliveryId, 'WEBHOOK_DELIVERY_ID', 180);
+      const body = req.body || {};
+      const delivery = await withSystemTransaction(config, (client) => settleWebhookDelivery(client, {
+        webhookDeliveryId,
+        statusCode: nonNegativeIntField(body.statusCode, 'STATUS_CODE'),
+        error: optionalStringField(body.error, 'ERROR', 1000),
+      }));
+      res.json({ delivery });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/ai/requests/:requestId/responses', async (req, res, next) => {
+    try {
+      requireAIAdapter(req, config);
+      const requestId = stringField(req.params.requestId, 'REQUEST_ID', 180);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) => settleAIResponse(client, {
+        requestId,
+        content: stringField(body.content, 'CONTENT', 12000),
+        supportLevel: choiceField(body.supportLevel, 'SUPPORT_LEVEL', ['HIGH_SUPPORT','MODERATE_SUPPORT','LIMITED_INFORMATION'] as const),
+        completionStatus: choiceField(body.completionStatus, 'COMPLETION_STATUS', ['COMPLETED','SAFETY_RESPONSE','BLOCKED','FAILED'] as const),
+        latencyMs: nonNegativeIntField(body.latencyMs, 'LATENCY_MS'),
+        tokenUsage: body.tokenUsage === undefined ? undefined : objectField(body.tokenUsage, 'TOKEN_USAGE') as any,
+        provenanceRefs: body.provenanceRefs === undefined ? undefined : arrayField(body.provenanceRefs, 'PROVENANCE_REFS', 100).map((item, index) => objectField(item, `PROVENANCE_REF_${index}`)),
+      }));
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/ai/recommendations', async (req, res, next) => {
+    try {
+      requireAIAdapter(req, config);
+      const body = req.body || {};
+      const recommendation = await withSystemTransaction(config, (client) => createAIRecommendation(client, {
+        householdId: stringField(body.householdId, 'HOUSEHOLD_ID', 180),
+        petId: stringField(body.petId, 'PET_ID', 180),
+        category: stringField(body.category, 'CATEGORY', 100),
+        title: stringField(body.title, 'TITLE', 200),
+        explanation: stringField(body.explanation, 'EXPLANATION', 4000),
+        priority: choiceField(body.priority, 'PRIORITY', ['LOW','NORMAL','HIGH','URGENT'] as const),
+        evidenceRefs: body.evidenceRefs === undefined ? [] : arrayField(body.evidenceRefs, 'EVIDENCE_REFS', 100).map((item, index) => objectField(item, `EVIDENCE_REF_${index}`)),
+        modelDeploymentId: optionalStringField(body.modelDeploymentId, 'MODEL_DEPLOYMENT_ID', 180),
+        policyVersion: stringField(body.policyVersion, 'POLICY_VERSION', 120),
+      }));
+      res.status(201).json({ recommendation });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/automation/proposals/:proposalId/settle', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const proposalId = stringField(req.params.proposalId, 'PROPOSAL_ID', 180);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) => settleAutomationExecution(client, {
+        proposalId,
+        classification: choiceField(body.classification, 'CLASSIFICATION', ['SUCCESS','VALIDATION_FAILURE','AUTHORIZATION_FAILURE','STALE_PREVIEW','CONFIRMATION_EXPIRED','TARGET_CONFLICT','DEPENDENCY_RETRYABLE','PERMANENT_FAILURE','PARTIAL_FAILURE','POLICY_BLOCKED'] as const),
+        resultReference: optionalStringField(body.resultReference, 'RESULT_REFERENCE', 300),
+        resultSummary: optionalStringField(body.resultSummary, 'RESULT_SUMMARY', 1000),
+        errorMessage: optionalStringField(body.errorMessage, 'ERROR_MESSAGE', 2000),
+      }));
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/analytics/platform/snapshots', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const body = req.body || {};
+      const snapshot = await withSystemTransaction(config, (client) => generatePlatformAnalytics(client, {
+        actorUserId: stringField(body.actorUserId, 'ACTOR_USER_ID', 180),
+        windowStart: isoDateField(body.windowStart, 'WINDOW_START'),
+        windowEnd: isoDateField(body.windowEnd, 'WINDOW_END'),
+        timezone: optionalStringField(body.timezone, 'TIMEZONE', 80) || 'Africa/Nairobi',
+      }));
+      res.status(201).json({ snapshot });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/integration/v1/pets', async (req, res, next) => {
+    try {
+      const identity = await integrationIdentity(req, 'pet:profile:read');
+      const pets = await withSystemTransaction(config, (client) => integrationPetProfiles(client, identity));
+      res.json({ pets });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/integration/v1/care', async (req, res, next) => {
+    try {
+      const identity = await integrationIdentity(req, 'care:read');
+      const care = await withSystemTransaction(config, (client) => integrationCare(client, identity));
+      res.json({ care });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/integration/v1/bookings', async (req, res, next) => {
+    try {
+      const identity = await integrationIdentity(req, 'booking:read');
+      const bookings = await withSystemTransaction(config, (client) => integrationBookings(client, identity));
+      res.json({ bookings });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/integration/v1/tracker-health', async (req, res, next) => {
+    try {
+      const identity = await integrationIdentity(req, 'tracker:health:read');
+      const trackers = await withSystemTransaction(config, (client) => integrationTrackerHealth(client, identity));
+      res.json({ trackers });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/integration/v1/command-center', async (req, res, next) => {
+    try {
+      const identity = await integrationIdentity(req, 'command-center:read');
+      const commandCenter = await withSystemTransaction(config, (client) => integrationCommandCenter(client, identity));
+      res.json({ commandCenter });
+    } catch (error) { next(error); }
+  });
+
   const authenticate = createAuthMiddleware(config);
   const rateLimit = createRateLimitMiddleware(config);
   const requireActiveAccount = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
