@@ -47,6 +47,44 @@ function positiveIntField(value: unknown, name: string): number {
   return parsed;
 }
 
+function containsRestrictedExactLocation(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  if (Array.isArray(value)) return value.some((item) => containsRestrictedExactLocation(item));
+  const restrictedKeys = new Set(['latitude','longitude','lat','lng','coordinates','gps','rawgps','geopoint','geojson','position']);
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    if (restrictedKeys.has(key.toLowerCase())) return true;
+    if (containsRestrictedExactLocation(nested)) return true;
+  }
+  return false;
+}
+
+function validateWave2Payload(
+  domain: DurableDomain,
+  recordType: string,
+  provenance: string | undefined,
+  verificationStatus: string | undefined,
+  payload: Record<string, unknown>,
+): void {
+  if (domain === 'health') {
+    if (recordType === 'AMENDMENT') {
+      throw Object.assign(new Error('HEALTH_AMENDMENT_ROUTE_REQUIRED'), { statusCode: 400 });
+    }
+    if (verificationStatus === 'VERIFIED') {
+      throw Object.assign(new Error('PROFESSIONAL_HEALTH_VERIFICATION_REQUIRED'), { statusCode: 403 });
+    }
+    if (provenance === 'VETERINARY_PROFESSIONAL' || provenance === 'CLINIC_SYSTEM') {
+      throw Object.assign(new Error('PROFESSIONAL_HEALTH_WRITE_REQUIRES_WAVE3'), { statusCode: 403 });
+    }
+    if (recordType === 'CONDITION' && payload.isDiagnosis === true) {
+      throw Object.assign(new Error('PROFESSIONAL_DIAGNOSIS_WRITE_REQUIRES_WAVE3'), { statusCode: 403 });
+    }
+  }
+
+  if (domain === 'activity' && containsRestrictedExactLocation(payload)) {
+    throw Object.assign(new Error('ACTIVITY_EXACT_LOCATION_FORBIDDEN_USE_TRACKING_REFERENCE'), { statusCode: 400 });
+  }
+}
+
 export function createApp(config: ServerConfig) {
   const app = express();
   app.disable('x-powered-by');
@@ -184,18 +222,23 @@ export function createApp(config: ServerConfig) {
         const petId = stringField(req.params.petId, 'PET_ID', 180);
         const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
         const body = req.body || {};
+        const recordType = stringField(body.recordType, 'RECORD_TYPE', 80);
+        const provenance = optionalStringField(body.provenance, 'PROVENANCE', 100);
+        const verificationStatus = optionalStringField(body.verificationStatus, 'VERIFICATION_STATUS', 80);
+        const payload = objectField(body.payload, 'PAYLOAD');
+        validateWave2Payload(domain, recordType, provenance, verificationStatus, payload);
         const result = await withTenantTransaction(config, userId, undefined, (client) =>
           createDomainRecord(client, {
             domain,
             petId,
             actorUserId: userId,
             idempotencyKey,
-            recordType: stringField(body.recordType, 'RECORD_TYPE', 80),
+            recordType,
             occurredAt: body.occurredAt ? isoDateField(body.occurredAt, 'OCCURRED_AT') : new Date().toISOString(),
             status: optionalStringField(body.status, 'STATUS', 80),
-            provenance: optionalStringField(body.provenance, 'PROVENANCE', 100),
-            verificationStatus: optionalStringField(body.verificationStatus, 'VERIFICATION_STATUS', 80),
-            payload: objectField(body.payload, 'PAYLOAD'),
+            provenance,
+            verificationStatus,
+            payload,
           }),
         );
         res.status(result.replayed ? 200 : 201).json({ record: result.record, replayed: result.replayed });
@@ -212,6 +255,10 @@ export function createApp(config: ServerConfig) {
           const recordId = stringField(req.params.recordId, 'RECORD_ID', 220);
           const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
           const body = req.body || {};
+          const payloadPatch = objectField(body.payloadPatch || {}, 'PAYLOAD_PATCH');
+          if (domain === 'activity' && containsRestrictedExactLocation(payloadPatch)) {
+            throw Object.assign(new Error('ACTIVITY_EXACT_LOCATION_FORBIDDEN_USE_TRACKING_REFERENCE'), { statusCode: 400 });
+          }
           const result = await withTenantTransaction(config, userId, undefined, (client) =>
             amendDomainRecord(client, {
               domain,
@@ -222,7 +269,7 @@ export function createApp(config: ServerConfig) {
               expectedVersion: positiveIntField(body.expectedVersion, 'EXPECTED_VERSION'),
               reason: stringField(body.reason, 'REASON', 500),
               status: optionalStringField(body.status, 'STATUS', 80),
-              payloadPatch: objectField(body.payloadPatch || {}, 'PAYLOAD_PATCH'),
+              payloadPatch,
             }),
           );
           res.status(200).json({ record: result.record, replayed: result.replayed });
@@ -240,6 +287,14 @@ export function createApp(config: ServerConfig) {
       const targetRecordId = stringField(req.params.recordId, 'RECORD_ID', 220);
       const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
       const body = req.body || {};
+      const provenance = optionalStringField(body.provenance, 'PROVENANCE', 100);
+      const verificationStatus = optionalStringField(body.verificationStatus, 'VERIFICATION_STATUS', 80);
+      if (verificationStatus === 'VERIFIED') {
+        throw Object.assign(new Error('PROFESSIONAL_HEALTH_VERIFICATION_REQUIRED'), { statusCode: 403 });
+      }
+      if (provenance === 'VETERINARY_PROFESSIONAL' || provenance === 'CLINIC_SYSTEM') {
+        throw Object.assign(new Error('PROFESSIONAL_HEALTH_WRITE_REQUIRES_WAVE3'), { statusCode: 403 });
+      }
       const result = await withTenantTransaction(config, userId, undefined, async (client) => {
         await getDomainRecord(client, 'health', petId, targetRecordId, userId);
         return createDomainRecord(client, {
@@ -250,8 +305,8 @@ export function createApp(config: ServerConfig) {
           recordType: 'AMENDMENT',
           occurredAt: new Date().toISOString(),
           status: 'RECORDED',
-          provenance: optionalStringField(body.provenance, 'PROVENANCE', 100),
-          verificationStatus: optionalStringField(body.verificationStatus, 'VERIFICATION_STATUS', 80),
+          provenance,
+          verificationStatus,
           payload: {
             targetRecordId,
             reason: stringField(body.reason, 'REASON', 500),
