@@ -25,3 +25,7 @@ All `/v1` routes require a valid Bearer token. The token subject is the canonica
 ## Important boundary
 
 This is the first production backend migration slice, not completion of the full migration. Health, booking, finance, tracking, professional care, commerce, subscriptions and the remaining bounded contexts still use prototype stores until migrated in later backend phases.
+
+## Sprint 39 — Migration Wave 2
+
+The backend now persists Pet-specific Health, Care, Nutrition, Training and Activity state in five separate PostgreSQL stores. Each domain exposes authenticated Pet-scoped create/list/detail APIs; Care, Nutrition, Training and Activity also expose optimistic versioned amendments, while Health uses append-only correction records. All five tables are protected by tenant authorization and RLS and are covered by the real `backend:wave2-integration` CI gate.
