@@ -113,7 +113,10 @@ export async function settlePaymentIntent(client:PoolClient,input:{
      VALUES($1,$2,$3,'PAYMENT_SETTLEMENT','PENDING',$4::jsonb)`,
     [`webhook-${generateUUIDv7()}`,intent.provider,input.providerEventId,JSON.stringify({paymentIntentId:input.paymentIntentId,providerTransactionId:input.providerTransactionId,status:input.status})],
   );
-  if(intent.status==='SUCCEEDED') return {duplicate:true,status:'PROCESSED'};
+  if(intent.status==='SUCCEEDED'){
+    await client.query(`UPDATE finance_webhook_events SET status='IGNORED',processed_at=now() WHERE provider_event_id=$1`,[input.providerEventId]);
+    return {duplicate:true,status:'PROCESSED'};
+  }
   if(!['CREATED','REQUIRES_ACTION','PROCESSING'].includes(String(intent.status))) throw Object.assign(new Error('PAYMENT_INTENT_NOT_SETTLEABLE'),{statusCode:409});
   if(input.currency!==intent.currency || input.settledAmountMinor!==Number(intent.amount_minor)) throw Object.assign(new Error('PAYMENT_SETTLEMENT_AMOUNT_MISMATCH'),{statusCode:409});
   const txId=`payment-tx-${generateUUIDv7()}`;
