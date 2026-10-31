@@ -378,6 +378,27 @@ CREATE TABLE IF NOT EXISTS integration_audit_events (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE OR REPLACE FUNCTION petos_validate_integration_installation_scopes()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public
+AS $integration_scope_guard$
+DECLARE
+  approved jsonb;
+BEGIN
+  SELECT approved_scopes INTO approved FROM integration_developer_apps WHERE developer_app_id=NEW.developer_app_id AND status='ACTIVE';
+  IF approved IS NULL THEN RAISE EXCEPTION 'ACTIVE_DEVELOPER_APP_REQUIRED'; END IF;
+  IF NOT (NEW.granted_scopes <@ approved) THEN RAISE EXCEPTION 'INTEGRATION_SCOPE_NOT_APPROVED'; END IF;
+  IF EXISTS (
+    SELECT 1 FROM jsonb_array_elements_text(NEW.granted_scopes) s(value)
+    WHERE s.value NOT IN ('pet:profile:read','care:read','booking:read','tracker:health:read','command-center:read','webhook:manage')
+  ) THEN RAISE EXCEPTION 'INTEGRATION_SCOPE_NOT_ALLOWED'; END IF;
+  RETURN NEW;
+END
+$integration_scope_guard$;
+DROP TRIGGER IF EXISTS trg_integration_installation_scope_guard ON integration_installations;
+CREATE TRIGGER trg_integration_installation_scope_guard
+BEFORE INSERT OR UPDATE OF granted_scopes,developer_app_id,status ON integration_installations
+FOR EACH ROW EXECUTE FUNCTION petos_validate_integration_installation_scopes();
+
 -- ============================================================================
 -- AI GOVERNANCE & REQUEST AUTHORITY
 -- ============================================================================
@@ -607,6 +628,51 @@ CREATE TABLE IF NOT EXISTS automation_execution_attempts (
   UNIQUE(action_proposal_id,attempt_number)
 );
 
+CREATE OR REPLACE FUNCTION petos_validate_automation_rule_version()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public
+AS $automation_rule_guard$
+DECLARE
+  def record;
+BEGIN
+  SELECT * INTO def FROM automation_action_definitions WHERE action_type=NEW.action_type AND enabled;
+  IF NOT FOUND THEN RAISE EXCEPTION 'AUTOMATION_ACTION_NOT_AVAILABLE'; END IF;
+  IF def.may_run_from_rule IS NOT TRUE THEN RAISE EXCEPTION 'AUTOMATION_ACTION_CANNOT_RUN_FROM_RULE'; END IF;
+  IF def.confirmation_level <> 'NONE' AND NEW.requires_confirmation_every_run IS NOT TRUE THEN
+    RAISE EXCEPTION 'AUTOMATION_CONFIRMATION_CANNOT_BE_BYPASSED';
+  END IF;
+  RETURN NEW;
+END
+$automation_rule_guard$;
+DROP TRIGGER IF EXISTS trg_automation_rule_version_guard ON automation_rule_versions;
+CREATE TRIGGER trg_automation_rule_version_guard
+BEFORE INSERT OR UPDATE ON automation_rule_versions
+FOR EACH ROW EXECUTE FUNCTION petos_validate_automation_rule_version();
+
+CREATE OR REPLACE FUNCTION petos_normalize_action_proposal()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public
+AS $automation_proposal_guard$
+DECLARE
+  def record;
+BEGIN
+  SELECT * INTO def FROM automation_action_definitions WHERE action_type=NEW.action_type AND enabled;
+  IF NOT FOUND THEN RAISE EXCEPTION 'AUTOMATION_ACTION_NOT_AVAILABLE'; END IF;
+  IF NEW.origin='AUTOMATION_RULE' AND def.may_run_from_rule IS NOT TRUE THEN
+    RAISE EXCEPTION 'AUTOMATION_ACTION_CANNOT_RUN_FROM_RULE';
+  END IF;
+  IF def.money_movement OR def.clinical_mutation THEN
+    RAISE EXCEPTION 'AUTOMATION_SENSITIVE_MUTATION_NOT_AUTONOMOUS';
+  END IF;
+  NEW.risk := def.risk;
+  NEW.confirmation_level := def.confirmation_level;
+  NEW.status := CASE WHEN def.confirmation_level='NONE' THEN 'CONFIRMED' ELSE 'AWAITING_CONFIRMATION' END;
+  RETURN NEW;
+END
+$automation_proposal_guard$;
+DROP TRIGGER IF EXISTS trg_automation_action_proposal_guard ON automation_action_proposals;
+CREATE TRIGGER trg_automation_action_proposal_guard
+BEFORE INSERT ON automation_action_proposals
+FOR EACH ROW EXECUTE FUNCTION petos_normalize_action_proposal();
+
 -- ============================================================================
 -- ANALYTICS SNAPSHOTS
 -- ============================================================================
@@ -718,7 +784,8 @@ GRANT EXECUTE ON FUNCTION petos_can_access_automation_household(text,text) TO pe
 -- PRIVILEGES
 -- ============================================================================
 
-GRANT SELECT,INSERT,UPDATE ON commerce_sellers,commerce_seller_memberships,commerce_products,commerce_skus,commerce_listings,commerce_inventory_items TO petos_app;
+GRANT SELECT,INSERT ON commerce_sellers,commerce_seller_memberships,commerce_products,commerce_skus TO petos_app;
+GRANT SELECT,INSERT,UPDATE ON commerce_listings,commerce_inventory_items TO petos_app;
 GRANT SELECT ON commerce_checkouts,commerce_checkout_items,commerce_inventory_reservations,commerce_orders,commerce_seller_orders,commerce_order_items,commerce_payment_transactions,commerce_shipments,commerce_return_requests TO petos_app;
 GRANT UPDATE ON commerce_seller_orders,commerce_shipments,commerce_return_requests TO petos_app;
 
@@ -727,15 +794,15 @@ GRANT SELECT ON integration_webhook_deliveries TO petos_app;
 GRANT SELECT,INSERT ON integration_audit_events TO petos_app;
 REVOKE ALL ON integration_api_credentials FROM petos_app;
 
-GRANT SELECT,INSERT,UPDATE ON ai_consents,ai_requests,ai_recommendations TO petos_app;
-GRANT SELECT,INSERT ON ai_safety_decisions TO petos_app;
-GRANT SELECT ON ai_responses,ai_model_deployments,ai_prompt_versions TO petos_app;
+GRANT SELECT,INSERT,UPDATE ON ai_consents TO petos_app;
+GRANT SELECT ON ai_requests,ai_safety_decisions,ai_responses,ai_model_deployments,ai_prompt_versions TO petos_app;
+GRANT SELECT,UPDATE ON ai_recommendations TO petos_app;
 
-GRANT SELECT,INSERT,UPDATE ON automation_rules,automation_rule_versions,automation_action_proposals,automation_confirmations TO petos_app;
+GRANT SELECT,INSERT ON automation_rules,automation_rule_versions,automation_action_proposals,automation_confirmations TO petos_app;
 GRANT SELECT ON automation_action_definitions TO petos_app;
 GRANT SELECT,INSERT ON automation_execution_attempts TO petos_app;
 
-GRANT SELECT,INSERT ON analytics_snapshots TO petos_app;
+GRANT SELECT ON analytics_snapshots TO petos_app;
 
 -- ============================================================================
 -- ROW LEVEL SECURITY
