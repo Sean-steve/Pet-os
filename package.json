@@ -1,7 +1,7 @@
 {
   "name": "pet-os",
   "private": true,
-  "version": "0.39.0",
+  "version": "0.40.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
@@ -20,7 +20,8 @@
     "server:start": "node dist-server/index.js",
     "db:migrate": "tsx server/migrate.ts",
     "backend:integration": "tsx server/tests/integration.ts",
-    "backend:wave2-integration": "tsx server/tests/wave2-integration.ts"
+    "backend:wave2-integration": "tsx server/tests/wave2-integration.ts",
+    "backend:wave3-integration": "tsx server/tests/wave3-integration.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
