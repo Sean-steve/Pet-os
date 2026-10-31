@@ -40,8 +40,6 @@ CREATE TABLE IF NOT EXISTS commerce_sellers (
   agreement_accepted_at timestamptz,
   standard_lead_time_hours integer NOT NULL DEFAULT 24 CHECK(standard_lead_time_hours>=0),
   is_first_party boolean NOT NULL DEFAULT false,
-  reviewed_at timestamptz,
-  reviewed_by text REFERENCES users(user_id) ON DELETE SET NULL,
   version integer NOT NULL DEFAULT 1 CHECK(version>0),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -304,6 +302,8 @@ CREATE TABLE IF NOT EXISTS integration_developer_apps (
   redirect_uris jsonb NOT NULL DEFAULT '[]'::jsonb CHECK(jsonb_typeof(redirect_uris)='array'),
   privacy_policy_url text,
   terms_url text,
+  reviewed_at timestamptz,
+  reviewed_by text REFERENCES users(user_id) ON DELETE SET NULL,
   version integer NOT NULL DEFAULT 1 CHECK(version>0),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
