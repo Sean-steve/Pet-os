@@ -339,7 +339,6 @@ export async function settleRefund(client:PoolClient,input:{refundId:string;prov
   const r=result.rows[0];
   if(['SUCCEEDED','FAILED','CANCELLED'].includes(String(r.status))) return {refundId:input.refundId,status:r.status,replayed:true};
   if(input.status==='FAILED'){
-    await client.query(`UPDATE finance_refunds SET status='FAILED',failure_reason='Provider refund failed',failed_at=now() WHERE refund_id=$1`,[input.refundId]).catch(()=>{});
     await client.query(`UPDATE finance_refunds SET status='FAILED',failure_reason='Provider refund failed' WHERE refund_id=$1`,[input.refundId]);
     return {refundId:input.refundId,status:'FAILED',replayed:false};
   }
