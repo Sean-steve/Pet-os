@@ -421,7 +421,7 @@ export async function createTransportDriver(client:PoolClient,input:{
     `INSERT INTO transport_driver_profiles(
       driver_profile_id,user_id,provider_id,business_id,full_name,phone_number_masked,operational_status,verification_status,
       driving_license_ref_masked,approved_service_types,emergency_contact_masked
-     ) VALUES($1,$2,$3,$4,$5,$6,'ACTIVE','PENDING',$7,$8::jsonb,$9) RETURNING *`,
+     ) VALUES($1,$2,$3,$4,$5,$6,'ACTIVE','UNVERIFIED',$7,$8::jsonb,$9) RETURNING *`,
     [driverProfileId,input.userId,input.providerId,input.businessId,input.fullName,input.phoneNumberMasked,input.drivingLicenseRefMasked,JSON.stringify(input.approvedServiceTypes),input.emergencyContactMasked],
   );
   const driver=result.rows[0];
@@ -838,9 +838,8 @@ export async function reportLostPet(client:PoolClient,input:{
 export async function submitRecoverySighting(client:PoolClient,input:{
   actorUserId:string;idempotencyKey:string;incidentId:string;sightingAt:string;latitude:number;longitude:number;coarseDescription:string;notes:string;confidence:string;reportedVia:string;
 }){
-  const incident=await client.query(`SELECT status FROM recovery_incidents WHERE lost_pet_incident_id=$1 LIMIT 1`,[input.incidentId]);
-  if(!incident.rowCount) throw httpError('LOST_PET_INCIDENT_NOT_FOUND',404);
-  if(!['ACTIVE','SEARCH_IN_PROGRESS'].includes(String(incident.rows[0].status))) throw httpError('LOST_PET_INCIDENT_NOT_ACCEPTING_SIGHTINGS',409);
+  const accepting=await client.query(`SELECT petos_recovery_accepting_sightings($1) AS accepting`,[input.incidentId]);
+  if(accepting.rows[0]?.accepting!==true) throw httpError('LOST_PET_INCIDENT_NOT_ACCEPTING_SIGHTINGS',409);
   const scope=`recovery:sighting:${input.incidentId}`;
   const requestFingerprint=fingerprint(input);
   const prior=await client.query(`SELECT request_fingerprint,response_body FROM idempotency_records WHERE actor_user_id=$1 AND scope=$2 AND idempotency_key=$3`,[input.actorUserId,scope,input.idempotencyKey]);
