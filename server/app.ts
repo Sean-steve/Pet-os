@@ -1298,7 +1298,7 @@ export function createApp(config: ServerConfig) {
           petIdsExiting:stop.petIdsExiting===undefined?[]:stringArrayField(stop.petIdsExiting,'PET_IDS_EXITING',30),
         };
       });
-      const result=await withTenantTransaction(config,userId,undefined,(client)=>createTransportTrip(client,{
+      const result=await withSystemTransaction(config,(client)=>createTransportTrip(client,{
         actorUserId:userId,idempotencyKey,
         bookingId:stringField(body.bookingId,'BOOKING_ID',180),
         assignedDriverId:stringField(body.assignedDriverId,'ASSIGNED_DRIVER_ID',180),
