@@ -66,6 +66,55 @@ import {
   volunteerForRecovery,
   listCommunityFeed,
 } from './repositories/wave5-repository';
+import {
+  createCheckout,
+  createProductListing,
+  createSeller,
+  getCommerceOrder,
+  listStore,
+  reviewProduct,
+  reviewSeller,
+  settleCommercePayment,
+  transitionSellerOrder,
+} from './repositories/commerce-repository';
+import {
+  authenticateIntegration,
+  createDeveloperApp,
+  createIntegrationCredential,
+  createWebhookSubscription,
+  installDeveloperApp,
+  integrationBookings,
+  integrationCare,
+  integrationCommandCenter,
+  integrationPetProfiles,
+  integrationTrackerHealth,
+  queuePublicIntegrationEvent,
+  reviewDeveloperApp,
+  settleWebhookDelivery,
+  type IntegrationIdentity,
+} from './repositories/integration-repository';
+import {
+  createAIRecommendation,
+  createAIRequest,
+  getAIRequest,
+  grantAIConsent,
+  settleAIResponse,
+  updateRecommendationStatus,
+} from './repositories/ai-repository';
+import {
+  confirmAutomationAction,
+  createAutomationRule,
+  executeAutomationAction,
+  getAutomationProposal,
+  proposeAutomationAction,
+  settleAutomationExecution,
+} from './repositories/automation-repository';
+import {
+  generateHouseholdAnalytics,
+  generatePlatformAnalytics,
+  generateProviderAnalytics,
+  listAnalyticsSnapshots,
+} from './repositories/analytics-repository';
 
 function stringField(value: unknown, name: string, max = 120): string {
   if (typeof value !== 'string' || !value.trim()) throw Object.assign(new Error(`${name}_REQUIRED`), { statusCode: 400 });
@@ -164,6 +213,26 @@ function requireLocationAdapter(req: Request, config: ServerConfig): void {
   }
 }
 
+function requireAIAdapter(req: Request, config: ServerConfig): void {
+  const supplied = req.header('x-ai-adapter-secret') || '';
+  const expected = config.aiAdapterSecret;
+  const suppliedBuffer = Buffer.from(supplied);
+  const expectedBuffer = Buffer.from(expected);
+  if (suppliedBuffer.length !== expectedBuffer.length || !timingSafeEqual(suppliedBuffer, expectedBuffer)) {
+    throw Object.assign(new Error('AI_ADAPTER_AUTHENTICATION_FAILED'), { statusCode: 401 });
+  }
+}
+
+function requireIntegrationAdapter(req: Request, config: ServerConfig): void {
+  const supplied = req.header('x-integration-adapter-secret') || '';
+  const expected = config.integrationAdapterSecret;
+  const suppliedBuffer = Buffer.from(supplied);
+  const expectedBuffer = Buffer.from(expected);
+  if (suppliedBuffer.length !== expectedBuffer.length || !timingSafeEqual(suppliedBuffer, expectedBuffer)) {
+    throw Object.assign(new Error('INTEGRATION_ADAPTER_AUTHENTICATION_FAILED'), { statusCode: 401 });
+  }
+}
+
 function containsAccessSecret(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false;
   if (Array.isArray(value)) return value.some((item) => containsAccessSecret(item));
@@ -215,6 +284,20 @@ function validateWave2Payload(
 
 export function createApp(config: ServerConfig) {
   const app = express();
+
+  const integrationIdentity = async (req: Request, requiredScope: string): Promise<IntegrationIdentity> => {
+    const rawToken = req.header('x-integration-key') || '';
+    const identity = await withSystemTransaction(config, (client) => authenticateIntegration(client, rawToken, requiredScope));
+    const redis = await getRedis(config);
+    const bucket = Math.floor(Date.now() / 60000);
+    const key = `rate:integration:${identity.credentialId}:${bucket}`;
+    const count = Number(await redis.incr(key));
+    if (count === 1) await redis.expire(key, 70);
+    if (count > identity.rateLimitPerMinute) {
+      throw Object.assign(new Error('INTEGRATION_RATE_LIMIT_EXCEEDED'), { statusCode: 429 });
+    }
+    return identity;
+  };
   app.disable('x-powered-by');
   app.use(express.json({ limit: '256kb' }));
   app.use((req, res, next) => {
@@ -462,6 +545,222 @@ export function createApp(config: ServerConfig) {
       const publicToken = stringField(req.params.publicToken, 'PUBLIC_TOKEN', 220);
       const profile = await withSystemTransaction(config, (client) => getPublicRecoveryProfile(client, publicToken));
       res.json({ profile });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/public/commerce/listings', async (req, res, next) => {
+    try {
+      const limit = req.query.limit === undefined ? 50 : positiveIntField(req.query.limit, 'LIMIT');
+      const listings = await withSystemTransaction(config, (client) => listStore(client, limit));
+      res.json({ listings });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/commerce/sellers/:sellerId/review', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const sellerId = stringField(req.params.sellerId, 'SELLER_ID', 180);
+      const body = req.body || {};
+      const seller = await withSystemTransaction(config, (client) => reviewSeller(client, {
+        sellerId,
+        approved: body.approved === true,
+        reviewerUserId: stringField(body.reviewerUserId, 'REVIEWER_USER_ID', 180),
+      }));
+      res.json({ seller });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/commerce/products/:productId/review', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const productId = stringField(req.params.productId, 'PRODUCT_ID', 180);
+      const body = req.body || {};
+      const product = await withSystemTransaction(config, (client) => reviewProduct(client, {
+        productId,
+        approved: body.approved === true,
+        reviewerUserId: stringField(body.reviewerUserId, 'REVIEWER_USER_ID', 180),
+        reason: optionalStringField(body.reason, 'REASON', 500),
+      }));
+      res.json({ product });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/commerce/payment-settlements', async (req, res, next) => {
+    try {
+      requireBillingAdapter(req, config);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) => settleCommercePayment(client, {
+        providerEventId: stringField(body.providerEventId, 'PROVIDER_EVENT_ID', 180),
+        orderId: stringField(body.orderId, 'ORDER_ID', 180),
+        provider: stringField(body.provider, 'PROVIDER', 80),
+        providerTransactionId: stringField(body.providerTransactionId, 'PROVIDER_TRANSACTION_ID', 180),
+        settledAmountMinor: positiveIntField(body.settledAmountMinor, 'SETTLED_AMOUNT_MINOR'),
+        currency: stringField(body.currency, 'CURRENCY', 12),
+        status: choiceField(body.status, 'STATUS', ['SUCCESS','FAILED'] as const),
+        providerFeeMinor: body.providerFeeMinor === undefined ? 0 : nonNegativeIntField(body.providerFeeMinor, 'PROVIDER_FEE_MINOR'),
+      }));
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/integrations/apps/:developerAppId/review', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const developerAppId = stringField(req.params.developerAppId, 'DEVELOPER_APP_ID', 180);
+      const body = req.body || {};
+      const appReview = await withSystemTransaction(config, (client) => reviewDeveloperApp(client, {
+        developerAppId,
+        reviewerUserId: stringField(body.reviewerUserId, 'REVIEWER_USER_ID', 180),
+        approved: body.approved === true,
+        approvedScopes: stringArrayField(body.approvedScopes, 'APPROVED_SCOPES', 20),
+      }));
+      res.json({ app: appReview });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/integrations/events', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const body = req.body || {};
+      const data = objectField(body.data, 'DATA');
+      if (containsRestrictedExactLocation(data) || containsAccessSecret(data)) {
+        throw Object.assign(new Error('PUBLIC_INTEGRATION_EVENT_CONTAINS_RESTRICTED_DATA'), { statusCode: 400 });
+      }
+      const result = await withSystemTransaction(config, (client) => queuePublicIntegrationEvent(client, {
+        householdId: stringField(body.householdId, 'HOUSEHOLD_ID', 180),
+        eventId: stringField(body.eventId, 'EVENT_ID', 180),
+        eventType: stringField(body.eventType, 'EVENT_TYPE', 100),
+        aggregateId: stringField(body.aggregateId, 'AGGREGATE_ID', 180),
+        data,
+      }));
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/integrations/webhook-deliveries/:webhookDeliveryId/settle', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const webhookDeliveryId = stringField(req.params.webhookDeliveryId, 'WEBHOOK_DELIVERY_ID', 180);
+      const body = req.body || {};
+      const delivery = await withSystemTransaction(config, (client) => settleWebhookDelivery(client, {
+        webhookDeliveryId,
+        statusCode: nonNegativeIntField(body.statusCode, 'STATUS_CODE'),
+        error: optionalStringField(body.error, 'ERROR', 1000),
+      }));
+      res.json({ delivery });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/ai/requests/:requestId/responses', async (req, res, next) => {
+    try {
+      requireAIAdapter(req, config);
+      const requestId = stringField(req.params.requestId, 'REQUEST_ID', 180);
+      const body = req.body || {};
+      if (containsRestrictedExactLocation(body.provenanceRefs) || containsAccessSecret(body.provenanceRefs)) {
+        throw Object.assign(new Error('AI_PROVENANCE_CONTAINS_RESTRICTED_DATA'), { statusCode: 400 });
+      }
+      const result = await withSystemTransaction(config, (client) => settleAIResponse(client, {
+        requestId,
+        content: stringField(body.content, 'CONTENT', 12000),
+        supportLevel: choiceField(body.supportLevel, 'SUPPORT_LEVEL', ['HIGH_SUPPORT','MODERATE_SUPPORT','LIMITED_INFORMATION'] as const),
+        completionStatus: choiceField(body.completionStatus, 'COMPLETION_STATUS', ['COMPLETED','SAFETY_RESPONSE','BLOCKED','FAILED'] as const),
+        latencyMs: nonNegativeIntField(body.latencyMs, 'LATENCY_MS'),
+        tokenUsage: body.tokenUsage === undefined ? undefined : objectField(body.tokenUsage, 'TOKEN_USAGE') as any,
+        provenanceRefs: body.provenanceRefs === undefined ? undefined : arrayField(body.provenanceRefs, 'PROVENANCE_REFS', 100).map((item, index) => objectField(item, `PROVENANCE_REF_${index}`)),
+      }));
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/ai/recommendations', async (req, res, next) => {
+    try {
+      requireAIAdapter(req, config);
+      const body = req.body || {};
+      if (containsRestrictedExactLocation(body.evidenceRefs) || containsAccessSecret(body.evidenceRefs)) {
+        throw Object.assign(new Error('AI_RECOMMENDATION_EVIDENCE_CONTAINS_RESTRICTED_DATA'), { statusCode: 400 });
+      }
+      const recommendation = await withSystemTransaction(config, (client) => createAIRecommendation(client, {
+        householdId: stringField(body.householdId, 'HOUSEHOLD_ID', 180),
+        petId: stringField(body.petId, 'PET_ID', 180),
+        category: stringField(body.category, 'CATEGORY', 100),
+        title: stringField(body.title, 'TITLE', 200),
+        explanation: stringField(body.explanation, 'EXPLANATION', 4000),
+        priority: choiceField(body.priority, 'PRIORITY', ['LOW','NORMAL','HIGH','URGENT'] as const),
+        evidenceRefs: body.evidenceRefs === undefined ? [] : arrayField(body.evidenceRefs, 'EVIDENCE_REFS', 100).map((item, index) => objectField(item, `EVIDENCE_REF_${index}`)),
+        modelDeploymentId: optionalStringField(body.modelDeploymentId, 'MODEL_DEPLOYMENT_ID', 180),
+        policyVersion: stringField(body.policyVersion, 'POLICY_VERSION', 120),
+      }));
+      res.status(201).json({ recommendation });
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/automation/proposals/:proposalId/settle', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const proposalId = stringField(req.params.proposalId, 'PROPOSAL_ID', 180);
+      const body = req.body || {};
+      const result = await withSystemTransaction(config, (client) => settleAutomationExecution(client, {
+        proposalId,
+        classification: choiceField(body.classification, 'CLASSIFICATION', ['SUCCESS','VALIDATION_FAILURE','AUTHORIZATION_FAILURE','STALE_PREVIEW','CONFIRMATION_EXPIRED','TARGET_CONFLICT','DEPENDENCY_RETRYABLE','PERMANENT_FAILURE','PARTIAL_FAILURE','POLICY_BLOCKED'] as const),
+        resultReference: optionalStringField(body.resultReference, 'RESULT_REFERENCE', 300),
+        resultSummary: optionalStringField(body.resultSummary, 'RESULT_SUMMARY', 1000),
+        errorMessage: optionalStringField(body.errorMessage, 'ERROR_MESSAGE', 2000),
+      }));
+      res.json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/internal/analytics/platform/snapshots', async (req, res, next) => {
+    try {
+      requireIntegrationAdapter(req, config);
+      const body = req.body || {};
+      const snapshot = await withSystemTransaction(config, (client) => generatePlatformAnalytics(client, {
+        actorUserId: stringField(body.actorUserId, 'ACTOR_USER_ID', 180),
+        windowStart: isoDateField(body.windowStart, 'WINDOW_START'),
+        windowEnd: isoDateField(body.windowEnd, 'WINDOW_END'),
+        timezone: optionalStringField(body.timezone, 'TIMEZONE', 80) || 'Africa/Nairobi',
+      }));
+      res.status(201).json({ snapshot });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/integration/v1/pets', async (req, res, next) => {
+    try {
+      const identity = await integrationIdentity(req, 'pet:profile:read');
+      const pets = await withSystemTransaction(config, (client) => integrationPetProfiles(client, identity));
+      res.json({ pets });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/integration/v1/care', async (req, res, next) => {
+    try {
+      const identity = await integrationIdentity(req, 'care:read');
+      const care = await withSystemTransaction(config, (client) => integrationCare(client, identity));
+      res.json({ care });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/integration/v1/bookings', async (req, res, next) => {
+    try {
+      const identity = await integrationIdentity(req, 'booking:read');
+      const bookings = await withSystemTransaction(config, (client) => integrationBookings(client, identity));
+      res.json({ bookings });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/integration/v1/tracker-health', async (req, res, next) => {
+    try {
+      const identity = await integrationIdentity(req, 'tracker:health:read');
+      const trackers = await withSystemTransaction(config, (client) => integrationTrackerHealth(client, identity));
+      res.json({ trackers });
+    } catch (error) { next(error); }
+  });
+
+  app.get('/integration/v1/command-center', async (req, res, next) => {
+    try {
+      const identity = await integrationIdentity(req, 'command-center:read');
+      const commandCenter = await withSystemTransaction(config, (client) => integrationCommandCenter(client, identity));
+      res.json({ commandCenter });
     } catch (error) { next(error); }
   });
 
@@ -1536,6 +1835,327 @@ export function createApp(config: ServerConfig) {
         notes:optionalStringField(body.notes,'NOTES',500),
       }));
       res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/commerce/sellers', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId } = requireAuthenticated(req);
+      const idempotencyKey = stringField(req.header('idempotency-key'), 'IDEMPOTENCY_KEY', 180);
+      const body = req.body || {};
+      const result = await withTenantTransaction(config, userId, undefined, (client) => createSeller(client, {
+        actorUserId:userId,idempotencyKey,
+        sellerType:choiceField(body.sellerType,'SELLER_TYPE',['INDIVIDUAL','BUSINESS'] as const),
+        businessId:optionalStringField(body.businessId,'BUSINESS_ID',180),
+        tradingName:stringField(body.tradingName,'TRADING_NAME',160),
+        legalEntityName:stringField(body.legalEntityName,'LEGAL_ENTITY_NAME',200),
+        registrationNumber:optionalStringField(body.registrationNumber,'REGISTRATION_NUMBER',100),
+        supportEmail:stringField(body.supportEmail,'SUPPORT_EMAIL',180),
+        supportPhone:stringField(body.supportPhone,'SUPPORT_PHONE',80),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/v1/commerce/sellers/:sellerId/products', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { userId }=requireAuthenticated(req);
+      const sellerId=stringField(req.params.sellerId,'SELLER_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>createProductListing(client,{
+        actorUserId:userId,idempotencyKey,sellerId,
+        title:stringField(body.title,'TITLE',200),
+        slug:stringField(body.slug,'SLUG',200),
+        description:stringField(body.description,'DESCRIPTION',5000),
+        shortDescription:typeof body.shortDescription==='string'?body.shortDescription.slice(0,500):'',
+        categoryCode:stringField(body.categoryCode,'CATEGORY_CODE',100),
+        speciesApplicability:choiceField(body.speciesApplicability,'SPECIES_APPLICABILITY',['DOG','CAT','MULTI_SPECIES','SMALL_PET','BIRD'] as const),
+        lifeStageApplicability:choiceField(body.lifeStageApplicability,'LIFE_STAGE_APPLICABILITY',['PUPPY_KITTEN','ADULT','SENIOR','ALL_STAGES'] as const),
+        safetyClassification:choiceField(body.safetyClassification,'SAFETY_CLASSIFICATION',['STANDARD','REGULATED','HAZARDOUS','PROHIBITED'] as const),
+        isLiveAnimal:body.isLiveAnimal===true,
+        prescriptionRestricted:body.prescriptionRestricted===true,
+        skuCode:stringField(body.skuCode,'SKU_CODE',100),
+        variantTitle:stringField(body.variantTitle,'VARIANT_TITLE',160),
+        options:body.options===undefined?{}:objectField(body.options,'OPTIONS') as Record<string,string>,
+        priceMinor:positiveIntField(body.priceMinor,'PRICE_MINOR'),
+        currency:stringField(body.currency,'CURRENCY',12),
+        fulfillmentMethods:stringArrayField(body.fulfillmentMethods,'FULFILLMENT_METHODS',10),
+        shippingProfileId:stringField(body.shippingProfileId,'SHIPPING_PROFILE_ID',180),
+        initialStock:nonNegativeIntField(body.initialStock,'INITIAL_STOCK'),
+        locationCode:stringField(body.locationCode,'LOCATION_CODE',120),
+        condition:choiceField(body.condition,'CONDITION',['NEW','REFURBISHED'] as const),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    } catch(error){next(error);}
+  });
+
+  app.post('/v1/commerce/checkouts', async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const {userId}=requireAuthenticated(req);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const items=arrayField(body.items,'ITEMS',50).map((item,index)=>{
+        const row=objectField(item,`ITEM_${index}`);
+        return {listingId:stringField(row.listingId,'LISTING_ID',180),quantity:positiveIntField(row.quantity,'QUANTITY')};
+      });
+      const result=await withSystemTransaction(config,(client)=>createCheckout(client,{
+        actorUserId:userId,idempotencyKey,
+        householdId:optionalStringField(body.householdId,'HOUSEHOLD_ID',180),
+        items,
+        shippingAddressCiphertext:stringField(body.shippingAddressCiphertext,'SHIPPING_ADDRESS_CIPHERTEXT',1200),
+        maskedAddressSummary:stringField(body.maskedAddressSummary,'MASKED_ADDRESS_SUMMARY',220),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    } catch(error){next(error);}
+  });
+
+  app.get('/v1/commerce/orders/:orderId', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const orderId=stringField(req.params.orderId,'ORDER_ID',180);
+      const order=await withTenantTransaction(config,userId,undefined,(client)=>getCommerceOrder(client,orderId,userId));
+      res.json(order);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/commerce/seller-orders/:sellerOrderId/transitions', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const sellerOrderId=stringField(req.params.sellerOrderId,'SELLER_ORDER_ID',180);
+      const idempotencyKey=stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>transitionSellerOrder(client,{
+        actorUserId:userId,idempotencyKey,sellerOrderId,
+        nextStatus:choiceField(body.nextStatus,'NEXT_STATUS',['ACCEPTED','PREPARING','READY_FOR_DISPATCH','SHIPPED','OUT_FOR_DELIVERY','DELIVERED','READY_FOR_PICKUP','PICKED_UP','CANCELLED','RETURN_IN_PROGRESS','CLOSED'] as const),
+      }));
+      res.json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/integrations/apps', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const body=req.body||{};
+      const appRecord=await withTenantTransaction(config,userId,undefined,(client)=>createDeveloperApp(client,{
+        actorUserId:userId,
+        name:stringField(body.name,'NAME',160),
+        description:typeof body.description==='string'?body.description.slice(0,1000):'',
+        requestedScopes:stringArrayField(body.requestedScopes,'REQUESTED_SCOPES',20),
+        redirectUris:body.redirectUris===undefined?[]:stringArrayField(body.redirectUris,'REDIRECT_URIS',20),
+        privacyPolicyUrl:optionalStringField(body.privacyPolicyUrl,'PRIVACY_POLICY_URL',500),
+        termsUrl:optionalStringField(body.termsUrl,'TERMS_URL',500),
+      }));
+      res.status(201).json({app:appRecord});
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/integrations/apps/:developerAppId/installations', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const developerAppId=stringField(req.params.developerAppId,'DEVELOPER_APP_ID',180);
+      const body=req.body||{};
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>installDeveloperApp(client,{
+        actorUserId:userId,developerAppId,
+        householdId:stringField(body.householdId,'HOUSEHOLD_ID',180),
+        grantedScopes:stringArrayField(body.grantedScopes,'GRANTED_SCOPES',20),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/integrations/installations/:installationId/credentials', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const installationId=stringField(req.params.installationId,'INSTALLATION_ID',180);
+      const body=req.body||{};
+      const credential=await withSystemTransaction(config,(client)=>createIntegrationCredential(client,{
+        actorUserId:userId,installationId,
+        expiresAt:body.expiresAt===undefined?undefined:isoDateField(body.expiresAt,'EXPIRES_AT'),
+        rateLimitPerMinute:body.rateLimitPerMinute===undefined?60:positiveIntField(body.rateLimitPerMinute,'RATE_LIMIT_PER_MINUTE'),
+      }));
+      res.status(201).json({credential});
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/integrations/installations/:installationId/webhooks', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const installationId=stringField(req.params.installationId,'INSTALLATION_ID',180);
+      const body=req.body||{};
+      const webhook=await withTenantTransaction(config,userId,undefined,(client)=>createWebhookSubscription(client,{
+        actorUserId:userId,installationId,
+        endpointUrl:stringField(body.endpointUrl,'ENDPOINT_URL',1000),
+        eventTypes:stringArrayField(body.eventTypes,'EVENT_TYPES',20),
+      }));
+      res.status(201).json({webhook});
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/ai/consents', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const body=req.body||{};
+      const consent=await withTenantTransaction(config,userId,undefined,(client)=>grantAIConsent(client,{
+        actorUserId:userId,
+        householdId:stringField(body.householdId,'HOUSEHOLD_ID',180),
+        scopes:stringArrayField(body.scopes,'SCOPES',20),
+        policyVersion:stringField(body.policyVersion,'POLICY_VERSION',120),
+      }));
+      res.json({consent});
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/ai/requests', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const body=req.body||{};
+      const result=await withSystemTransaction(config,(client)=>createAIRequest(client,{
+        actorUserId:userId,
+        householdId:stringField(body.householdId,'HOUSEHOLD_ID',180),
+        petId:stringField(body.petId,'PET_ID',180),
+        useCase:choiceField(body.useCase,'USE_CASE',['PET_ASSISTANT','PET_SUMMARY','DAILY_INSIGHT','HEALTH_SUMMARY','MEDICATION_EXPLANATION','TRAINING_GUIDANCE','NUTRITION_INFORMATION','ACTIVITY_INSIGHT','LOST_PET_ASSISTANT','TRACKER_TROUBLESHOOTING','PROFESSIONAL_DRAFT','PRODUCT_INFORMATION'] as const),
+        text:stringField(body.text,'TEXT',8000),
+      }));
+      res.status(201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.get('/v1/ai/requests/:requestId', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const requestId=stringField(req.params.requestId,'REQUEST_ID',180);
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>getAIRequest(client,requestId,userId));
+      res.json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/ai/recommendations/:recommendationId/status', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const recommendationId=stringField(req.params.recommendationId,'RECOMMENDATION_ID',180);
+      const body=req.body||{};
+      const recommendation=await withTenantTransaction(config,userId,undefined,(client)=>updateRecommendationStatus(client,{
+        actorUserId:userId,recommendationId,
+        status:choiceField(body.status,'STATUS',['ACCEPTED','DISMISSED','SNOOZED'] as const),
+        snoozedUntil:body.snoozedUntil===undefined?undefined:isoDateField(body.snoozedUntil,'SNOOZED_UNTIL'),
+      }));
+      res.json({recommendation});
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/automation/rules', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const body=req.body||{};
+      if(containsRestrictedExactLocation(body.actionPayloadTemplate))throw Object.assign(new Error('AUTOMATION_EXACT_LOCATION_PAYLOAD_FORBIDDEN'),{statusCode:400});
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>createAutomationRule(client,{
+        actorUserId:userId,
+        householdId:stringField(body.householdId,'HOUSEHOLD_ID',180),
+        name:stringField(body.name,'NAME',160),
+        description:typeof body.description==='string'?body.description.slice(0,1000):'',
+        triggerType:choiceField(body.triggerType,'TRIGGER_TYPE',['DOMAIN_EVENT','SCHEDULE','CONDITION','MANUAL','AI_RECOMMENDATION'] as const),
+        triggerConfig:body.triggerConfig===undefined?{}:objectField(body.triggerConfig,'TRIGGER_CONFIG'),
+        conditionExpression:typeof body.conditionExpression==='string'?body.conditionExpression.slice(0,1000):'true',
+        actionType:choiceField(body.actionType,'ACTION_TYPE',['CARE_CREATE_OWNER_TASK','CARE_SNOOZE_OCCURRENCE','CARE_COMPLETE_OCCURRENCE','NOTIFICATION_SCHEDULE_SELF','BOOKING_CREATE_SERVICE_REQUEST','LOST_PET_ACTIVATE_COMMUNITY_ALERT','TRACKING_REQUEST_LOST_MODE','OPEN_DOMAIN_WORKSPACE'] as const),
+        actionPayloadTemplate:body.actionPayloadTemplate===undefined?{}:objectField(body.actionPayloadTemplate,'ACTION_PAYLOAD_TEMPLATE'),
+        requiresConfirmationEveryRun:body.requiresConfirmationEveryRun!==false,
+        maxExecutionsPerDay:body.maxExecutionsPerDay===undefined?1:positiveIntField(body.maxExecutionsPerDay,'MAX_EXECUTIONS_PER_DAY'),
+      }));
+      res.status(201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/automation/proposals', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const body=req.body||{};
+      const payload=body.payload===undefined?{}:objectField(body.payload,'PAYLOAD');
+      if(containsRestrictedExactLocation(payload)||containsAccessSecret(payload))throw Object.assign(new Error('AUTOMATION_RESTRICTED_PAYLOAD_FORBIDDEN'),{statusCode:400});
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>proposeAutomationAction(client,{
+        actorUserId:userId,
+        householdId:stringField(body.householdId,'HOUSEHOLD_ID',180),
+        petId:optionalStringField(body.petId,'PET_ID',180),
+        actionType:choiceField(body.actionType,'ACTION_TYPE',['CARE_CREATE_OWNER_TASK','CARE_SNOOZE_OCCURRENCE','CARE_COMPLETE_OCCURRENCE','NOTIFICATION_SCHEDULE_SELF','BOOKING_CREATE_SERVICE_REQUEST','LOST_PET_ACTIVATE_COMMUNITY_ALERT','TRACKING_REQUEST_LOST_MODE','OPEN_DOMAIN_WORKSPACE'] as const),
+        origin:choiceField(body.origin,'ORIGIN',['USER_UI','AI_PROPOSAL','AUTOMATION_RULE','DOMAIN_EVENT','SYSTEM'] as const),
+        originReferenceId:optionalStringField(body.originReferenceId,'ORIGIN_REFERENCE_ID',180),
+        payload,
+        idempotencyKey:stringField(req.header('idempotency-key'),'IDEMPOTENCY_KEY',180),
+      }));
+      res.status(result.replayed?200:201).json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/automation/proposals/:proposalId/confirm', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const proposalId=stringField(req.params.proposalId,'PROPOSAL_ID',180);
+      const body=req.body||{};
+      const result=await withSystemTransaction(config,(client)=>confirmAutomationAction(client,{
+        actorUserId:userId,proposalId,
+        previewHash:stringField(body.previewHash,'PREVIEW_HASH',128),
+        confirmationBinding:stringField(body.confirmationBinding,'CONFIRMATION_BINDING',500),
+      }));
+      res.json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/automation/proposals/:proposalId/execute', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const proposalId=stringField(req.params.proposalId,'PROPOSAL_ID',180);
+      const result=await withSystemTransaction(config,(client)=>executeAutomationAction(client,{actorUserId:userId,proposalId}));
+      res.json(result);
+    }catch(error){next(error);}
+  });
+
+  app.get('/v1/automation/proposals/:proposalId', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const proposalId=stringField(req.params.proposalId,'PROPOSAL_ID',180);
+      const result=await withTenantTransaction(config,userId,undefined,(client)=>getAutomationProposal(client,proposalId,userId));
+      res.json(result);
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/analytics/households/:householdId/snapshots', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const householdId=stringField(req.params.householdId,'HOUSEHOLD_ID',180);
+      const body=req.body||{};
+      const snapshot=await withSystemTransaction(config,(client)=>generateHouseholdAnalytics(client,{
+        actorUserId:userId,householdId,
+        windowStart:isoDateField(body.windowStart,'WINDOW_START'),
+        windowEnd:isoDateField(body.windowEnd,'WINDOW_END'),
+        timezone:optionalStringField(body.timezone,'TIMEZONE',80)||'Africa/Nairobi',
+      }));
+      res.status(201).json({snapshot});
+    }catch(error){next(error);}
+  });
+
+  app.post('/v1/analytics/providers/:providerId/snapshots', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const providerId=stringField(req.params.providerId,'PROVIDER_ID',180);
+      const body=req.body||{};
+      const snapshot=await withSystemTransaction(config,(client)=>generateProviderAnalytics(client,{
+        actorUserId:userId,providerId,
+        windowStart:isoDateField(body.windowStart,'WINDOW_START'),
+        windowEnd:isoDateField(body.windowEnd,'WINDOW_END'),
+        timezone:optionalStringField(body.timezone,'TIMEZONE',80)||'Africa/Nairobi',
+      }));
+      res.status(201).json({snapshot});
+    }catch(error){next(error);}
+  });
+
+  app.get('/v1/analytics/:audience/:scopeId/snapshots', async (req:AuthenticatedRequest,res,next)=>{
+    try{
+      const {userId}=requireAuthenticated(req);
+      const audience=choiceField(req.params.audience,'AUDIENCE',['HOUSEHOLD','PROVIDER'] as const);
+      const scopeId=stringField(req.params.scopeId,'SCOPE_ID',180);
+      const limit=req.query.limit===undefined?20:positiveIntField(req.query.limit,'LIMIT');
+      const snapshots=await withTenantTransaction(config,userId,undefined,(client)=>listAnalyticsSnapshots(client,{actorUserId:userId,audience,scopeId,limit}));
+      res.json({snapshots});
     }catch(error){next(error);}
   });
 

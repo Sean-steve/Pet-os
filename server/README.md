@@ -41,3 +41,7 @@ Finance, consumer Subscriptions and Provider SaaS now use durable PostgreSQL aut
 ## Sprint 42 — Migration Wave 5
 
 Tracking, Transport, Recovery and Community now use durable PostgreSQL authority. Exact location is ingested only through the trusted `LOCATION_ADAPTER_SECRET` boundary and stored in Tracking/Recovery private tables. Transport stores coarse stop projections plus encrypted exact-address references and append-only custody records. Lost Pet recovery derives last-known location from Tracking and publishes coarse-only public profiles; Community rejects structured exact location and requires recovery-relay opt-in for volunteers. Real device-provider credentials/signature verification and asynchronous ingestion workers remain production integration requirements.
+
+## Sprint 43 — Migration Wave 6
+
+Commerce, Integrations, AI, Automation and Analytics now use durable PostgreSQL server authority. Commerce uses server pricing and inventory reservations and posts payment continuity to Finance. Integration credentials are hash-only and scope-bound. AI persists consent, safety decisions and provenance while remaining non-authoritative. Automation persists policy, confirmation and execution state. Analytics snapshots are server-derived and privacy-minimized. All six planned backend domain migration waves are complete; production still requires frontend API cutover, durable async workers, live provider credentials/signature verification and deployed observability/security/backup/DR evidence.
