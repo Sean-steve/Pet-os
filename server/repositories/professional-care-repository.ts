@@ -97,6 +97,7 @@ export async function addCareRecord(client:PoolClient,input:{
   actorUserId:string;idempotencyKey:string;engagementId:string;recordType:string;petId?:string;status?:string;occurredAt:string;payload:Record<string,unknown>;
 }){
   const engagement=await getEngagement(client,input.engagementId,input.actorUserId);
+  await assertProviderActor(client,engagement.providerId,input.actorUserId,engagement.businessId,engagement.assignedStaffId);
   const allowedTypes=['INSTRUCTION_SNAPSHOT','ACCESS_GRANT','HANDOVER','OBSERVATION','INCIDENT','GROOMING_SESSION','SITTER_VISIT','BOARDING_STAY','SHIFT_HANDOVER','COMPLETION_EVIDENCE'];
   if(!allowedTypes.includes(input.recordType)) throw Object.assign(new Error('CARE_RECORD_TYPE_INVALID'),{statusCode:400});
   if(input.petId && !engagement.petIds.includes(input.petId)) throw Object.assign(new Error('CARE_RECORD_PET_SCOPE_INVALID'),{statusCode:400});
